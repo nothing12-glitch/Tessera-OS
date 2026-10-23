@@ -1,0 +1,106 @@
+# Збірка власного лаунчера (apps/launcher).
+#
+# Середовище спеціально не покладається на gradlew: політика репо забороняє
+# будь-які бінарники в git, а gradle-wrapper.jar — бінарник. Тому Gradle
+# ставиться кроком нижче, з перевіркою sha256.
+name: build-launcher
+
+on:
+  push:
+    paths:
+      - "apps/**"
+      - ".github/workflows/build-launcher.yml"
+  pull_request:
+    paths: ["apps/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GRADLE_VERSION: "8.14.3"
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/launcher
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Перевірити Android SDK на раннері
+        id: sdk
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          [[ -d "$SDK" ]] || { echo "немає Android SDK за $SDK" >&2; exit 1; }
+          if ! ls -d "$SDK"/platforms/android-35 >/dev/null 2>&1; then
+            echo "на раннері немає platforms/android-35 — ставимо через sdkmanager" >&2
+            "$SDK"/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null 2>&1 || true
+            "$SDK"/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          fi
+          echo "sdk=$SDK" >> "$GITHUB_OUTPUT"
+          ls -1 "$SDK/platforms"
+
+      - name: Встановити Gradle ${{ env.GRADLE_VERSION }}
+        run: |
+          set -euo pipefail
+          ZIP="gradle-${GRADLE_VERSION}-bin.zip"
+          curl -fsSLO "https://services.gradle.org/distributions/${ZIP}"
+          curl -fsSL "https://services.gradle.org/distributions/${ZIP}.sha256" > "${ZIP}.sha256.expected"
+          # файл .sha256 від gradle.org — це лише сума без імені файлу,
+          # тому імені додаємо вручну перед перевіркою
+          printf '%s  %s\n' "$(cat "${ZIP}.sha256.expected")" "$ZIP" | sha256sum --check --strict
+          unzip -q "$ZIP" -d "$HOME/gradle-dist"
+          echo "$HOME/gradle-dist/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Зібрати debug APK і прогнати юніт-тести
+        run: |
+          set -euo pipefail
+          gradle --no-daemon --console=plain \
+            -Pandroid.sdk.channel=0 \
+            :app:testDebugUnitTest :app:assembleDebug
+
+      - name: Перевірити маніфест зібраного APK
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          [[ -f "$APK" ]] || { echo "немає $APK" >&2; exit 1; }
+          BT="$(ls -1d "${{ steps.sdk.outputs.sdk }}"/build-tools/*/ | sort -V | tail -1)"
+          BADGE="$("$BT/aapt2" dump badging "$APK")"
+          # badging не показує категорії фільтрів — их читаємо з відтвореного
+          # бінарного маніфеста
+          MANIFEST="$("$BT/aapt2" dump xmltree --file AndroidManifest.xml "$APK")"
+          echo "$BADGE" | grep -q "package: name='os.tessera.launcher'" || {
+            echo "APK не має нашого package" >&2; exit 1; }
+          echo "$MANIFEST" | grep -q '"android.intent.category.HOME"' || {
+            echo "лаунчер не оголошує HOME — система не поставить його основним екраном" >&2; exit 1; }
+          echo "$MANIFEST" | grep -q '"android.intent.category.DEFAULT"' || {
+            echo "без DEFAULT фільтр HOME не спрацює" >&2; exit 1; }
+          echo "$BADGE" | grep -q "minSdkVersion:'33'" || {
+            echo "неочікуваний minSdk" >&2; exit 1; }
+          echo "ok: HOME-екран, minSdk 33"
+
+      - name: Перевірити, що в APK немає чужих власницьких ресурсів
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          # Лаунчер бере іконки з PackageManager під час запуску, тому в самому
+          # APK жодних іконок застосунків бути не повинно.
+          if unzip -l "$APK" | grep -qE "nexuslauncher|product_sans|google_sans|bootanimation"; then
+            echo "у APK знайдено власницькі ресурси Google" >&2; exit 1
+          fi
+          echo "ok: лише наші ресурси"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tessera-launcher-debug
+          path: apps/launcher/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

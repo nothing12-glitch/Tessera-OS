@@ -15,6 +15,13 @@ build/testkey/*.jks
 .vscode/
 .idea/
 
+# Gradle-білд лаунчера (корінь `build/` — це наш AOSP-шар, його не чіпаємо)
+.gradle/
+local.properties
+apps/launcher/.gradle/
+apps/launcher/build/
+apps/launcher/app/build/
+
 # Ключі підпису — ніколи не в git
 *.pk8
 *.pem

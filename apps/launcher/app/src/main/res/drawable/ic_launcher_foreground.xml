@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Власний знак: мозаїка з трьох пластинок («tessera»). Жодних чужих іконок. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path android:fillColor="@color/launcher_glyph" android:pathData="M26,58 H50 V82 H26 Z" />
+    <path android:fillColor="@color/launcher_glyph" android:fillAlpha="0.75" android:pathData="M44,40 H68 V64 H44 Z" />
+    <path android:fillColor="@color/launcher_glyph" android:fillAlpha="0.5" android:pathData="M62,22 H86 V46 H62 Z" />
+</vector>

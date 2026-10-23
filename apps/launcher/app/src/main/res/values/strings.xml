@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tessera Launcher</string>
+    <string name="drawer_search_hint">Пошук застосунків</string>
+    <string name="drawer_empty">Нічого не знайдено</string>
+    <string name="action_pin">Закріпити на головному екрані</string>
+    <string name="action_unpin">Прибрати з головного екрана</string>
+    <string name="action_dock">Закріпити в доці</string>
+    <string name="action_undock">Прибрати з дока</string>
+    <string name="home_search">Пошук</string>
+    <string name="drawer_back">Закрити шухляду застосунків</string>
+    <string name="drawer_clear">Очистити пошук</string>
+    <string name="action_app_info">Про застосунок</string>
+    <string name="loading">Завантажуємо застосунки…</string>
+</resources>
