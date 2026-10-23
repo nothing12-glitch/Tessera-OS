@@ -23,21 +23,28 @@ jobs:
             echo "Бінарні файли не належать до репозиторію:"; echo "$BAD"; exit 1
           fi
 
-      - name: Заборона марок Google / Pixel у коді та ресурсах
+      - name: Заборона марок Google / Pixel у тому, що потрапляє в образ
         run: |
           set -euo pipefail
-          if grep -rniE 'pixel launcher|product sans|google material icon|bootanimation.*pixel' \
-               --include='*.xml' --include='*.mk' --include='*.md' . ; then
+          # Скануємо лише те, що збирається в image (ресурси, конфіги, маніфест).
+          # Документація навмисне називає заборонені речі — її чіпати не треба.
+          SCOPE="overlay build config manifest apps"
+          HIT=$(grep -rniE 'pixel launcher|product sans|google material icon|bootanimation' \
+                 $SCOPE 2>/dev/null || true)
+          if [[ -n "$HIT" ]]; then
+            echo "$HIT"
             echo "Знайшов ознаки чужого бренда (Google/Pixel). TesseraOS — власна айдентика."
             exit 1
           fi
+          echo "чисто: $SCOPE"
 
-      - name: Кожен каталог з кодом має мати LICENSE
+      - name: Ліцензія Apache-2.0 присутня
         run: |
           set -euo pipefail
-          for d in overlay/themes/*/ apps/*/; do
+          head -3 LICENSE | grep -qi 'apache license' || { echo "LICENSE не Apache-2.0"; exit 1; }
+          grep -qi 'Version 2.0' LICENSE || { echo "LICENSE: немає рядка про версію 2.0"; exit 1; }
+          for d in overlay/themes/*/; do
             [[ -d "$d" ]] || continue
-            head -1 "$d/AndroidManifest.xml" >/dev/null 2>&1 || continue
-            echo "ok: $d"
+            grep -qi 'license' "$d/Android.bp" || echo "увага: $d не має рядка про ліцензію в Android.bp"
           done
-          head -1 LICENSE | grep -qi 'apache' || { echo "LICENSE не Apache-2.0"; exit 1; }
+          echo "ok: LICENSE = Apache-2.0"
