@@ -1,6 +1,7 @@
 # Конфіг продукту TesseraOS для x86_64-віртуальної машини.
-# Маніфест лінкує цей файл у build/make/target/product/tessera_x86_64.mk,
-# тому `lunch tessera_x86_64-userdebug` працює без ручних symlink.
+# Маніфест лінкує цей файл у device/tessera/x86_64/tessera_x86_64.mk, а
+# сусідній AndroidProducts.mk оголошує таргент для lunch. Ручні symlink не
+# потрібні:
 #
 #   source build/envsetup.sh && lunch tessera_x86_64-userdebug && m -j$(nproc)
 
@@ -13,13 +14,20 @@ $(call inherit-product, build/make/target/product/full_x86_64.mk)
 $(call inherit-product-if-exists, vendor/lineage/config/lineage_microg.mk)
 $(call inherit-product-if-exists, build/make/target/product/lineage_base.mk)
 
-# --- 2. MD3-оверлеї --------------------------------------------------------
-# Static RRO пакети з overlay/themes/. Збираються через Android.mk blueprint
-# (Android.bp поряд з кожним пакетом); isStatic="true" в маніфесті
-# означає, що окрема активація через `cmd overlay enable` не потрібна.
+# --- 2. Оверлеї інтерфейсу -------------------------------------------------
+# Static RRO пакети з overlay/themes/. Збираються через Android.bp blueprint
+# поряд з кожним пакетом; isStatic="true" в маніфесті означає, що окрема
+# активація через `cmd overlay enable` не потрібна.
+#
+# Семантика: інтерфейс = stock AOSP + Material You. Тематичні файли
+# (framework, settings) працюють лише як fallback, коли динамічна палітра
+# вимкнена; структурні файли (launcher3, systemui) міняють лише геометрію
+# — сітку, маску іконок, колонки Quick Settings — а не кольори.
 PRODUCT_PACKAGES += \
     os.tessera.theme.framework \
-    os.tessera.theme.settings
+    os.tessera.theme.settings \
+    os.tessera.theme.launcher3 \
+    os.tessera.theme.systemui
 
 # --- 3. Сервіси, замість власницьких бінарів -------------------------------
 # microG — вільна реалізація push/location/oauth. Профіль GApps користувача

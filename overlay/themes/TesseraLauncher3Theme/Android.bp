@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 TesseraOS Project
+
+// Static RRO для AOSP Launcher3: маска іконок і сітка.
+// У дереві AOSP: m os.tessera.theme.launcher3
+runtime_resource_overlay {
+    name: "os.tessera.theme.launcher3",
+    manifest: "AndroidManifest.xml",
+    resource_dirs: ["res"],
+    sdk_version: "current",
+    product_specific: true,
+    certificate: "platform",
+}

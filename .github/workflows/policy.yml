@@ -33,7 +33,7 @@ jobs:
                  $SCOPE 2>/dev/null || true)
           if [[ -n "$HIT" ]]; then
             echo "$HIT"
-            echo "Знайшов ознаки чужого бренда (Google/Pixel). TesseraOS — власна айдентика."
+            echo "Знайшов ознаки чужого бренда (Google/Pixel) у тому, що потрапляє в образ."
             exit 1
           fi
           echo "чисто: $SCOPE"

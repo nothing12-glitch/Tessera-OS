@@ -3,6 +3,12 @@
   Static RRO: Material Design 3 для Android framework.
   targetPackage="android" => змінюємо ресурси frameworks/base/core/res.
 
+  Умова активації — навмисне «0». Стоковий Android 15 бере кольори зі
+  шпалер (Monet), і саме це дає той вигляд, який усі впізнають. Якби ми
+  перекривали Theme.DeviceDefault за замовчуванням, система виглядала б
+  пласко й не як сток. Ми — fallback: перший запуск, AOD, безпечний режим
+  або Monet, свідомо вимкнений користувачем.
+
   Зверни увагу: імена токенів (colorPrimary, *Container, shapeAppearance)
   відрізняються між релізами Android. Перевір свій checkout у
   frameworks/base/core/res/res/values/colors_device_defaults.xml та
@@ -10,7 +16,7 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="os.tessera.theme.framework"
-    android:versionCode="1502"
+    android:versionCode="1503"
     android:versionName="15.22.2.0">
 
     <overlay
@@ -18,8 +24,8 @@
         android:priority="700"
         android:isStatic="true"
         android:requiredSystemPropertyName="persist.tessera.dynamic_color"
-        android:requiredSystemPropertyValue="1" />
+        android:requiredSystemPropertyValue="0" />
 
     <!-- Тема не містить коду і не має компонентів. -->
-    <application android:hasCode="false" android:label="Tessera MD3 (framework)" />
+    <application android:hasCode="false" android:label="TesseraOS MD3 (framework fallback)" />
 </manifest>

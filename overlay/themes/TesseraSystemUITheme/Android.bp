@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 TesseraOS Project
+
+// Static RRO для SystemUI: компонування Quick Settings.
+// У дереві AOSP: m os.tessera.theme.systemui
+runtime_resource_overlay {
+    name: "os.tessera.theme.systemui",
+    manifest: "AndroidManifest.xml",
+    resource_dirs: ["res"],
+    sdk_version: "current",
+    product_specific: true,
+    certificate: "platform",
+}

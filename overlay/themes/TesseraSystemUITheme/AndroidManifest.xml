@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Static RRO для SystemUI: компонування Quick Settings.
+  Дві колонки плиток у портретному режимі — те, до чого звик сток.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="os.tessera.theme.systemui"
+    android:versionCode="1503"
+    android:versionName="15.22.2.0">
+
+    <overlay
+        android:targetPackage="com.android.systemui"
+        android:priority="700"
+        android:isStatic="true" />
+
+    <application android:hasCode="false" android:label="TesseraOS (SystemUI)" />
+</manifest>
