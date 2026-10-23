@@ -21,7 +21,7 @@ Material Design 3, поверх стабільної бази LineageOS 22.x (An
 | Ядро, HAL, системні сервіси | LineageOS 22.x (Android 15) |
 | Material Design 3 | RRO-оверлеї в `overlay/themes/` |
 | Геометрія (сітка лаунчера 5×6, док) | build-time підміни файлів у `overlay-packages/` |
-| Застосунки | `apps/launcher` — власний лаунчер (Compose + MD3): сітка 5×6, док 5, шухляда з пошуком; в образі — модуль `TesseraLauncher` |
+| Застосунки | `apps/launcher` (сітка 5×6, док 5, шухляда з пошуком), `apps/calculator` (точна арифметика на `BigDecimal`) і `apps/files` (робота з деревом через SAF) — усі Compose + MD3 з Monet. Реєстр модулів: `build/scripts/apps.list` |
 | Google-сервіси | не входить у образ; профіль встановлення в `config/gapps/` |
 | Ціль першого релізу | x86_64 Android VM (AVD / qemu) |
 | Збірка | `build/` + GitHub Actions |

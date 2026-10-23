@@ -63,20 +63,21 @@ adb shell cmd package set-home-activity os.tessera.launcher/.LauncherActivity
 `system_ext/app/TesseraLauncher/`. У PRODUCT_PACKAGES його додає
 `build/tessera.mk`.
 
-APK у git немає (політика репо), тому перед `m` файл готує скрипт:
+APK у git немає (політика репо), тому перед `m` файл готує скрипт — спільний
+для всіх наших застосунків (реєстр: `build/scripts/apps.list`):
 
 ```bash
-build/scripts/prepare-launcher.sh                 # зібрати Gradle-ом
-build/scripts/prepare-launcher.sh prebuilt <шлях> # узяти вже зібраний
-build/scripts/prepare-launcher.sh artifact <id>   # завантажити апек CI (GITHUB_TOKEN)
+build/scripts/prepare-app.sh launcher                # зібрати Gradle-ом
+build/scripts/prepare-app.sh launcher prebuilt <шлях> # узяти вже зібраний
+build/scripts/prepare-app.sh all artifact <id>       # завантажити апекси CI (GITHUB_TOKEN)
 ```
 
 Він пише `apps/launcher/prebuilt/TesseraLauncher.apk` (ігнорується git через
 `*.apk`), перевіряє через `aapt2`, що це наш package з HOME-фільтром, і
-контролює складові APK. `build/scripts/build-emulator.sh` викликає його сам,
-щоб помилка «apk not found» не з'являлася посеред години збірки; обійти —
-`TESSERA_SKIP_LAUNCHER=1`. Інваріанти інтеграції тримає CI:
-`build/scripts/check-launcher-integration.sh`.
+контролює складові APK. `build/scripts/build-emulator.sh` викликає його сам
+для кожного застосунку з реєстру, щоб помилка «apk not found» не з'являлася
+посеред години збірки; обійти — `TESSERA_SKIP_APPS=1`. Інваріанти інтеграції
+тримає CI: `build/scripts/check-app-integration.sh`.
 
 Чому `android_app_import`, а не `android_app` із сирцевин — чесно: у бази
 Compose збирається Soong-ом лише за прапорцем

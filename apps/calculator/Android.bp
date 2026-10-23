@@ -1,0 +1,21 @@
+// Калькулятор TesseraOS у зібраному образі.
+//
+// Той самий шлях, що й для лаунчера: Gradle збирає APK поза деревом,
+// build/scripts/prepare-app.sh кладе його в apps/calculator/prebuilt/,
+// Soong імпортує. У git apk не лежить — політика репо забороняє бінарники.
+//
+// Властивості `presigned` і `system_ext_specific` взяті з бази:
+// build/soong/java/app_import.go на lineage-22.2 — той самий механізм, що й для
+// TesseraLauncher; `system_ext_specific` живий у packages/apps/Trebuchet/Android.bp.
+//
+// `overrides` свідомо немає: калькулятор у базі може й не входити в образ на
+// x86_64 (перелік пакетів дає vendor/lineage/config/common_mobile.mk), тому
+// перекривати нічого. Якщо на конкретному пристрої стане два калькулятори —
+// це видимий дубль без наслідків для системи; додамо overrides тоді, коли
+// перевіримо точне імʼя модуля на зібраному образі.
+android_app_import {
+    name: "TesseraCalculator",
+    apk: "prebuilt/TesseraCalculator.apk",
+    presigned: true,
+    system_ext_specific: true,
+}

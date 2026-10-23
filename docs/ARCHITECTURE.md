@@ -56,13 +56,21 @@ TesseraOS на цьому етапі його не обирає, бо корис
 | `manifest/tessera.xml` | `repo`-маніфест: база + цей репозиторій |
 | `build/tessera.mk` | Android.mk конфіг продукту `tessera_x86_64` |
 | `build/board/BoardConfig.mk` | параметри платформи x86_64 VM |
-| `build/scripts/` | bootstrap, збірка, пакування GApps, запуск AVD, підготовка APK лаунчера, перевірки інтеграції |
+| `build/scripts/` | bootstrap, збірка, пакування GApps, запуск AVD, підготовка APK наших застосунків (`prepare-app.sh` за реєстром `apps.list`), перевірки інтеграції |
 | `overlay/themes/` | RRO-пакети MD3 |
 | `overlay-packages/` | build-time підміни файлів застосунків (сітка лаунчера 5×6) — не RRO, бо `res/xml` з атрибутами чужого namespace не лінкується оверлеєм |
 | `config/branding/` | `tessera.prop`: name, version, шпалери, шрифти |
 | `config/gapps/` | профілі встановлення GApps/microG |
-| `apps/launcher/` | власний лаунчер (Kotlin + Compose MD3): сітка 5×6, док 5, шухляда з пошуком, рядок «дата + погода». Збирається Gradle-ом окремо від дерева AOSP і входить в образ як `android_app_import` (`apps/launcher/Android.bp`) |
-| `.github/workflows/` | CI: оверлеї (hosted), лаунчер (hosted), ROM (self-hosted), релізи |
+| `apps/launcher/` | власний лаунчер (Kotlin + Compose MD3): сітка 5×6, док 5, шухляда з пошуком, рядок «дата + погода». В образі — модуль `TesseraLauncher` |
+| `apps/calculator/` | власний калькулятор: `BigDecimal`-арифметика, тональні клавіші MD3, науковий запис за межами `1E-10 … 1E21`. Модуль `TesseraCalculator` |
+| `apps/files/` | власні «Файли» поверх SAF (без дозволу на все сховище): крихти, пошук, чотири порядки сортування, створення/перейменування/видалення. Модуль `TesseraFiles` |
+| `.github/workflows/` | CI: оверлеї (hosted), наші застосунки — матриця по `apps.list` (hosted), ROM (self-hosted), релізи |
+
+Усі три застосунки збираються Gradle-ом окремо від дерева AOSP і входять в
+образ як `android_app_import` (`apps/<застосунок>/Android.bp`): бінарників у
+git немає, тому перед `m` скрипт кладе свіжий APK у `prebuilt/`. Реєстр
+`build/scripts/apps.list` — єдине місце, де записано, які застосунки взагалі є;
+його читають і `prepare-app.sh`, і `check-app-integration.sh`, і CI-матриця.
 
 ## Конвенції гілок і версій
 
@@ -77,7 +85,8 @@ TesseraOS на цьому етапі його не обирає, бо корис
 2. **M1, образ на емуляторі** — `tessera_x86_64` збирається, MD3-тема
    застосована static-overlay, microG за замовчуванням.
 3. **M2, UI-шар** — власні Settings-екран і лаунчер-концепт на Compose/MD3,
-   динамічна палітра від шпалер.
+   динамічна палітра від шпалер. *частково: лаунчер, калькулятор і «Файли» вже
+   в репо і збираються; лишилися Settings-шкіра й перевірка на екрані.*
 4. **M3, пристрої** — перші 2–3 реальні телефони з підтримкою в LineageOS,
    own-app у `product`.
 5. **M4, інфраструктура релізу** — підписані образи, OTA-сервер, публічний

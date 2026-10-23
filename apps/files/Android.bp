@@ -1,0 +1,20 @@
+// Файли TesseraOS у зібраному образі.
+//
+// Той самий шлях, що й для лаунчера: Gradle збирає APK поза деревом,
+// build/scripts/prepare-app.sh кладе його в apps/files/prebuilt/, Soong
+// імпортує. У git apk не лежить — політика репо забороняє бінарники.
+//
+// Властивості `presigned` і `system_ext_specific` взяті з бази:
+// build/soong/java/app_import.go на lineage-22.2 (той самий механізм, що й для
+// TesseraLauncher); `system_ext_specific` живий у packages/apps/Trebuchet/Android.bp.
+//
+// `overrides` свідомо немає: у базі файловик — DocumentsUI, і він тримає
+// цілий набір ролей (ROOT_DOCUMENTS, MIME...), яких ми не реалізуємо.
+// Перекрити його означало б залишити систему без «Отримати доступ до сховища»
+// для інших застосунків. Тому обидва у образі, а користувач обирає наш.
+android_app_import {
+    name: "TesseraFiles",
+    apk: "prebuilt/TesseraFiles.apk",
+    presigned: true,
+    system_ext_specific: true,
+}

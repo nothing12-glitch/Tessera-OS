@@ -1,9 +1,14 @@
-# Збірка власного лаунчера (apps/launcher).
+# Збірка всіх власних застосунків TesseraOS (реєстр — build/scripts/apps.list).
+#
+# Матриця будується з самого реєстру, тому новий застосунок потрапляє в CI
+# тим самий рядом, що й в образ: забути про нього в конфігурації робочого
+# процесу більше неможливо — перевірку «Android.bp без рядка в apps.list»
+# робить check-app-integration.sh.
 #
 # Середовище спеціально не покладається на gradlew: політика репо забороняє
 # будь-які бінарники в git, а gradle-wrapper.jar — бінарник. Тому Gradle
 # ставиться кроком нижче, з перевіркою sha256.
-name: build-launcher
+name: build-apps
 
 on:
   push:
@@ -11,7 +16,7 @@ on:
       - "apps/**"
       - "build/tessera.mk"
       - "build/scripts/**"
-      - ".github/workflows/build-launcher.yml"
+      - ".github/workflows/build-apps.yml"
   pull_request:
     paths: ["apps/**", "build/tessera.mk", "build/scripts/**"]
   workflow_dispatch:
@@ -23,20 +28,39 @@ env:
   GRADLE_VERSION: "8.14.3"
 
 jobs:
-  apk:
+  discover:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/launcher
+    outputs:
+      apps: ${{ steps.registry.outputs.apps }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Прочитати реєстр застосунків
+        id: registry
+        run: |
+          set -euo pipefail
+          [[ -s build/scripts/apps.list ]] || { echo "порожній реєстр" >&2; exit 1; }
+          awk -F"|" '$0 !~ /^[[:space:]]*#/ && NF == 5 {
+            printf "{\"app\":\"%s\",\"module\":\"%s\",\"pkg\":\"%s\",\"artifact\":\"%s\",\"category\":\"%s\"}\n", $1, $2, $3, $4, $5
+          }' build/scripts/apps.list | jq -s -c '.' > /tmp/apps.json
+          rows=$(jq 'length' /tmp/apps.json)
+          [[ "$rows" -gt 0 ]] || { echo "у реєстрі немає жодного рядка з 5 стовпчиками" >&2; exit 1; }
+          echo "apps=$(cat /tmp/apps.json)" >> "$GITHUB_OUTPUT"
+          jq -r '.[].app' /tmp/apps.json
+
+  apk:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.discover.outputs.apps) }}
     steps:
       - uses: actions/checkout@v4
 
       # Дешево й до збірки: чи модуль взагалі потрапить у образ.
-      # Робоча каталог-jobу — apps/launcher (див. defaults.run).
       - name: Перевірити інтеграцію в ROM
-        run: |
-          set -euo pipefail
-          bash ../../build/scripts/check-launcher-integration.sh
+        run: bash build/scripts/check-app-integration.sh "${{ matrix.app }}"
 
       - uses: actions/setup-java@v4
         with:
@@ -71,6 +95,7 @@ jobs:
           echo "$HOME/gradle-dist/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
 
       - name: Зібрати debug APK і прогнати юніт-тести
+        working-directory: apps/${{ matrix.app }}
         run: |
           set -euo pipefail
           gradle --no-daemon --console=plain \
@@ -78,31 +103,37 @@ jobs:
             :app:testDebugUnitTest :app:assembleDebug
 
       - name: Перевірити маніфест зібраного APK
+        working-directory: apps/${{ matrix.app }}
         run: |
           set -euo pipefail
           APK="app/build/outputs/apk/debug/app-debug.apk"
           [[ -f "$APK" ]] || { echo "немає $APK" >&2; exit 1; }
           BT="$(ls -1d "${{ steps.sdk.outputs.sdk }}"/build-tools/*/ | sort -V | tail -1)"
           BADGE="$("$BT/aapt2" dump badging "$APK")"
-          # badging не показує категорії фільтрів — их читаємо з відтвореного
+          # badging не показує категорії фільтрів — їх читаємо з відтвореного
           # бінарного маніфеста
           MANIFEST="$("$BT/aapt2" dump xmltree --file AndroidManifest.xml "$APK")"
-          echo "$BADGE" | grep -q "package: name='os.tessera.launcher'" || {
-            echo "APK не має нашого package" >&2; exit 1; }
-          echo "$MANIFEST" | grep -q '"android.intent.category.HOME"' || {
-            echo "лаунчер не оголошує HOME — система не поставить його основним екраном" >&2; exit 1; }
-          echo "$MANIFEST" | grep -q '"android.intent.category.DEFAULT"' || {
-            echo "без DEFAULT фільтр HOME не спрацює" >&2; exit 1; }
+          echo "$BADGE" | grep -q "package: name='${{ matrix.pkg }}'" || {
+            echo "APK не має нашого package ${{ matrix.pkg }}" >&2; exit 1; }
+          echo "$MANIFEST" | grep -q '"android.intent.category.LAUNCHER"' || {
+            echo "застосунок не оголошує LAUNCHER — іконки не буде на екрані" >&2; exit 1; }
+          if [[ "${{ matrix.category }}" != "-" ]]; then
+            # Без цієї категорії застосунок не виконує свою системну роль
+            # (для лаунчера — «Додом» веде не туди).
+            echo "$MANIFEST" | grep -q "\"android.intent.category.${{ matrix.category }}\"" || {
+              echo "у APK немає категорії ${{ matrix.category }}" >&2; exit 1; }
+          fi
           echo "$BADGE" | grep -q "minSdkVersion:'33'" || {
             echo "неочікуваний minSdk" >&2; exit 1; }
-          echo "ok: HOME-екран, minSdk 33"
+          echo "ok: ${{ matrix.pkg }}, minSdk 33"
 
       - name: Перевірити, що в APK немає чужих власницьких ресурсів
+        working-directory: apps/${{ matrix.app }}
         run: |
           set -euo pipefail
           APK="app/build/outputs/apk/debug/app-debug.apk"
-          # Лаунчер бере іконки з PackageManager під час запуску, тому в самому
-          # APK жодних іконок застосунків бути не повинно.
+          # Застосунки беруть іконки з PackageManager під час запуску, тому в
+          # самих APK жодних іконок чужих застосунків бути не повинно.
           if unzip -l "$APK" | grep -qE "nexuslauncher|product_sans|google_sans|bootanimation"; then
             echo "у APK знайдено власницькі ресурси Google" >&2; exit 1
           fi
@@ -110,6 +141,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: tessera-launcher-debug
-          path: apps/launcher/app/build/outputs/apk/debug/app-debug.apk
+          name: ${{ matrix.artifact }}
+          path: apps/${{ matrix.app }}/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error

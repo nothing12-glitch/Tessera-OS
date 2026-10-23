@@ -1,0 +1,14 @@
+# Реєстр власних застосунків TesseraOS: одному скрипту вистачає цих рядків,
+# щоб підготувати APK і перевірити його інтеграцію в образ.
+#
+# Формат: <каталог у apps/>|<модуль Soong>|<applicationId>|<ім'я CI-артефакту>|<додаткова категорія фільтра>
+#
+# Каталог, модуль і package мають збігатися дослівно: саме на цій трійці
+# ловиться клас помилки «APK зібрано під одним іменем, а в образ просимо інший».
+#
+# Останній стовпчик — категорія фільтра, без якої застосунок не виконує свою
+# роль у системі (для лаунчера це HOME; без неї «Додом» нікуди не веде).
+# Прочерк означає «вистачає звичайного LAUNCHER».
+calculator|TesseraCalculator|os.tessera.calculator|tessera-calculator-debug|-
+files|TesseraFiles|os.tessera.files|tessera-files-debug|-
+launcher|TesseraLauncher|os.tessera.launcher|tessera-launcher-debug|HOME

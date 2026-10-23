@@ -43,7 +43,7 @@ DEVICE_PACKAGE_OVERLAYS += vendor/tessera/os/overlay-packages
 
 # Наш стартовий застосунок. Модуль оголошений у apps/launcher/Android.bp як
 # android_app_import (APK збирає Gradle, у git його немає — готує
-# build/scripts/prepare-launcher.sh до m).
+# build/scripts/prepare-app.sh до m; список застосунків — apps.list там само).
 #
 # Сток-лаунчер НЕ перекримо: у базі це TrebuchetQuickStep
 # (vendor/lineage/config/common_mobile.mk:31-38), і він дає ще й перегляд
@@ -52,6 +52,23 @@ DEVICE_PACKAGE_OVERLAYS += vendor/tessera/os/overlay-packages
 # образі поки два HOME-застосунки, а вибір робить користувач один раз:
 #   adb shell cmd package set-home-activity os.tessera.launcher/.LauncherActivity
 PRODUCT_PACKAGES += TesseraLauncher
+
+# Наші заміни стандартних дрібних застосунків. Обидва — той самий механізм, що
+# і лаунчер: apps/<застосунок>/Android.bp з android_app_import + APK, покладений
+# build/scripts/prepare-app.sh.
+#
+# `overrides` у обох свідомо немає, і це не забутовка, а рішення:
+#  - калькулятор у базі може й не входити в x86_64-перелік пакетів
+#    (vendor/lineage/config/common_mobile.mk), тому перекривати нічого;
+#  - файловий застосунок у базі — DocumentsUI, який тримає системні ролі
+#    ROOT_DOCUMENTS і DEFAULT_MIME_TYPE_HANDLERS: без них зламається відкриття
+#    файлів іншими застосунками. Наш Files цих ролей не реалізує.
+# Наслідок: у образі калькулятор і «Файли» можуть бути подвоєні зі стоковими.
+# Це видимий дубль без наслідків для системи; точні імена модулів бази
+# перевіримо на зібраному образі — тоді й додамо overrides.
+PRODUCT_PACKAGES += \
+    TesseraCalculator \
+    TesseraFiles
 
 # --- 3. Сервіси, замість власницьких бінарів -------------------------------
 # microG — вільна реалізація push/location/oauth. Профіль GApps користувача

@@ -1,9 +1,9 @@
 // Лаунчер TesseraOS у зібраному образі.
 //
 // Це android_app_import, а не android_app: APK збираємо зовнішнім Gradle-ом
-// (той самий склад, що й у CI build-launcher), а готує файл на білд-боксі
-// build/scripts/prepare-launcher.sh. У git APK не лежить — політика репо
-// забороняє бінарники.
+// (той самий склад, що й у CI build-apps), а готує файл на білд-боксі
+// build/scripts/prepare-app.sh — за реєстром build/scripts/apps.list. У git
+// APK не лежить — політика репо забороняє бінарники.
 //
 // Чому не збираємо сирцевини Soong-ом, чесно:
 //   - у бази packages/apps/Trebuchet/Android.bp Compose підключається лише

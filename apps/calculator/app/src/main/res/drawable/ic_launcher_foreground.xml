@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Власний знак калькулятора: дисплей і чотири клавіші. Жодних чужих іконок. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="@color/calculator_glyph"
+        android:pathData="M32,30 H76 V42 H32 Z" />
+    <path
+        android:fillColor="@color/calculator_glyph"
+        android:fillAlpha="0.8"
+        android:pathData="M32,50 H44 V62 H32 Z" />
+    <path
+        android:fillColor="@color/calculator_glyph"
+        android:fillAlpha="0.8"
+        android:pathData="M48,50 H60 V62 H48 Z" />
+    <path
+        android:fillColor="@color/calculator_glyph"
+        android:fillAlpha="0.8"
+        android:pathData="M64,50 H76 V62 H64 Z" />
+    <path
+        android:fillColor="@color/calculator_glyph"
+        android:fillAlpha="0.6"
+        android:pathData="M32,66 H44 V78 H32 Z" />
+    <path
+        android:fillColor="@color/calculator_glyph"
+        android:fillAlpha="0.6"
+        android:pathData="M48,66 H60 V78 H48 Z" />
+    <path
+        android:fillColor="@color/calculator_glyph"
+        android:pathData="M64,66 H76 V78 H64 Z" />
+</vector>

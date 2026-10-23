@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tessera Файли</string>
+    <string name="loading">Читаємо папку…</string>
+    <string name="folder_empty">Папка порожня</string>
+    <string name="nothing_found">Нічого не знайдено</string>
+    <string name="search_hint">Пошук у папці</string>
+    <string name="action_up">Нагору</string>
+    <string name="action_clear_search">Очистити пошук</string>
+    <string name="action_change_folder">Інша папка</string>
+    <string name="action_new_folder">Нова папка</string>
+    <string name="action_open">Відкрити</string>
+    <string name="action_rename">Перейменувати</string>
+    <string name="action_delete">Видалити</string>
+    <string name="action_ok">Гаразд</string>
+    <string name="action_cancel">Скасувати</string>
+    <string name="read_only">лише читання</string>
+    <string name="needs_folder_title">Немає дозволеної папки</string>
+    <string name="needs_folder_body">Застосунок бачить лише те, що ви обранили сам. Оберіть папку — і відкриємо її вміст.</string>
+    <string name="pick_folder">Обрати папку</string>
+    <string name="dialog_new_folder">Назва нової папки</string>
+    <string name="dialog_rename">Нова назва</string>
+    <string name="sort_name">за назвою</string>
+    <string name="sort_name_desc">за назвою (у зворотному)</string>
+    <string name="sort_date">за датою</string>
+    <string name="sort_size">за розміром</string>
+    <string name="notice_created">Папку створено</string>
+    <string name="notice_create_failed">Не вдалося створити папку</string>
+    <string name="notice_renamed">Перейменовано</string>
+    <string name="notice_rename_failed">Не вдалося перейменувати</string>
+    <string name="notice_deleted">Видалено</string>
+    <string name="notice_delete_failed">Не вдалося видалити</string>
+</resources>

@@ -20,6 +20,35 @@ build/scripts/run-avd.sh --api 35 --abi x86_64 --image out/target/product/tesser
 Вимоги на хості: Android SDK (`cmdline-tools`, `emulator`), KVM для x86_64
 (`egrep -c '(vmx|svm)' /proc/cpuinfo` > 0), інакше буде повільна емуляція.
 
+#### Windows: чому емулятор може не стартувати
+
+x86_64-гостьова система вимагає апаратного прискорення. Перевіряємо першим
+ділом, до будь-якої спроби запуску:
+
+```powershell
+& "$env:LOCALAPPDATA\Android\Sdk\emulator\emulator-check.exe" accel-check
+```
+
+Код `0` — прискорення є. Код `6` — його немає, і звичайний запуск обривається
+на `x86_64 emulation currently requires hardware acceleration!` (саме так на
+хості 2026-10-23: віртуалізація в увімкнена в UEFI, але AEHD не встановлено,
+роль Hyper-V вимкнена, «Платформа гіпервізора Windows» не увімкнена, WSL
+немає, і сесія не адміністратор).
+
+Два шляхи, обидва — одноразово і з перезавантаженням:
+
+| Варіант | Що робити |
+|---|---|
+| Платформа гіпервізора Windows (WHPX) | `optionalfeatures.exe` → «Платформа гіпервізора Windows» → перезавантаження. Потрібні права адміністратора |
+| Android Emulator Hypervisor Driver (AEHD) | SDK Manager → «Performance → Android Emulator Hypervisor Driver», далі запуск його інсталятора з адміністраторськими правами |
+
+Без прискорення гостеву систему все ж можна підняти в чистій емуляції —
+прапорцем `-no-accel`. Це не «швидкий шлях», а крайній: перший кадр SurfaceFlinger
+з'являється замість хвилин — десятки хвилин, а `-gpu host` при цьому не
+працює, треба програмний рендерер (`-gpu swangle` або `-gpu lavapipe`; на
+тому ж хості `-gpu swiftshader_indirect` друкує `Failed to load opengl32sw`).
+Для повного образу TesseraOS це, зрозуміло, не замінює нормальний запуск.
+
 ### B. Готовий образ зі сторінки релізів
 
 У GitHub Release лежить `tessera-x86_64-<ver>.tar.xz` + `sha256sum.txt`.
