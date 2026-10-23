@@ -22,7 +22,14 @@ local.properties
 apps/*/.gradle/
 apps/*/build/
 apps/*/app/build/
+apps/*/app/.kotlin/
+apps/*/.kotlin/
 apps/*/prebuilt/
+
+# Повні варіативні TTF брендових шрифтів: їх дістає
+# build/scripts/fetch-brand-fonts.sh і звіряє за сумою. У репо лишаються
+# маленькі woff2-підмножини для сайту та тексти ліцензій OFL.
+brand/fonts/*.ttf
 
 # Ключі підпису — ніколи не в git
 *.pk8

@@ -81,7 +81,7 @@ x86_64-гостьова система вимагає апаратного пр�
 | microG, push через фактичний MQTT | так |
 | Застосунки з F-Droid / Aurora | так |
 | Апаратне прискорення графіки | так, `-gpu host` |
-| Наші `apps/launcher`, `apps/calculator`, `apps/files` | збираються CI; на екрані ще не перевірені |
+| Наші `apps/launcher`, `apps/calculator`, `apps/files`, `apps/clock` | збираються CI; на екрані ще не перевірені |
 | Камера, NFC, телефонія | ні (немає заліза) |
 | Play Protect attestation | ні, див. [GAPPS.md](GAPPS.md) |
 | Widevine | L3 (програмний); DRM-потоки можуть не працювати |

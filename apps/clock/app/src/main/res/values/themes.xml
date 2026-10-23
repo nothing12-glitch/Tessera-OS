@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Системний DeviceDefault дає день/ніч і Monet для вікна до першого кадру
+         Compose; прозорі панелі — щоб edge-to-edge не лишив чорних смуг. -->
+    <style name="Theme.TesseraClock" parent="android:Theme.DeviceDefault.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+</resources>

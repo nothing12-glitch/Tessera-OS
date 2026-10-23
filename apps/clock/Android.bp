@@ -1,0 +1,17 @@
+// Годинник TesseraOS у зібраному образі.
+//
+// Той самий шлях, що для калькулятора й лаунчера: Gradle збирає APK поза деревом,
+// build/scripts/prepare-app.sh кладе його в apps/clock/prebuilt/, Soong імпортує.
+// У git apk не лежить — політика репо забороняє бінарники.
+//
+// `overrides` свідомо немає: у базі це packages/apps/DeskClock, який на x86_64
+// може й не входити в перелік пакетів, а з майбутніми будильниками через
+// AlarmManager перекриття старого модуля — зайвий ризик. Дубль видно, але
+// системних ролей годинник не тримає; допишемо overrides, коли побачимо
+// точний список модулів на зібраному образі.
+android_app_import {
+    name: "TesseraClock",
+    apk: "prebuilt/TesseraClock.apk",
+    presigned: true,
+    system_ext_specific: true,
+}

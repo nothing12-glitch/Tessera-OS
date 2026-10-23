@@ -10,5 +10,6 @@
 # роль у системі (для лаунчера це HOME; без неї «Додом» нікуди не веде).
 # Прочерк означає «вистачає звичайного LAUNCHER».
 calculator|TesseraCalculator|os.tessera.calculator|tessera-calculator-debug|-
+clock|TesseraClock|os.tessera.clock|tessera-clock-debug|-
 files|TesseraFiles|os.tessera.files|tessera-files-debug|-
 launcher|TesseraLauncher|os.tessera.launcher|tessera-launcher-debug|HOME

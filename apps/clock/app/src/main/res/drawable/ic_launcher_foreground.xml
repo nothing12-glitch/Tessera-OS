@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Власний циферблат годинника: кільце, стрілки й вісь. Жодних чужих іконок. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- кільце циферблата -->
+    <path
+        android:strokeColor="@color/clock_glyph"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M54,54 m-25,0 a25,25 0 1,0 50,0 a25,25 0 1,0 -50,0" />
+
+    <!-- годинникова стрілка вгору -->
+    <path
+        android:strokeColor="@color/clock_glyph"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M54,54 L54,38" />
+
+    <!-- хвилинна стрілка -->
+    <path
+        android:strokeColor="@color/clock_glyph"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M54,54 L67,60" />
+
+    <!-- вісь -->
+    <path
+        android:fillColor="@color/clock_glyph"
+        android:pathData="M54,54 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
+</vector>

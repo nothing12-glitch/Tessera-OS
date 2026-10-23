@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Годинник Tessera</string>
+
+    <string name="tab_stopwatch">Секундомір</string>
+    <string name="tab_timer">Таймер</string>
+    <string name="tab_alarms">Будильники</string>
+
+    <string name="action_start">Старт</string>
+    <string name="action_stop">Стоп</string>
+    <string name="action_lap">Коло</string>
+    <string name="action_reset">Скинути</string>
+    <string name="action_add_minute">+ хвилина</string>
+    <string name="action_add_hour">+ година</string>
+    <string name="action_sub_minute">− хвилина</string>
+    <string name="action_sub_hour">− година</string>
+    <string name="laps_count">Кіл-сть кіл: %1$d</string>
+    <string name="timer_done">Час вийшов</string>
+    <string name="timer_idle">Таймер не запущено</string>
+
+    <string name="alarms_empty">Немає жодного будильника. Додайте перший кнопкою внизу.</string>
+    <string name="alarm_new">Новий будильник</string>
+    <string name="alarm_label_hint">Підпис</string>
+    <string name="alarm_repeat">Щодня</string>
+    <string name="alarm_once">Один раз</string>
+    <string name="alarm_save">Зберегти</string>
+    <string name="alarm_cancel">Скасувати</string>
+    <string name="alarm_delete">Видалити</string>
+    <string name="alarm_next">наступний через %1$s</string>
+    <string name="alarm_off">вимкнено</string>
+    <string name="lap_total">загалом %1$s</string>
+    <string name="notifications_needed">Без дозволу на сповіщення будильник не спрацює</string>
+    <string name="exact_alarm_warning">Щоб сигнал лунав точно, дозвольте застосунку точні будильники</string>
+    <string name="action_open_settings">Налаштування</string>
+</resources>
