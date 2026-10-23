@@ -66,7 +66,9 @@ jobs:
       - name: Перевірити імена ресурсів проти бази
         run: |
           set -euo pipefail
-          build/scripts/check-overlay-names.sh
+          # через bash, а не прямим викликом: git на Windows не тримає exec-біт,
+          # тому в checkout файли приходять 100644
+          bash build/scripts/check-overlay-names.sh
 
       - name: Згенерувати тестовий ключ
         run: |
