@@ -308,6 +308,45 @@ input[type="color"] { width: 44px; height: 34px; border: 1px solid var(--outline
 .switch.on { background: var(--ui-accent) }
 .switch.on::after { left: 17px; background: var(--ui-on-accent) }
 
+/* калькулятор — тон клавіш 1:1 з KeyCell у apps/calculator:
+   digits surfaceContainerHighest, operators secondaryContainer,
+   utility surfaceContainerLow, «=» primary; радіус 28 dp */
+.calc { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 8px 12px 12px; gap: 10px }
+.calc-out { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; gap: 4px; padding: 0 4px }
+.calc-expr { font-size: 14px; color: var(--ui-on-variant) }
+.calc-res { font-size: 32px; font-weight: 300; letter-spacing: -.7px; color: var(--ui-on) }
+.keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px }
+.key { height: 52px; border-radius: 26px; display: grid; place-items: center; font-size: 15px;
+  background: var(--ui-surface2); color: var(--ui-on) }
+.key.op { background: var(--ui-sec-cont); color: var(--ui-on-sec-cont) }
+.key.util { background: var(--ui-surface); color: var(--ui-on-variant) }
+.key.eq { background: var(--ui-accent); color: var(--ui-on-accent) }
+
+/* файли — та сама структура, що в FilesScreen: заголовок + чип сортування +
+   «Інша папка», пошук, хлібні крихти, потім список (папки попереду) */
+.files { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 2px 12px 12px; gap: 8px }
+.files-top { display: flex; align-items: center; gap: 7px; padding: 4px 2px 0 }
+.files-top b { font-size: 14px; font-weight: 500; color: var(--ui-on); margin-right: auto }
+.fchip { font-size: 9.5px; padding: 4px 9px; border-radius: 8px; color: var(--ui-on-variant); white-space: nowrap;
+  border: 1px solid color-mix(in srgb, var(--ui-on-variant) 34%, transparent) }
+.fchip.sel { background: var(--ui-sec-cont); color: var(--ui-on-sec-cont); border-color: transparent }
+.fsearch { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 17px;
+  border: 1px solid color-mix(in srgb, var(--ui-on-variant) 34%, transparent);
+  color: var(--ui-on-variant); font-size: 10.5px }
+.crumbs { display: flex; align-items: center; gap: 5px; font-size: 9.5px; color: var(--ui-on-variant); padding: 0 2px }
+.crumbs i { font-style: normal; opacity: .5 }
+.crumbs span { padding: 3px 8px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--ui-on-variant) 26%, transparent) }
+.flist { background: var(--ui-surface); border-radius: 20px; overflow: hidden }
+.frow { display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-bottom: 1px solid color-mix(in srgb, var(--ui-on-variant) 14%, transparent) }
+.frow:last-child { border-bottom: 0 }
+/*KindBadge: 40 dp коло, папка — primaryContainer, решта — surfaceContainerHighest */
+.fbadge { min-width: 30px; height: 30px; padding: 0 4px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 10.5px; font-weight: 500; flex: none;
+  background: var(--ui-surface2); color: var(--ui-on-variant) }
+.fbadge.dir { background: var(--ui-pri-cont); color: var(--ui-on-pri-cont) }
+.frow .txt b { display: block; font-size: 11.5px; font-weight: 500; color: var(--ui-on) }
+.frow .txt small { font-size: 10px; color: var(--ui-on-variant) }
+
 /* footer */
 footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant); color: var(--on-surface-variant); font-size: .92rem }
 .foot { display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap; align-items: center }
@@ -457,6 +496,8 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
               <button data-screen="drawer" aria-pressed="false">Шухляда</button>
               <button data-screen="qs" aria-pressed="false">Швидкі панелі</button>
               <button data-screen="settings" aria-pressed="false">Налаштування</button>
+              <button data-screen="calculator" aria-pressed="false">Калькулятор</button>
+              <button data-screen="files" aria-pressed="false">Файли</button>
             </div>
           </div>
         </div>
@@ -478,8 +519,10 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
           <p class="hint" style="max-width:420px;text-align:center;margin:0">
             Макет не стверджує, що образ уже зібраний: він показує цільову поведінку палітри й
             геометрії. Сітка 5&nbsp;×&nbsp;6 з доком із 5 іконок — це вже файл у репо; рядок
-            «дата + погода» й шухляда тепер у власному лаунчері в <code>apps/launcher</code>
-            — він збирається CI, але на екрані його ще не бачили.
+            «дата + погода» й шухляда тепер у власному лаунчері в <code>apps/launcher</code>.
+            Екрани «Калькулятор» і «Файли» знімають з <code>apps/calculator</code> та
+            <code>apps/files</code>: тон клавіш, позначки типів і порядок сортування взяті з коду.
+            Усі три застосунки збирає CI, але на екрані пристрою їх ще не бачили.
           </p>
         </div>
       </div>
@@ -603,15 +646,17 @@ build/scripts/run-avd.sh</code></pre>
             <p class="muted" style="margin:0">
               Структура дистрибутива, конфіг продукту та BoardConfig, маніфест із <code>linkfile</code>,
               три RRO-оверлеї з перевіреними іменами, захист імен у CI, документація зі збірки,
-              емулятора, GApps і тем, ліцензія Apache-2.0.
+              емулятора, GApps і тем, ліцензія Apache-2.0. Три власні застосунки —
+              <code>apps/launcher</code>, <code>apps/calculator</code>, <code>apps/files</code> —
+              з тестами, реєстром <code>build/scripts/apps.list</code> та матрицею CI.
             </p>
           </div>
           <div class="card" style="margin-top:16px">
             <h3>Наступне</h3>
             <p class="muted" style="margin:0 0 10px">
               Перший зібраний образ, який запускається в емуляторі; звірка імен <code>settingslib_*</code>
-              зі зібраного <code>Settings.apk</code>; перевірка сітки 5 × 6 на тому образі; власні
-              Compose-застосунки.
+              зі зібраного <code>Settings.apk</code>; перевірка сітки 5 × 6 на тому образі; наступні
+              застосунки — годинник, галерея, нотатки.
             </p>
             <p class="muted" style="margin:0"><b>Не перевірено на пристрої.</b> Поки образ не зібрано,
             пункти про ефект оверлеїв — гіпотеза з доказом на рівні імен ресурсів, а не факт.</p>
@@ -627,9 +672,13 @@ bash build/scripts/check-overlay-names.sh
 # чи збираються й підписуються оверлеї
 bash build/scripts/build-themes.sh
 
+# чи наші застосунки справді входять в образ
+bash build/scripts/check-app-integration.sh
+
 # що всередині пакета
 aapt2 dump resources overlay/out/TesseraIconShapeTheme.apk</code></pre>
-          <p class="muted" style="margin:14px 0 0">CI-воркфлоу <code>build-themes</code> і <code>policy</code>
+          <p class="muted" style="margin:14px 0 0">CI-воркфлоу <code>build-apps</code>,
+          <code>build-themes</code> і <code>policy</code>
           женуть ці самі перевірки на кожен пуш.</p>
         </div>
       </div>
@@ -747,12 +796,15 @@ function applyPalette() {
   const p = tonal(state.seed, 1.0);
   const n = tonal(state.seed, 0.09);      // neutral
   const nv = tonal(state.seed, 0.22);     // neutral variant
+  const s = tonal(state.seed, 0.38);      // secondary: той самий відтінок, менша naschromost
   const stage = document.getElementById('stage');
   const set = (k, v) => stage.style.setProperty(k, v);
   if (state.dark) {
     set('--ui-bg', n(6)); set('--ui-surface', n(12)); set('--ui-surface2', n(20));
     set('--ui-on', n(96)); set('--ui-on-variant', nv(84));
     set('--ui-accent', p(80)); set('--ui-on-accent', p(20));
+    set('--ui-sec-cont', s(80)); set('--ui-on-sec-cont', s(20));
+    set('--ui-pri-cont', p(30)); set('--ui-on-pri-cont', p(90));
     set('--app-bg', p(40)); set('--app-fg', n(100));
     set('--ui-wall', `radial-gradient(120% 80% at 25% 15%, ${p(25)}, transparent 60%),` +
       `radial-gradient(100% 70% at 85% 90%, ${nv(15)}, transparent 55%), ${n(4)}`);
@@ -760,6 +812,8 @@ function applyPalette() {
     set('--ui-bg', n(98)); set('--ui-surface', n(94)); set('--ui-surface2', n(90));
     set('--ui-on', n(12)); set('--ui-on-variant', nv(35));
     set('--ui-accent', p(40)); set('--ui-on-accent', n(100));
+    set('--ui-sec-cont', s(90)); set('--ui-on-sec-cont', s(20));
+    set('--ui-pri-cont', p(90)); set('--ui-on-pri-cont', p(30));
     set('--app-bg', p(40)); set('--app-fg', p(100));
     set('--ui-wall', `radial-gradient(120% 80% at 20% 10%, ${p(90)}, transparent 62%),` +
       `radial-gradient(100% 70% at 90% 95%, ${nv(92)}, transparent 58%), ${n(96)}`);
@@ -773,7 +827,8 @@ function applyPalette() {
 const APPS = [
   ['Телефон', '#2F6B4F'], ['Повідомлення', '#3E6A96'], ['Камера', '#7A4A6E'], ['Годинник', '#5B5F70'],
   ['Налаштування', '#48505E'], ['Музика', '#8A5A22'], ['Пошта', '#2E6D77'], ['Карти', '#55693A'],
-  ['Календар', '#7C3047'], ['Файли', '#6A5B8C'], ['Контакти', '#34656B'], ['Браузер', '#8C4A2F']
+  ['Календар', '#7C3047'], ['Файли', '#6A5B8C'], ['Контакти', '#34656B'], ['Браузер', '#8C4A2F'],
+  ['Калькулятор', '#4B6478']
 ];
 function ico(lbl) { return lbl.trim()[0].toUpperCase(); }
 function statusBarTime() {
@@ -861,7 +916,49 @@ function settingsMarkup() {
       ${row('↻', 'Оновлення', 'Перевірити доступні', false)}
     </div>`;
 }
-const MARKUP = { lock: lockMarkup, launcher: launcherMarkup, drawer: drawerMarkup, qs: qsMarkup, settings: settingsMarkup };
+/* Калькулятор і «Файли» — макети наших застосунків з apps/. Рядки клавіш і
+   порядок списку взяті з коду, а не «на око»: сітка 4×5 з AC / ( ) / % / ⌫
+   зверху (CalculatorScreen), папки завжди попереду файлів (EntrySort). */
+const CALC_KEYS = [
+  ['AC', 'util'], ['( )', 'util'], ['%', 'util'], ['⌫', 'util'],
+  ['7', ''], ['8', ''], ['9', ''], ['÷', 'op'],
+  ['4', ''], ['5', ''], ['6', ''], ['×', 'op'],
+  ['1', ''], ['2', ''], ['3', ''], ['−', 'op'],
+  ['0', ''], ['.', ''], ['+', 'op'], ['=', 'eq']
+];
+function calculatorMarkup() {
+  const keys = CALC_KEYS.map(([label, tone]) =>
+    `<div class="key ${tone}">${label}</div>`).join('');
+  return `<div class="calc">
+      <div class="calc-out">
+        <div class="calc-expr">12 × 7</div>
+        <div class="calc-res">84</div>
+      </div>
+      <div class="keys">${keys}</div>
+    </div>`;
+}
+/* позначки й рядки — з apps/files: літери з EntryKind, папки завжди попереду
+   (EntrySort), для папки summaryLine показує лише час, для файла — «розмір · час» */
+const FILES_ROWS = [
+  ['П', 'Фотографії', 'сьогодні', true],
+  ['П', 'Документи', 'учора', true],
+  ['PDF', 'звіт-за-квартал.pdf', '2,4 МіБ · учора', false],
+  ['З', 'poster-dark.png', '1,2 МіБ · сьогодні', false],
+  ['Т', 'notes.txt', '4 КіБ · 3 дні тому', false]
+];
+function filesMarkup() {
+  const rows = FILES_ROWS.map(([badge, name, meta, isDir]) =>
+    `<div class="frow"><span class="fbadge${isDir ? ' dir' : ''}">${badge}</span>
+      <div class="txt"><b>${name}</b><small>${meta}</small></div></div>`).join('');
+  return `<div class="files">
+      <div class="files-top"><b>Завантаження</b>
+        <span class="fchip sel">за назвою</span><span class="fchip">Інша папка</span></div>
+      <div class="fsearch">Пошук у папці</div>
+      <div class="crumbs"><span>Домашня</span><i>›</i><span>Завантаження</span></div>
+      <div class="flist">${rows}</div>
+    </div>`;
+}
+const MARKUP = { lock: lockMarkup, launcher: launcherMarkup, drawer: drawerMarkup, qs: qsMarkup, settings: settingsMarkup, calculator: calculatorMarkup, files: filesMarkup };
 
 function render() {
   document.getElementById('screenBody').innerHTML = MARKUP[state.screen]();
