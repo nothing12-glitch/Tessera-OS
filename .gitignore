@@ -26,6 +26,9 @@ apps/*/app/.kotlin/
 apps/*/.kotlin/
 apps/*/prebuilt/
 
+# Тимчасове робоче дерево гілки gh-pages, яке створює publish-site.sh.
+.pages-worktree/
+
 # Повні варіативні TTF брендових шрифтів: їх дістає
 # build/scripts/fetch-brand-fonts.sh і звіряє за сумою. У репо лишаються
 # маленькі woff2-підмножини для сайту та тексти ліцензій OFL.
