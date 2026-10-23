@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 TesseraOS Project
+
 // Static RRO-пакет MD3 для Android framework.
 // Збирається Soong у дереві AOSP (`m os.tessera.theme.framework`).
 // Для швидкої CI-збірки без дерева — build/scripts/build-themes.sh (aapt2).
