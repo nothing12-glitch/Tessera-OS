@@ -111,6 +111,24 @@ res/xml/device_profiles.xml:46: error: attribute deviceCategory
 
 Чого це НЕ підтверджує: ані рядки, ані відступи не бачили на екрані.
 Composable без пристрою не перевіряється чесно, тому 🧩 лишається до першого
-кадру з образу. Образ також ще не поставляє наш лаунчер: для цього потрібен
-`android_app` у `Android.bp` і позиція в `system_ext/priv-app` — без бінарників
-у git (докладно в [apps/launcher/README.md](../apps/launcher/README.md)).
+кадру з образу.
+
+Інтеграція в образ підготовлена (`apps/launcher/Android.bp` —
+`android_app_import` + `PRODUCT_PACKAGES += TesseraLauncher` у `build/tessera.mk`,
+APK на білд-боксі готує `build/scripts/prepare-launcher.sh`). Два місця, де
+ми навмисне зупинилися там, де ще немає доказу:
+
+1. **Не перекриваємо сток-лаунчер.** У базі `TrebuchetQuickStep`
+   (`vendor/lineage/config/common_mobile.mk:31-38`) дає ще й перегляд
+   недавніх — `frameworks/base/core/res/res/values/config.xml:3622
+   config_recentsComponentName`. Жестова навігація без Recents у нас
+   зламалася б, тому в образі два HOME-застосунки й користувач обирає один.
+   `overrides:` повернеться разом із власним Recents.
+2. **Не збираємо з сирцевин Soong-ом.** Compose у базі вмикається прапорцем
+   `release_enable_compose_in_launcher`, і з androidx там видно лише
+   `androidx.compose.runtime_runtime` і `androidx.compose.material3_material3`
+   (`packages/apps/Trebuchet/Android.bp:225-249`). Чи є в дереві `ui`,
+   `foundation`, `activity-compose`, `lifecycle` і Compose-компілятор Kotlin
+   2.0 — не перевірено; import готового APK — єдиний шлях, бачений зеленим.
+
+Обидва інваріанти ловить CI: `build/scripts/check-launcher-integration.sh`.

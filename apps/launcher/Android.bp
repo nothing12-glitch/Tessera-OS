@@ -1,0 +1,44 @@
+// Лаунчер TesseraOS у зібраному образі.
+//
+// Це android_app_import, а не android_app: APK збираємо зовнішнім Gradle-ом
+// (той самий склад, що й у CI build-launcher), а готує файл на білд-боксі
+// build/scripts/prepare-launcher.sh. У git APK не лежить — політика репо
+// забороняє бінарники.
+//
+// Чому не збираємо сирцевини Soong-ом, чесно:
+//   - у бази packages/apps/Trebuchet/Android.bp Compose підключається лише
+//     за soong_config-прапорцем ANDROID `release_enable_compose_in_launcher`,
+//     а з модулів androidx там перелічені тільки
+//     `androidx.compose.runtime_runtime` і `androidx.compose.material3_material3`;
+//   - для нашого складів треба ще ui / foundation / activity-compose /
+//     lifecycle-модулі і Compose-компілятор Kotlin 2.0 — чи є вони в дереві
+//     під іменами, які ми можемо послатися, на білд-боксі ще не перевірено.
+// Тож path «Gradle → APK → import» єдиний, який ми вже бачили зеленим.
+//
+// Властивості (`presigned`, `certificate`, `system_ext_specific`) взяті з
+// бази: build/soong/java/app_import.go на гілці lineage-22.2.
+//
+// `presigned: true` — APK підписаний debug-ключем Gradle. Ролі HOME це
+// достатньо: лаунчер не бере жодного signature|privileged дозволу, тому
+// платформи підпис не вимагаємо. Якщо білд-бокс відхилить ключ (Soong перевіряє
+// презначений APK скриптом check_prebuilt_presigned_apk.py), варіант —
+// `default_dev_cert: true` і безпідписний APK з Gradle.
+//
+// `overrides` тут свідомо НЕМАЄ. Сток у базі — TrebuchetQuickStep
+// (vendor/lineage/config/common_mobile.mk:31-38), і він дає не лише HOME, а й
+// Recents: frameworks/base/core/res/res/values/config.xml:3622
+// config_recentsComponentName = com.android.launcher3/…RecentsActivity.
+// Наш лаунчер жестовий перегляд недавніх ще не реалізує, тому перекрити
+// TrebuchetQuickStep означало б зламати навігацію. Зараз у образі два HOME-
+// застосунки, і користувач обирає наш один раз (або скриптовано):
+//
+//   adb shell cmd package set-home-activity os.tessera.launcher/.LauncherActivity
+//
+// `overrides: ["TrebuchetQuickStep", "Trebuchet"]` повернеться тоді, коли
+// лаунчер отримає власний Recents — тоді ж зʼявиться і запис у docs/PIXEL-PARITY.md.
+android_app_import {
+    name: "TesseraLauncher",
+    apk: "prebuilt/TesseraLauncher.apk",
+    presigned: true,
+    system_ext_specific: true,
+}

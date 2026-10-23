@@ -41,6 +41,18 @@ PRODUCT_PACKAGES += \
 # і docs/PIXEL-PARITY.md.
 DEVICE_PACKAGE_OVERLAYS += vendor/tessera/os/overlay-packages
 
+# Наш стартовий застосунок. Модуль оголошений у apps/launcher/Android.bp як
+# android_app_import (APK збирає Gradle, у git його немає — готує
+# build/scripts/prepare-launcher.sh до m).
+#
+# Сток-лаунчер НЕ перекримо: у базі це TrebuchetQuickStep
+# (vendor/lineage/config/common_mobile.mk:31-38), і він дає ще й перегляд
+# недавніх (frameworks/base/core/res/res/values/config.xml:3622
+# config_recentsComponentName). Наш лаунчер Recents ще не робить, тому в
+# образі поки два HOME-застосунки, а вибір робить користувач один раз:
+#   adb shell cmd package set-home-activity os.tessera.launcher/.LauncherActivity
+PRODUCT_PACKAGES += TesseraLauncher
+
 # --- 3. Сервіси, замість власницьких бінарів -------------------------------
 # microG — вільна реалізація push/location/oauth. Профіль GApps користувача
 # описано в docs/GAPPS.md; сюда власницькі бінари Google не входять.
@@ -50,9 +62,23 @@ PRODUCT_PACKAGES += \
     FakeStore \
     AuroraStore
 
-# Прибираємо з образу те, що не має сенсу в VM (телефонія, SMS).
-# Продуктова змінна LineageOS; на чистому AOSP ігнорується.
-PRODUCT_PACKAGES_REMOVE := Dialer Messaging
+# Прибираємо з образу те, що не має сенсу в VM (телефонія, MMS).
+#
+# Раніше тут стояло `PRODUCT_PACKAGES_REMOVE := Dialer Messaging`. Перевірено
+# деревом бази: такої змінної в LineageOS 22.2 НЕМАЄ — нулів у
+# build/make/core/product.mk, core/Makefile, core/config.mk і у
+# vendor/lineage/config/{common,common_mobile}.mk. Рядок мовчки нічого не
+# прибирав (те саме «зелений білд ≠ результат», від якого захищає
+# check-overlay-names.sh). Працюючий механізм — фільтр уже зібраного списку,
+# бо inherit-product вище розкрив PRODUCT_PACKAGES повністю.
+#
+# Імена модулів підтверджені: MmsService — build/make/target/product/
+# handheld_system.mk:60; Dialer — packages/apps/Dialer/Android.bp:11;
+# messaging — packages/apps/Messaging/Android.bp:55 (малими літерами!).
+# Останні два доходять лише якщо база додає їх через vendor/lineage/config;
+# на x86_64-VM вони можуть не бути в списку взагалі — фільтр тоді порожній,
+# але й не бреше.
+PRODUCT_PACKAGES := $(filter-out MmsService Dialer messaging,$(PRODUCT_PACKAGES))
 
 # --- 4. Ідентичність -------------------------------------------------------
 PRODUCT_NAME := tessera_x86_64

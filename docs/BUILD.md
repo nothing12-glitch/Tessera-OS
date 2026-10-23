@@ -92,6 +92,19 @@ m -j"$(nproc)" 2>&1 | tee /tmp/tessera-build.log
 build/scripts/build-emulator.sh
 ```
 
+Перед `m` у дереві має лежати APK нашого лаунчера: модуль
+`TesseraLauncher` — це `android_app_import`, а бінарники в git заборонені
+політикою. `build-emulator.sh` викликає підготовку сам; вручну це
+
+```bash
+build/scripts/prepare-launcher.sh          # зібрати Gradle-ом
+build/scripts/prepare-launcher.sh prebuilt /шлях/app-debug.apk
+build/scripts/prepare-launcher.sh artifact <id запуску build-launcher>
+```
+
+(режим `artifact` потребує `GITHUB_TOKEN`; обійти підготовку —
+`TESSERA_SKIP_LAUNCHER=1`, якщо лаунчер у образі не потрібен).
+
 Перша збірка на 16 ядрах — 2–6 годин. Наступні інкрементальні — хвилини
 (за умови `ccache`).
 
@@ -111,6 +124,8 @@ Image лежать у `out/target/product/tessera_x86_64/`:
 | `Android platform requires the host tool 'repo'` | `repo` не в `PATH` | поставити у `~/bin` і експорт |
 | `error: cannot find SDK` у own-app | немає Android SDK | `bootstrap.sh --apps` |
 | Оверлей не застосований | `isStatic="true"` + не в `PRODUCT_PACKAGES` | додай пакет у `tessera.mk`, перевіри `cmd overlay list` |
+| `TesseraLauncher`: apk not found | APK лаунчера готується перед `m`, а не лежить у git | `build/scripts/prepare-launcher.sh` |
+| Система щоразу питає, який лаунчер | у образі два HOME-застосунки (сток не перекритий — див. docs/PIXEL-PARITY.md §6) | обери «Завжди» або `cmd package set-home-activity os.tessera.launcher/.LauncherActivity` |
 
 ## Відтворюваність
 

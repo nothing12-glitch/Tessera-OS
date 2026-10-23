@@ -14,6 +14,15 @@ export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git -C "$(dirname "${BASH_SOURC
 
 TARGET="${1:-tessera_x86_64-userdebug}"
 
+# Наш лаунчер входить у образ як android_app_import, тому APK має існувати ще
+# до аналізу Soong: інакше помилка «module TesseraLauncher: apk not found»
+# з'явиться посеред години збірки. Пропустити — TESSERA_SKIP_LAUNCHER=1.
+if [[ "${TESSERA_SKIP_LAUNCHER:-0}" != "1" ]]; then
+  REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+  # shellcheck disable=SC2086  # TESSERA_LAUNCHER_ARGS — це режим + аргумент
+  bash "$REPO_DIR/build/scripts/prepare-launcher.sh" ${TESSERA_LAUNCHER_ARGS:-}
+fi
+
 source build/envsetup.sh
 lunch "$TARGET"
 

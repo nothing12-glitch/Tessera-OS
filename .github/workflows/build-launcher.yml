@@ -9,9 +9,11 @@ on:
   push:
     paths:
       - "apps/**"
+      - "build/tessera.mk"
+      - "build/scripts/**"
       - ".github/workflows/build-launcher.yml"
   pull_request:
-    paths: ["apps/**"]
+    paths: ["apps/**", "build/tessera.mk", "build/scripts/**"]
   workflow_dispatch:
 
 permissions:
@@ -28,6 +30,13 @@ jobs:
         working-directory: apps/launcher
     steps:
       - uses: actions/checkout@v4
+
+      # Дешево й до збірки: чи модуль взагалі потрапить у образ.
+      # Робоча каталог-jobу — apps/launcher (див. defaults.run).
+      - name: Перевірити інтеграцію в ROM
+        run: |
+          set -euo pipefail
+          bash ../../build/scripts/check-launcher-integration.sh
 
       - uses: actions/setup-java@v4
         with:

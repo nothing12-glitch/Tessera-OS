@@ -56,12 +56,12 @@ TesseraOS на цьому етапі його не обирає, бо корис
 | `manifest/tessera.xml` | `repo`-маніфест: база + цей репозиторій |
 | `build/tessera.mk` | Android.mk конфіг продукту `tessera_x86_64` |
 | `build/board/BoardConfig.mk` | параметри платформи x86_64 VM |
-| `build/scripts/` | bootstrap, збірка, пакування GApps, запуск AVD |
+| `build/scripts/` | bootstrap, збірка, пакування GApps, запуск AVD, підготовка APK лаунчера, перевірки інтеграції |
 | `overlay/themes/` | RRO-пакети MD3 |
 | `overlay-packages/` | build-time підміни файлів застосунків (сітка лаунчера 5×6) — не RRO, бо `res/xml` з атрибутами чужого namespace не лінкується оверлеєм |
 | `config/branding/` | `tessera.prop`: name, version, шпалери, шрифти |
 | `config/gapps/` | профілі встановлення GApps/microG |
-| `apps/launcher/` | власний лаунчер (Kotlin + Compose MD3): сітка 5×6, док 5, шухляда з пошуком, рядок «дата + погода». Збирається Gradle-ом окремо від дерева AOSP |
+| `apps/launcher/` | власний лаунчер (Kotlin + Compose MD3): сітка 5×6, док 5, шухляда з пошуком, рядок «дата + погода». Збирається Gradle-ом окремо від дерева AOSP і входить в образ як `android_app_import` (`apps/launcher/Android.bp`) |
 | `.github/workflows/` | CI: оверлеї (hosted), лаунчер (hosted), ROM (self-hosted), релізи |
 
 ## Конвенції гілок і версій
