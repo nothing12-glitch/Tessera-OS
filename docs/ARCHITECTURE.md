@@ -86,7 +86,8 @@ TesseraOS на цьому етапі його не обирає, бо корис
 Назви ресурсів MD3 у framework змінюються між релізами Android, а імена
 device-таргетів — між версіями LineageOS. Перед першим білдом звір:
 
-- `lunch <target>` — список у `build/make/target/product/AndroidProducts.mk`;
+- `lunch <target>` — перелік бере з `device/**/AndroidProducts.mk`
+  (`PRODUCT_LIST`, `PRODUCT_MAKEFILES`); наш файл — `build/board/AndroidProducts.mk`;
 - реальні імена токенів у
   `frameworks/base/core/res/res/values/colors_device_defaults.xml`;
 - чи існує `lineage_x86_64` у твоїй гілці маніфесту (якщо ні — `aosp_x86_64`).

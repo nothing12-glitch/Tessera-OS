@@ -46,17 +46,37 @@ git clone https://github.com/<you>/tessera-os vendor/tessera/os
 
 ### 3. Конфіг продукту
 
-Конфіг продукту має бути у списку, який зчитує `lunch`. Маніфест
-`manifest/tessera.xml` робить це автоматично через `<linkfile>`: при
-`repo sync` наш `build/tessera.mk` з'являється як
-`build/make/target/product/tessera_x86_64.mk`, а `BoardConfig.mk` — у
-`device/tessera/x86_64/`. Якщо ти клонуєш репозиторій вручну (без `repo`),
-створи symlink вручну:
+`lunch` бачить таргент лише тоді, коли він оголошений в
+`device/**/AndroidProducts.mk`. Маніфест `manifest/tessera.xml` робить це
+автоматично через `<linkfile>`: при `repo sync` наші файли з'являються в
+каталозі платформи:
+
+| Джерело (у нашому репо) | Призначення в дереві |
+|---|---|
+| `build/tessera.mk` | `device/tessera/x86_64/tessera_x86_64.mk` |
+| `build/board/AndroidProducts.mk` | `device/tessera/x86_64/AndroidProducts.mk` |
+| `build/board/BoardConfig.mk` | `device/tessera/x86_64/BoardConfig.mk` |
+| `config/branding/tessera.prop` | `vendor/tessera/etc/tessera.prop` |
+
+Якщо ти клонуєш репозиторій вручну (без `repo sync` для нашого шару), зроби
+ті самі три посилання сам:
 
 ```bash
-ln -sfn "$PWD/vendor/tessera/os/build/tessera.mk" \
-        build/make/target/product/tessera_x86_64.mk
+mkdir -p device/tessera/x86_64
+T="$PWD/vendor/tessera/os"
+ln -sfn "$T/build/tessera.mk"            device/tessera/x86_64/tessera_x86_64.mk
+ln -sfn "$T/build/board/AndroidProducts.mk" device/tessera/x86_64/AndroidProducts.mk
+ln -sfn "$T/build/board/BoardConfig.mk"   device/tessera/x86_64/BoardConfig.mk
 ```
+
+**Чому не повний маніфест.** `manifest/tessera.xml` перелічує лише кілька
+проєктів бази — цього достатньо, щоб показати шар і зібрати оверлеї, але не
+для повної збірки ROM: справжній образ потребує сотень проєктів і власне
+`default.xml` від LineageOS. Надійний шлях: форкнути
+[LineageOS/manifest](https://github.com/LineageOS/manifest), додати у його
+`default.xml` проєкт `vendor/tessera/os` з чотирма `<linkfile>` з таблиці вище
+— і робити `repo init -u` на власний форк. Саме тому команда на кроці 2 вказує
+на маніфест LineageOS, а не на наш.
 
 ### 4. Збірка
 

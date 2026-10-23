@@ -10,7 +10,8 @@
 # Публічний android.jar з SDK їх не містить, тому без --framework-jar
 # скрипт будує «палітровий» варіант оверлею (colors/dimens) і друкує
 # попередження. Повний оверлей збирається всередині дерева AOSP:
-#   m os.tessera.theme.framework os.tessera.theme.settings
+#   m os.tessera.theme.framework os.tessera.theme.settings \
+#     os.tessera.theme.launcher3 os.tessera.theme.systemui
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
