@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Фавіконка сайту: знак на темній плитці-сквіркулі. site/index.html підключає
+     цей файл як <link rel="icon">. Apache-2.0 © TesseraOS contributors -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="16" fill="#0B0E14"/>
+  <g transform="translate(32,32) scale(0.44) translate(-54,-54)">
+    <rect x="25" y="25" width="26" height="26" rx="9" fill="#3350C8"/>
+    <rect x="57" y="25" width="26" height="26" rx="9" fill="#8FB0FF"/>
+    <rect x="25" y="57" width="26" height="26" rx="9" fill="#C8D8FF"/>
+    <path d="M70 55 L85 70 L70 85 L55 70 Z" fill="#E8B23A"/>
+  </g>
+</svg>

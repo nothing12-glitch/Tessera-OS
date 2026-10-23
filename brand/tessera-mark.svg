@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Основний знак TesseraOS.
+
+  «Tessera» — мозаїчна плитка. Знак = поле з чотирьох плиток, три з яких
+  лежать у сітці, а четверта повернута на 45°: це та плитка, що задає
+  візерунок усій системі. Геометрія навмисно проста — знак читається з 16 px
+  і не повторляє жодної чужої торгової марки.
+
+  Мотив вписаний у 25…85 із 108, тому той самий файл працює і як
+  foreground adaptive-іконки (безпечна зона 66 dp по центру).
+
+  Кольори — маркові, не системні: див. brand/PALETTE.md.
+  Apache-2.0 © TesseraOS contributors
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108" role="img" aria-label="TesseraOS">
+  <rect x="25" y="25" width="26" height="26" rx="9" fill="#3350C8"/>
+  <rect x="57" y="25" width="26" height="26" rx="9" fill="#8FB0FF"/>
+  <rect x="25" y="57" width="26" height="26" rx="9" fill="#C8D8FF"/>
+  <path d="M70 55 L85 70 L70 85 L55 70 Z" fill="#E8B23A"/>
+</svg>
