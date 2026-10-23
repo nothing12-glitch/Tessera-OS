@@ -61,7 +61,8 @@ TesseraOS на цьому етапі його не обирає, бо корис
 | `overlay-packages/` | build-time підміни файлів застосунків (сітка лаунчера 5×6) — не RRO, бо `res/xml` з атрибутами чужого namespace не лінкується оверлеєм |
 | `config/branding/` | `tessera.prop`: name, version, шпалери, шрифти |
 | `config/gapps/` | профілі встановлення GApps/microG |
-| `.github/workflows/` | CI: оверлеї (hosted), ROM (self-hosted), релізи |
+| `apps/launcher/` | власний лаунчер (Kotlin + Compose MD3): сітка 5×6, док 5, шухляда з пошуком, рядок «дата + погода». Збирається Gradle-ом окремо від дерева AOSP |
+| `.github/workflows/` | CI: оверлеї (hosted), лаунчер (hosted), ROM (self-hosted), релізи |
 
 ## Конвенції гілок і версій
 
