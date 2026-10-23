@@ -10,8 +10,35 @@
 <meta property="og:description" content="Каркас, оверлеї й CI поверх LineageOS 22.2. Спробуйте макет інтерфейсу прямо в браузері.">
 <meta property="og:locale" content="uk_UA">
 <meta name="theme-color" content="#0F1016">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2312131A'/%3E%3Cpath d='M16 6l8 5v10l-8 5-8-5V11z' fill='none' stroke='%23B6C4FF' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="icon" href="brand/tessera-favicon.svg" type="image/svg+xml">
 <style>
+/* Брендові шрифти самохостовані: сторінка працює офлайн і не дерться до чужого
+   CDN (це ж вимагає воркфлоу check-site). Підмножини — офіційні Google Fonts,
+   OFL 1.1; походження й контрольні суми — brand/TYPE.md. */
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/manrope-latin.woff2") format("woff2");
+  font-weight: 200 800; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+2070-209F, U+20AC, U+2122, U+2191, U+2193, U+2212;
+}
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/manrope-cyrillic.woff2") format("woff2");
+  font-weight: 200 800; font-style: normal; font-display: swap;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "Tessera Display";
+  src: url("fonts/unbounded-latin.woff2") format("woff2");
+  font-weight: 200 900; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "Tessera Display";
+  src: url("fonts/unbounded-cyrillic.woff2") format("woff2");
+  font-weight: 200 900; font-style: normal; font-display: swap;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
 :root {
   --bg: #0F1016;
   --bg-2: #15161D;
@@ -30,7 +57,8 @@
   --radius-m: 16px;
   --radius-s: 12px;
   --maxw: 1120px;
-  --font: "Roboto Flex", Roboto, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font: Manrope, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Tessera Display", Manrope, "Segoe UI", system-ui, sans-serif;
 }
 * { box-sizing: border-box }
 html { scroll-behavior: smooth }
@@ -42,6 +70,7 @@ a { color: var(--accent); text-decoration: none }
 a:hover { text-decoration: underline }
 h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; margin: 0 0 .5em }
 h1 { font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 520 }
+.hero h1, .brand-name, .eyebrow-mark { font-family: var(--font-display); letter-spacing: -.03em }
 h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 500 }
 h3 { font-size: 1.15rem; font-weight: 500 }
 p { margin: 0 0 1em }
@@ -62,13 +91,20 @@ header.site {
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   border-bottom: 1px solid var(--outline-variant)
 }
-.bar { display: flex; align-items: center; gap: 18px; height: 64px }
+.bar { display: flex; align-items: center; gap: 18px; min-height: 64px; flex-wrap: wrap; padding: 8px 0 }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--on-surface); font-weight: 600 }
 .brand:hover { text-decoration: none }
 .brand svg { display: block }
+.brand-name { font-family: var(--font-display); font-weight: 600; letter-spacing: -.02em }
+.brand-os { color: #E8B23A }
 nav.links { margin-left: auto; display: flex; gap: 20px; flex-wrap: wrap }
 nav.links a { color: var(--on-surface-variant); font-size: .92rem }
 nav.links a:hover { color: var(--on-surface); text-decoration: none }
+@media (max-width: 760px) {
+  .bar { gap: 10px 14px }
+  nav.links { gap: 13px; margin-left: 0; width: 100% }
+  nav.links a { font-size: .84rem }
+}
 
 /* buttons */
 .btn {
@@ -174,6 +210,15 @@ pre code { font-family: inherit }
 .swatch span { display: block; width: 100%; height: 100%; border-radius: 50% }
 .swatch[aria-pressed="true"] { border-color: var(--on-surface) }
 .swatch:hover { transform: scale(1.08) }
+/* Вибір шпалери — маленькі превʼю 40×72; «без шпалери» — суцільний колір */
+.walls { display: flex; gap: 8px; flex-wrap: wrap }
+.wallpick {
+  width: 40px; height: 72px; border-radius: 10px; overflow: hidden; padding: 0; cursor: pointer;
+  border: 2px solid transparent; background: var(--surface-2); transition: transform .15s ease
+}
+.wallpick img { display: block; width: 100%; height: 100%; object-fit: cover }
+.wallpick[aria-pressed="true"] { border-color: var(--accent) }
+.wallpick:hover { transform: scale(1.06) }
 .seg { display: inline-flex; padding: 3px; background: var(--surface-2); border-radius: 999px; border: 1px solid var(--outline-variant); gap: 3px; flex-wrap: wrap }
 .seg button {
   border: 0; background: transparent; color: var(--on-surface-variant); font: inherit;
@@ -183,6 +228,41 @@ pre code { font-family: inherit }
 .seed-row { display: flex; align-items: center; gap: 10px }
 input[type="color"] { width: 44px; height: 34px; border: 1px solid var(--outline); border-radius: 10px; background: none; padding: 2px; cursor: pointer }
 .hint { font-size: .86rem; color: var(--on-surface-variant) }
+
+/* ---------- айдентика ---------- */
+.idcard {
+  background: var(--surface-2); border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-l); padding: 22px
+}
+.idcard h3 { margin-bottom: 6px }
+.mark-strip { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin: 14px 0 4px }
+.mark-tile { display: grid; place-items: center; border-radius: 24px; padding: 18px }
+.mark-tile.dark { background: #0B0E14; color: #EDF0FA }
+.mark-tile.light { background: #F1F3FA; color: #14161F }
+.mark-strip img { display: block }
+.lockup { width: 100%; max-width: 320px; height: auto; margin-top: 6px }
+.spec {
+  font-family: var(--font-display); font-weight: 700; letter-spacing: -.045em;
+  line-height: 1.02; font-size: clamp(2.1rem, 6vw, 3.4rem); margin: 12px 0 6px
+}
+.spec-sub { font-family: var(--font); font-weight: 300; font-size: 1.05rem; color: var(--on-surface-variant); margin: 0 0 16px }
+.glyphs {
+  display: flex; gap: 7px; flex-wrap: wrap; font-family: var(--font-display);
+  font-size: 1.35rem; margin: 0 0 14px
+}
+.glyphs span { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: var(--bg-2) }
+.glyphs span.key { background: var(--accent); color: #10111A }
+.pal { display: grid; grid-template-columns: repeat(auto-fit, minmax(126px, 1fr)); gap: 12px; margin-top: 14px }
+.pal > div { border-radius: 14px; padding: 12px; border: 1px solid var(--outline-variant); font-size: .8rem }
+.pal b { display: block; font-size: .9rem; margin-bottom: 2px }
+.pal i { font-style: normal; opacity: .75; font-variant-numeric: tabular-nums }
+.wallgal { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-top: 14px }
+.wallgal figure { margin: 0 }
+.wallgal img {
+  width: 100%; aspect-ratio: 9 / 16; object-fit: cover; display: block;
+  border-radius: 16px; border: 1px solid var(--outline-variant)
+}
+.wallgal figcaption { font-size: .84rem; color: var(--on-surface-variant); margin-top: 8px }
 
 .stage {
   background: var(--bg-2); border: 1px solid var(--outline-variant);
@@ -198,8 +278,14 @@ input[type="color"] { width: 44px; height: 34px; border: 1px solid var(--outline
   font-size: 12px
 }
 /* material you vars are set on .stage by JS */
-.wall { position: absolute; inset: 0; background: var(--ui-wall); transition: background .35s ease }
-.wall::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,0) 42%, rgba(0,0,0,.34)) }
+.wall { position: absolute; inset: 0; transition: background-color .35s ease;
+  background-color: var(--ui-wall-base, var(--ui-bg));
+  background-image: var(--ui-wall-img, none), var(--ui-wall-grad);
+  background-size: cover, auto; background-position: center, center }
+/* Затемнення поверх шпалери: без нього темний текст на світлій плитці
+   читається погано — саме тому система кладе на шпалеру власний шар затемнення. */
+.wall::after { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,.46), rgba(0,0,0,.20) 42%, rgba(0,0,0,.44)) }
 .statusbar {
   position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center;
   padding: 9px 16px 4px; font-size: 10.5px; font-weight: 600; color: var(--ui-on)
@@ -359,15 +445,20 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
 <header class="site">
   <div class="wrap bar">
     <a class="brand" href="#top">
-      <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
-        <rect width="32" height="32" rx="9" fill="#1B1C24"/>
-        <path d="M16 6l8 5v10l-8 5-8-5V11z" fill="none" stroke="#B6C4FF" stroke-width="2"/>
+      <!-- Той самий знак, що brand/logo/tessera-mark.svg, тільки вписаний
+           сюди, щоб наслідувати палітру сторінки. -->
+      <svg width="26" height="26" viewBox="0 0 108 108" aria-hidden="true">
+        <rect x="25" y="25" width="26" height="26" rx="9" fill="#3350C8"/>
+        <rect x="57" y="25" width="26" height="26" rx="9" fill="#8FB0FF"/>
+        <rect x="25" y="57" width="26" height="26" rx="9" fill="#C8D8FF"/>
+        <path d="M70 55 L85 70 L70 85 L55 70 Z" fill="#E8B23A"/>
       </svg>
-      TesseraOS
+      <span class="brand-name">Tessera<span class="brand-os">OS</span></span>
     </a>
     <nav class="links">
       <a href="#about">Що це</a>
       <a href="#look">Як виглядає</a>
+      <a href="#identity">Айдентика</a>
       <a href="#try">Спробувати</a>
       <a href="#status">Статус</a>
       <a href="#limits">Межі</a>
@@ -381,7 +472,7 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
   <div class="hero">
     <div class="wrap">
       <div class="chip"><span class="dot"></span> Каркас, документація й CI — образ ще не випущено</div>
-      <h1>TesseraOS</h1>
+      <h1>Tessera<span class="brand-os">OS</span></h1>
       <p class="lead">Вільний дистрибутив Android на базі LineageOS&nbsp;22.2 (Android&nbsp;15) із власним
       UI-шаром за Material Design&nbsp;3. Без пропрієтарних бінарників, з відкритим кодом і
       зрозумілою межею того, що взагалі можна легально зробити.</p>
@@ -453,6 +544,12 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
 
       <div class="preview-layout" style="margin-top:32px">
         <div class="controls">
+          <div class="ctl-group">
+            <label>Шпалера</label>
+            <div class="walls" id="walls"></div>
+            <p class="hint" style="margin-top:8px">Шпалера — це джерело кольору: Monet рахує всю
+            палітру від неї. Оберіть іншу — і колір-основа нижче зміниться сам.</p>
+          </div>
           <div class="ctl-group">
             <label for="seeds">Колір-основа</label>
             <div class="swatches" id="seeds"></div>
@@ -575,6 +672,132 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
     </div>
   </section>
 
+  <section id="identity">
+    <div class="wrap">
+      <p class="eyebrow">Айдентика</p>
+      <h2>Власний знак, власний шрифт, власні кольори</h2>
+      <p class="muted" style="max-width:720px">
+        Дистрибутив без власного обличчя — це ще один «якийсь Android», який ніхто не
+        запамʼятає. Тому в TesseraOS є своя айдентика: мозаїчний знак, дві звʼязки шрифтів
+        з повною кирилицею, пʼять маркових кольорів і три шпалери. Усе це — окремі файли
+        в репозиторії (<code>brand/</code>), а не картинка, вилита з сайту, і кожен із них
+        перевіряє скрипт <code>build/scripts/check-brand.sh</code>.
+      </p>
+
+      <div class="grid g2" style="margin-top:28px;align-items:start">
+        <div class="idcard">
+          <h3>Знак</h3>
+          <p class="muted" style="margin-bottom:0">«Tessera» — мозаїчна плитка. Чотири плитки: три
+          лежать у сітці, четверта повернута на 45° — та, що задає візерунок усій системі.</p>
+          <div class="mark-strip">
+            <img src="brand/tessera-mark.svg" width="84" height="84" alt="Основний знак TesseraOS у чотирьох кольорах">
+            <img src="brand/tessera-favicon.svg" width="84" height="84" alt="Знак на темній плитці — фавіконка">
+            <!-- Монохромний варіант навмисно вбудований сюди, а не підключений файлом:
+                 він фарбується через currentColor, тож один і той самий малюнок
+                 працює на світлому й темному тлі. -->
+            <span class="mark-tile dark" aria-label="Монохромний знак на темному тлі">
+              <svg width="56" height="56" viewBox="0 0 108 108" role="img" aria-label="TesseraOS">
+                <rect x="25" y="25" width="26" height="26" rx="9" fill="currentColor" fill-opacity="0.45"/>
+                <rect x="57" y="25" width="26" height="26" rx="9" fill="currentColor" fill-opacity="0.7"/>
+                <rect x="25" y="57" width="26" height="26" rx="9" fill="currentColor" fill-opacity="0.25"/>
+                <path d="M70 55 L85 70 L70 85 L55 70 Z" fill="currentColor"/>
+              </svg>
+            </span>
+            <span class="mark-tile light" aria-label="Монохромний знак на світлому тлі">
+              <svg width="56" height="56" viewBox="0 0 108 108" role="img" aria-label="TesseraOS">
+                <rect x="25" y="25" width="26" height="26" rx="9" fill="currentColor" fill-opacity="0.45"/>
+                <rect x="57" y="25" width="26" height="26" rx="9" fill="currentColor" fill-opacity="0.7"/>
+                <rect x="25" y="57" width="26" height="26" rx="9" fill="currentColor" fill-opacity="0.25"/>
+                <path d="M70 55 L85 70 L70 85 L55 70 Z" fill="currentColor"/>
+              </svg>
+            </span>
+          </div>
+          <p class="muted" style="margin:16px 0 0">Той самий знак у трьох розмірах — 24, 16 і 12 px,
+          бо він має читатися й у панелі стану:</p>
+          <div class="mark-strip" style="gap:14px">
+            <img src="brand/tessera-mark.svg" width="24" height="24" alt="">
+            <img src="brand/tessera-mark.svg" width="16" height="16" alt="">
+            <img src="brand/tessera-mark.svg" width="12" height="12" alt="">
+          </div>
+          <svg class="lockup" viewBox="0 0 340 72" role="img" aria-label="TesseraOS — логотип-заголовок">
+            <g transform="translate(12,12) scale(0.4444)">
+              <rect x="25" y="25" width="26" height="26" rx="9" fill="#3350C8"/>
+              <rect x="57" y="25" width="26" height="26" rx="9" fill="#8FB0FF"/>
+              <rect x="25" y="57" width="26" height="26" rx="9" fill="#C8D8FF"/>
+              <path d="M70 55 L85 70 L70 85 L55 70 Z" fill="#E8B23A"/>
+            </g>
+            <text x="68" y="47" font-family="Tessera Display, Manrope, sans-serif" font-size="26"
+                  font-weight="600" letter-spacing="-0.5" fill="#EDF0FA">Tessera<tspan fill="#E8B23A">OS</tspan></text>
+          </svg>
+          <p class="hint" style="margin-top:14px">Для системи той самий малюнок існує як
+          VectorDrawable — <code>brand/android/tessera_mark.xml</code>. Геометрія двох файлів
+          звіряється автоматично, щоб знак у UI ніколи не розійшовся зі знаком на сайті.</p>
+        </div>
+
+        <div class="idcard">
+          <h3>Шрифт</h3>
+          <p class="muted" style="margin-bottom:0">Два шрифти з відкритою ліцензією SIL Open Font
+          License 1.1, обидва з кирилицею. Заголовки — Unbounded (тут і далі підписаний як
+          «Tessera Display»), інтерфейс і текст — Manrope.</p>
+          <p class="spec">Тессера</p>
+          <p class="spec-sub">Мозаїка, яку видно здалеку — і поодинокі плитки, які видно зблизька.</p>
+          <div class="glyphs" aria-label="Українські літери, перевірені у файлі шрифта">
+            <span class="key">Ґ</span><span>ґ</span><span class="key">Є</span><span>є</span>
+            <span class="key">Ї</span><span>ї</span><span class="key">І</span><span>і</span>
+          </div>
+          <p class="hint">Чотири літери, яких найчастіше бракує в європейських наборах: Ґ, Є, Ї, І та
+          їхні строчні форми. <code>brand-font-check.js</code> читає таблицю <code>cmap</code>
+          просто з TTF і каже «НЕМАЄ», якщо хоча б однієї не вистачає. Тож кирилиця тут не
+          на віру, а перевірена.</p>
+          <p class="hint" style="margin-top:12px">Сайт підключує локальні woff2-підмножини
+          (latin + cyrillic), жодного запиту до Google Fonts. Android у <code>fonts.xml</code>
+          woff2 не читає, тому для образу ROM потрібні повні TTF; їх завантажує
+          <code>build/scripts/fetch-brand-fonts.sh</code> — за контрольними сумами, а не «якось так».</p>
+        </div>
+      </div>
+
+      <div class="idcard" style="margin-top:18px">
+        <h3>Кольори</h3>
+        <p class="muted" style="margin-bottom:0">Два набори не плутайте. Нижче — <b>маркові</b>
+        кольори: вони ніколи не змінюються і живуть у знаку, на сайті та у документації. Палітра
+        самого інтерфейсу народжується з шпалери за правилом Material You — саме нею можна
+        покрутити в розділі «Спробувати».</p>
+        <div class="pal">
+          <div style="background:#3350C8;color:#EDF0FA"><b>Індиго</b><i>#3350C8</i></div>
+          <div style="background:#8FB0FF;color:#101527"><b>Світле індиго</b><i>#8FB0FF</i></div>
+          <div style="background:#C8D8FF;color:#101527"><b>Молоко</b><i>#C8D8FF</i></div>
+          <div style="background:#E8B23A;color:#101527"><b>Бурштин</b><i>#E8B23A</i></div>
+          <div style="background:#0B0E14;color:#EDF0FA"><b>Ніч</b><i>#0B0E14</i></div>
+        </div>
+      </div>
+
+      <div class="idcard" style="margin-top:18px">
+        <h3>Шпалери</h3>
+        <p class="muted" style="margin-bottom:0">Три власні зображення 1080 × 2400, зроблені для
+        проєкту. Кожна одночасно є колір-основою: на пристрої Monet візьме сид саме з неї, тому
+        вибір шпалери змінює весь інтерфейс.</p>
+        <div class="wallgal">
+          <figure>
+            <img src="wallpapers/tessera-nightfall.webp" alt="Шпалера «Ніч» — темний синій з бірюзовими прожилками" loading="lazy">
+            <figcaption>«Ніч» · сид #3350C8</figcaption>
+          </figure>
+          <figure>
+            <img src="wallpapers/tessera-ember.webp" alt="Шпалера «Жарини» — теплий помаранчевий градієнт" loading="lazy">
+            <figcaption>«Жарини» · сид #B1452E</figcaption>
+          </figure>
+          <figure>
+            <img src="wallpapers/tessera-verdigris.webp" alt="Шпалера «Патина» — зелений з металевим відливом" loading="lazy">
+            <figcaption>«Патина» · сид #1F6E5C</figcaption>
+          </figure>
+        </div>
+        <p class="hint" style="margin-top:14px">Оригінали лежать у <code>brand/wallpapers/</code>
+        (JPG 1080 × 2400), а сюди потрапили зменшені webp 486 × 1080 — щоб сторінка лишалася
+        легкою. Контрольні суми і оригіналів, і сайт-копій перевіряє
+        <code>check-brand.sh</code>.</p>
+      </div>
+    </div>
+  </section>
+
   <section id="try">
     <div class="wrap">
       <p class="eyebrow">Спробувати</p>
@@ -649,6 +872,9 @@ build/scripts/run-avd.sh</code></pre>
               емулятора, GApps і тем, ліцензія Apache-2.0. Три власні застосунки —
               <code>apps/launcher</code>, <code>apps/calculator</code>, <code>apps/files</code> —
               з тестами, реєстром <code>build/scripts/apps.list</code> та матрицею CI.
+              Власна айдентика: знак (SVG і VectorDrawable з однаковою геометрією), дві
+              OFL-ліцензії шрифтів із перевіреною кирилицею, пʼять маркових кольорів і три
+              шпалери — усе з контрольними сумами у <code>check-brand.sh</code>.
             </p>
           </div>
           <div class="card" style="margin-top:16px">
@@ -789,14 +1015,19 @@ const SEEDS = [
   ['#3350C8', 'індиго'], ['#7A59B0', 'фіолет'], ['#1F6E5C', 'смарагд'],
   ['#B1452E', 'цегла'], ['#4A6570', 'сталь'], ['#8A6D1F', 'бурштин']
 ];
+/* Наші шпалери (brand/wallpapers) і сид, який Monet дістав би з кожної. */
+const WALLS = [
+  ['nightfall', 'Ніч', '#3350C8'], ['ember', 'Жарини', '#B1452E'],
+  ['verdigris', 'Патина', '#1F6E5C'], [null, 'Без шпалери', '#4A6570']
+];
 
-const state = { seed: SEEDS[0][0], dark: true, round: true, cols: 5, screen: 'launcher' };
+const state = { seed: SEEDS[0][0], dark: true, round: true, cols: 5, screen: 'launcher', wall: 'nightfall' };
 
 function applyPalette() {
   const p = tonal(state.seed, 1.0);
   const n = tonal(state.seed, 0.09);      // neutral
   const nv = tonal(state.seed, 0.22);     // neutral variant
-  const s = tonal(state.seed, 0.38);      // secondary: той самий відтінок, менша naschromost
+  const s = tonal(state.seed, 0.38);      // secondary: той самий відтінок, менша насиченість
   const stage = document.getElementById('stage');
   const set = (k, v) => stage.style.setProperty(k, v);
   if (state.dark) {
@@ -806,8 +1037,9 @@ function applyPalette() {
     set('--ui-sec-cont', s(80)); set('--ui-on-sec-cont', s(20));
     set('--ui-pri-cont', p(30)); set('--ui-on-pri-cont', p(90));
     set('--app-bg', p(40)); set('--app-fg', n(100));
-    set('--ui-wall', `radial-gradient(120% 80% at 25% 15%, ${p(25)}, transparent 60%),` +
-      `radial-gradient(100% 70% at 85% 90%, ${nv(15)}, transparent 55%), ${n(4)}`);
+    set('--ui-wall-base', n(4));
+    set('--ui-wall-grad', `radial-gradient(120% 80% at 25% 15%, ${p(25)}, transparent 60%),` +
+      `radial-gradient(100% 70% at 85% 90%, ${nv(15)}, transparent 55%)`);
   } else {
     set('--ui-bg', n(98)); set('--ui-surface', n(94)); set('--ui-surface2', n(90));
     set('--ui-on', n(12)); set('--ui-on-variant', nv(35));
@@ -815,9 +1047,14 @@ function applyPalette() {
     set('--ui-sec-cont', s(90)); set('--ui-on-sec-cont', s(20));
     set('--ui-pri-cont', p(90)); set('--ui-on-pri-cont', p(30));
     set('--app-bg', p(40)); set('--app-fg', p(100));
-    set('--ui-wall', `radial-gradient(120% 80% at 20% 10%, ${p(90)}, transparent 62%),` +
-      `radial-gradient(100% 70% at 90% 95%, ${nv(92)}, transparent 58%), ${n(96)}`);
+    set('--ui-wall-base', n(96));
+    set('--ui-wall-grad', `radial-gradient(120% 80% at 20% 10%, ${p(90)}, transparent 62%),` +
+      `radial-gradient(100% 70% at 90% 95%, ${nv(92)}, transparent 58%)`);
   }
+  /* Шпалера — не декор, а джерело кольору: на пристрої Monet бере сид саме з
+     неї, тому вибір шпалери нижче ще й міняє state.seed. "Немає шпалери"
+     лишає рівномірний тон — як на пристрої без картинки. */
+  set('--ui-wall-img', state.wall ? `url("wallpapers/tessera-${state.wall}.webp")` : 'none');
   set('--icon-clip', state.round ? 'circle(50% at 50% 50%)' :
     'url(#tesseraSquircle)');
   render();
@@ -837,15 +1074,21 @@ function statusBarTime() {
 }
 const UK_DATE = new Intl.DateTimeFormat('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' });
 
+/* Кожна іконка має власний колір — як у справжнього лаунчера, де плитку бере
+   з іконки застосунку, а не з теми. Тема керує фоном, текстом і панеллю,
+   але не перефарбовує чужі іконки. */
+function icoTile(app) {
+  return `<div class="ico" style="background:${app[1]}">${ico(app[0])}</div>`;
+}
 function launcherMarkup() {
   const cells = [];
   for (let i = 0; i < 30; i++) {
     const app = APPS[i];
     cells.push(app
-      ? `<div class="app"><div class="ico">${ico(app[0])}</div><div class="lbl">${app[0]}</div></div>`
+      ? `<div class="app">${icoTile(app)}<div class="lbl">${app[0]}</div></div>`
       : '<div class="slot"></div>');
   }
-  const dock = APPS.slice(0, 5).map(([name]) => `<div class="ico">${ico(name)}</div>`).join('');
+  const dock = APPS.slice(0, 5).map(app => `<div class="ico" style="background:${app[1]}">${ico(app[0])}</div>`).join('');
   return `<div class="glance">
       <b>${UK_DATE.format(new Date())}</b>
       <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg>ясно, 12&deg;</span>
@@ -861,7 +1104,7 @@ function drawerMarkup() {
   for (let i = 0; i < 25; i++) {
     const app = sorted[i];
     cells.push(app
-      ? `<div class="app"><div class="ico">${ico(app[0])}</div><div class="lbl">${app[0]}</div></div>`
+      ? `<div class="app">${icoTile(app)}<div class="lbl">${app[0]}</div></div>`
       : '<div class="slot"></div>');
   }
   return `<div class="drawer-head">
@@ -967,22 +1210,48 @@ function render() {
 
 /* ---------- керування ---------- */
 const seedsBox = document.getElementById('seeds');
+const wallsBox = document.getElementById('walls');
+
+function selectSeed(hex) {
+  state.seed = hex;
+  document.getElementById('customSeed').value = hex;
+  seedsBox.querySelectorAll('.swatch').forEach(s =>
+    s.setAttribute('aria-pressed', String(s.dataset.hex === hex)));
+}
+
 for (const [hex, name] of SEEDS) {
   const b = document.createElement('button');
   b.className = 'swatch';
   b.title = name;
+  b.dataset.hex = hex;
   b.setAttribute('aria-label', `Колір-основа: ${name}`);
   b.setAttribute('aria-pressed', String(hex === state.seed));
   b.innerHTML = `<span style="background:${hex}"></span>`;
-  b.addEventListener('click', () => {
-    state.seed = hex;
-    document.getElementById('customSeed').value = hex;
-    seedsBox.querySelectorAll('.swatch').forEach(s => s.setAttribute('aria-pressed', 'false'));
-    b.setAttribute('aria-pressed', 'true');
-    applyPalette();
-  });
+  b.addEventListener('click', () => { selectSeed(hex); applyPalette(); });
   seedsBox.append(b);
 }
+
+/* Шпалера тягне за собою колір-основу — так само, як на пристрої:
+   користувач міняє картинку, а палітра перераховується сама. */
+for (const [id, name, seed] of WALLS) {
+  const b = document.createElement('button');
+  b.className = 'wallpick';
+  b.title = name;
+  b.setAttribute('aria-label', `Шпалера: ${name}`);
+  b.setAttribute('aria-pressed', String((id || null) === (state.wall || null)));
+  b.innerHTML = id
+    ? `<img src="wallpapers/tessera-${id}.webp" alt="" loading="lazy">`
+    : `<span style="display:block;width:100%;height:100%;background:${seed}"></span>`;
+  b.addEventListener('click', () => {
+    state.wall = id;
+    wallsBox.querySelectorAll('.wallpick').forEach(w => w.setAttribute('aria-pressed', 'false'));
+    b.setAttribute('aria-pressed', 'true');
+    selectSeed(seed);
+    applyPalette();
+  });
+  wallsBox.append(b);
+}
+
 document.getElementById('customSeed').addEventListener('input', e => {
   state.seed = e.target.value;
   seedsBox.querySelectorAll('.swatch').forEach(s => s.setAttribute('aria-pressed', 'false'));

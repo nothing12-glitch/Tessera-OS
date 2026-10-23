@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Логотип-заголовок (lockup): знак + напис.
+
+  Напис набраний брендовим шрифтом Unbounded (OFL 1.1, див. brand/TYPE.md).
+  SVG-текст рендериться тим шрифтом, який доступний у переглядача: на сайті
+  він самохостований, тож виглядає як задумано; у редакторах без шрифта
+  підставиться системний — це єдине місце, де таке допустимо, бо сам знак
+  (tessera-mark.svg) від шрифта не залежить.
+
+  «OS» свідомо теплішого кольору: це той самий акцент, що й у повернутій
+  плитці знака.
+  Apache-2.0 © TesseraOS contributors
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 72" width="340" height="72" role="img" aria-label="TesseraOS">
+  <g transform="translate(12,12) scale(0.4444)">
+    <rect x="25" y="25" width="26" height="26" rx="9" fill="#3350C8"/>
+    <rect x="57" y="25" width="26" height="26" rx="9" fill="#8FB0FF"/>
+    <rect x="25" y="57" width="26" height="26" rx="9" fill="#C8D8FF"/>
+    <path d="M70 55 L85 70 L70 85 L55 70 Z" fill="#E8B23A"/>
+  </g>
+  <text x="68" y="47" font-family="Unbounded, Manrope, system-ui, sans-serif" font-size="26" font-weight="600" letter-spacing="-0.5" fill="#EDF0FA">Tessera<tspan fill="#E8B23A">OS</tspan></text>
+</svg>

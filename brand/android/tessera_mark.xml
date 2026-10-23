@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Той самий знак, що brand/logo/tessera-mark.svg, але у форматі
+  Android VectorDrawable — єдиному, який розуміє система збірки AOSP.
+  SVG у образ Android не потрапляє напряму, тому бренд існує у двох
+  формах, і вони мають збігатися геометрично.
+
+  Використання в Compose:  Icon(painterResource(R.drawable.tessera_mark), …)
+  Використання в Soong-модулі: android:drawable="@drawable/tessera_mark"
+  Apache-2.0 © TesseraOS contributors
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="#3350C8"
+        android:pathData="M34,25 H42 A9,9 0 0 1 51,34 V42 A9,9 0 0 1 42,51 H34 A9,9 0 0 1 25,42 V34 A9,9 0 0 1 34,25 Z" />
+    <path
+        android:fillColor="#8FB0FF"
+        android:pathData="M66,25 H74 A9,9 0 0 1 83,34 V42 A9,9 0 0 1 74,51 H66 A9,9 0 0 1 57,42 V34 A9,9 0 0 1 66,25 Z" />
+    <path
+        android:fillColor="#C8D8FF"
+        android:pathData="M34,57 H42 A9,9 0 0 1 51,66 V74 A9,9 0 0 1 42,83 H34 A9,9 0 0 1 25,74 V66 A9,9 0 0 1 34,57 Z" />
+    <path
+        android:fillColor="#E8B23A"
+        android:pathData="M70,55 L85,70 L70,85 L55,70 Z" />
+</vector>
