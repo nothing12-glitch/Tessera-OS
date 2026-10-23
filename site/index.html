@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TesseraOS — вільний Android-дистрибутив із Material You</title>
+<meta name="description" content="TesseraOS — дистрибутив Android на базі LineageOS 22.2 із власним UI-шаром за Material Design 3. Спробуйте інтерфейс прямо в браузері.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="TesseraOS — вільний Android-дистрибутив із Material You">
+<meta property="og:description" content="Каркас, оверлеї й CI поверх LineageOS 22.2. Спробуйте макет інтерфейсу прямо в браузері.">
+<meta property="og:locale" content="uk_UA">
+<meta name="theme-color" content="#0F1016">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2312131A'/%3E%3Cpath d='M16 6l8 5v10l-8 5-8-5V11z' fill='none' stroke='%23B6C4FF' stroke-width='2'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #0F1016;
+  --bg-2: #15161D;
+  --surface: #1B1C24;
+  --surface-2: #22232C;
+  --on-surface: #E4E2E9;
+  --on-surface-variant: #C7C6CE;
+  --outline: #45464F;
+  --outline-variant: #36373F;
+  --accent: #B6C4FF;
+  --accent-strong: #7C93F5;
+  --ok: #7FDDA0;
+  --warn: #F5C56B;
+  --bad: #FFB4AB;
+  --radius-l: 28px;
+  --radius-m: 16px;
+  --radius-s: 12px;
+  --maxw: 1120px;
+  --font: "Roboto Flex", Roboto, "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+* { box-sizing: border-box }
+html { scroll-behavior: smooth }
+body {
+  margin: 0; background: var(--bg); color: var(--on-surface);
+  font-family: var(--font); line-height: 1.6; -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none }
+a:hover { text-decoration: underline }
+h1, h2, h3 { line-height: 1.2; letter-spacing: -0.01em; margin: 0 0 .5em }
+h1 { font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 520 }
+h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 500 }
+h3 { font-size: 1.15rem; font-weight: 500 }
+p { margin: 0 0 1em }
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 20px }
+section { padding: 72px 0; border-top: 1px solid var(--outline-variant) }
+section:first-of-type { border-top: 0 }
+.eyebrow {
+  font-size: .8rem; text-transform: uppercase; letter-spacing: .14em;
+  color: var(--accent); margin-bottom: 12px; font-weight: 600
+}
+.muted { color: var(--on-surface-variant) }
+small.muted { display: block }
+
+/* header */
+header.site {
+  position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px);
+  background: rgba(15, 16, 22, .85);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  border-bottom: 1px solid var(--outline-variant)
+}
+.bar { display: flex; align-items: center; gap: 18px; height: 64px }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--on-surface); font-weight: 600 }
+.brand:hover { text-decoration: none }
+.brand svg { display: block }
+nav.links { margin-left: auto; display: flex; gap: 20px; flex-wrap: wrap }
+nav.links a { color: var(--on-surface-variant); font-size: .92rem }
+nav.links a:hover { color: var(--on-surface); text-decoration: none }
+
+/* buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px;
+  border-radius: 999px; font-weight: 600; font-size: .95rem; border: 1px solid transparent;
+  transition: transform .12s ease, background .2s ease
+}
+.btn.primary { background: var(--accent); color: #10111A }
+.btn.primary:hover { background: var(--accent); background: color-mix(in srgb, var(--accent) 88%, white); text-decoration: none }
+.btn.text { border-color: var(--outline); color: var(--accent) }
+.btn.text:hover { background: var(--surface); text-decoration: none }
+.btn:active { transform: scale(.98) }
+.actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center }
+
+/* hero */
+.hero { padding: 92px 0 64px; text-align: center; position: relative; overflow: hidden }
+.hero::before {
+  content: ""; position: absolute; inset: -40% -10% auto; height: 120%;
+  background:
+    radial-gradient(42% 40% at 28% 32%, color-mix(in srgb, var(--accent-strong) 30%, transparent), transparent 70%),
+    radial-gradient(38% 36% at 72% 26%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 72%);
+  filter: blur(30px); opacity: .55; pointer-events: none
+}
+.hero > .wrap { position: relative }
+.hero p.lead { font-size: 1.12rem; max-width: 640px; margin: 0 auto 22px }
+.chip {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px;
+  border-radius: 999px; background: var(--surface-2); border: 1px solid var(--outline-variant);
+  font-size: .84rem; color: var(--on-surface-variant); margin-bottom: 20px
+}
+.chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn) }
+
+/* grids & cards */
+.grid { display: grid; gap: 18px }
+.g3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) }
+.g2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) }
+.card {
+  background: var(--surface); border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-l); padding: 24px
+}
+.card h3 { margin-top: 0 }
+.card p:last-child { margin-bottom: 0 }
+.stack-num { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; font-size: .82rem; letter-spacing: .1em }
+
+/* layer diagram */
+.layers { display: grid; gap: 10px; margin: 0 0 18px }
+.layer { border-radius: var(--radius-m); padding: 16px 18px; border: 1px solid var(--outline-variant) }
+.layer b { display: block; font-size: 1.02rem }
+.layer span { font-size: .9rem; color: var(--on-surface-variant) }
+.layer.ours {
+  background: var(--surface);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  border-color: var(--outline);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent)
+}
+.layer.base { background: var(--surface) }
+.layer.aosp { background: var(--bg-2) }
+
+/* table */
+table { width: 100%; border-collapse: collapse; font-size: .94rem }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--outline-variant); vertical-align: top }
+th { font-weight: 600; color: var(--on-surface-variant); font-size: .82rem; text-transform: uppercase; letter-spacing: .08em }
+td code { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; font-size: .86em; color: var(--accent) }
+.state { white-space: nowrap; font-weight: 600 }
+.state.ok { color: var(--ok) } .state.warn { color: var(--warn) } .state.bad { color: var(--bad) }
+.table-scroll { overflow-x: auto; border: 1px solid var(--outline-variant); border-radius: var(--radius-m) }
+
+/* code */
+pre {
+  margin: 0; padding: 18px; background: #0B0C11; border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-m); overflow-x: auto; font-size: .86rem; line-height: 1.55
+}
+code { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace }
+pre code { font-family: inherit }
+.code-caption {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  font-size: .84rem; color: var(--on-surface-variant); margin: 0 0 8px
+}
+.copy {
+  border: 1px solid var(--outline); background: transparent; color: var(--accent);
+  border-radius: 999px; padding: 5px 14px; font: inherit; font-size: .82rem; cursor: pointer
+}
+.copy:hover { background: var(--surface-2) }
+
+/* notice */
+.notice {
+  border-left: 3px solid var(--warn); background: var(--bg-2);
+  border-radius: 0 var(--radius-m) var(--radius-m) 0; padding: 16px 20px; font-size: .95rem
+}
+.notice.good { border-left-color: var(--ok) }
+.notice.bad { border-left-color: var(--bad) }
+
+/* ---------- interactive preview ---------- */
+.preview-layout { display: grid; gap: 28px; grid-template-columns: minmax(0, 320px) minmax(0, 1fr) }
+@media (max-width: 900px) { .preview-layout { grid-template-columns: 1fr } }
+.controls { display: grid; gap: 22px; align-content: start }
+.ctl-group > label { display: block; font-size: .8rem; text-transform: uppercase; letter-spacing: .1em; color: var(--on-surface-variant); margin-bottom: 10px; font-weight: 600 }
+.swatches { display: flex; gap: 10px; flex-wrap: wrap }
+.swatch {
+  width: 40px; height: 40px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+  padding: 0; background: none; transition: transform .15s ease
+}
+.swatch span { display: block; width: 100%; height: 100%; border-radius: 50% }
+.swatch[aria-pressed="true"] { border-color: var(--on-surface) }
+.swatch:hover { transform: scale(1.08) }
+.seg { display: inline-flex; padding: 3px; background: var(--surface-2); border-radius: 999px; border: 1px solid var(--outline-variant); gap: 3px; flex-wrap: wrap }
+.seg button {
+  border: 0; background: transparent; color: var(--on-surface-variant); font: inherit;
+  font-size: .86rem; padding: 7px 14px; border-radius: 999px; cursor: pointer
+}
+.seg button[aria-pressed="true"] { background: var(--accent); color: #10111A; font-weight: 600 }
+.seed-row { display: flex; align-items: center; gap: 10px }
+input[type="color"] { width: 44px; height: 34px; border: 1px solid var(--outline); border-radius: 10px; background: none; padding: 2px; cursor: pointer }
+.hint { font-size: .86rem; color: var(--on-surface-variant) }
+
+.stage {
+  background: var(--bg-2); border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-l); padding: 26px; display: grid; gap: 22px; justify-items: center
+}
+.device {
+  width: 300px; aspect-ratio: 9 / 19.3; border-radius: 38px; padding: 9px;
+  background: #08080C; border: 1px solid var(--outline); position: relative
+}
+.screen {
+  width: 100%; height: 100%; border-radius: 30px; overflow: hidden; position: relative;
+  display: flex; flex-direction: column; background: var(--ui-bg); color: var(--ui-on);
+  font-size: 12px
+}
+/* material you vars are set on .stage by JS */
+.wall { position: absolute; inset: 0; background: var(--ui-wall); transition: background .35s ease }
+.wall::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,0) 42%, rgba(0,0,0,.34)) }
+.statusbar {
+  position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 16px 4px; font-size: 10.5px; font-weight: 600; color: var(--ui-on)
+}
+.statusbar .marks { display: flex; gap: 5px; align-items: center }
+.statusbar svg { display: block }
+.screen > .body { position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column }
+
+/* lock */
+.lock-clock { padding: 40px 20px 0 }
+.lock-clock .t { font-size: 46px; font-weight: 300; letter-spacing: -.02em; line-height: 1 }
+.lock-clock .d { font-size: 12px; opacity: .9; margin-top: 6px }
+.lock-notif {
+  margin: auto 14px 18px; background: var(--ui-surface);
+  background: color-mix(in srgb, var(--ui-surface) 78%, transparent);
+  backdrop-filter: blur(8px); border-radius: 22px; padding: 12px 14px
+}
+.lock-notif .row { display: flex; gap: 10px; align-items: center }
+.app-dot { width: 22px; height: 22px; border-radius: 50%; background: var(--ui-accent); color: var(--ui-on-accent); display: grid; place-items: center; font-size: 10px; font-weight: 700; flex: none }
+.lock-notif b { font-size: 11.5px; display: block }
+.lock-notif i { font-style: normal; font-size: 10.5px; opacity: .82 }
+.lock-shortcuts { display: flex; justify-content: space-between; padding: 0 26px 20px }
+.sc { width: 38px; height: 38px; border-radius: 50%; background: var(--ui-surface); background: color-mix(in srgb, var(--ui-surface) 70%, transparent); display: grid; place-items: center }
+.sc svg { stroke: var(--ui-on) }
+
+/* launcher */
+.widget {
+  margin: 12px 14px 4px; padding: 14px 16px; border-radius: 26px;
+  background: var(--ui-surface);
+  background: color-mix(in srgb, var(--ui-surface) 82%, transparent)
+}
+.widget .big { font-size: 24px; font-weight: 400; letter-spacing: -.01em }
+.widget .sub { font-size: 11px; color: var(--ui-on-variant) }
+.apps { display: grid; grid-template-columns: repeat(var(--cols, 4), 1fr); gap: 14px 10px; padding: 14px 16px; justify-items: center }
+.app { width: 100%; display: grid; justify-items: center; gap: 5px }
+.app .ico {
+  width: 46px; height: 46px; background: var(--app-bg); display: grid; place-items: center;
+  color: var(--app-fg); font-weight: 700; font-size: 17px;
+  clip-path: var(--icon-clip)
+}
+.app .lbl { font-size: 10px; color: var(--ui-on); opacity: .92; white-space: nowrap }
+.dock {
+  margin: auto 10px 12px; padding: 9px; border-radius: 30px;
+  background: var(--ui-surface);
+  background: color-mix(in srgb, var(--ui-surface) 74%, transparent);
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; justify-items: center
+}
+.pager { display: flex; gap: 5px; justify-content: center; padding-bottom: 8px }
+.pager i { width: 5px; height: 5px; border-radius: 50%; background: var(--ui-on); opacity: .35 }
+.pager i.on { opacity: .9 }
+
+/* quick settings */
+.qs { padding: 8px 10px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; overflow: hidden }
+.tile { border-radius: 24px; padding: 12px 13px; min-height: 66px; background: var(--ui-surface2); display: flex; flex-direction: column; justify-content: space-between }
+.tile .ic { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center }
+.tile b { font-size: 11px; font-weight: 600 }
+.tile small { font-size: 9.5px; color: var(--ui-on-variant) }
+.tile.on { background: var(--ui-accent); color: var(--ui-on-accent) }
+.tile.on small { color: var(--ui-on-accent); color: color-mix(in srgb, var(--ui-on-accent) 80%, transparent) }
+.tile.on .ic { background: var(--ui-surface); background: color-mix(in srgb, var(--ui-on-accent) 22%, transparent) }
+.tile:not(.on) .ic { background: var(--ui-surface) }
+.tile.wide { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 12px; min-height: 56px }
+.slider { flex: 1; height: 30px; border-radius: 15px; background: var(--ui-surface2); position: relative; overflow: hidden }
+.slider .fill { position: absolute; inset: 0 auto 0 0; width: var(--w, 60%); background: var(--ui-accent) }
+.slider span { position: absolute; left: 12px; top: 7px; font-size: 10px; font-weight: 600; z-index: 1 }
+
+/* settings */
+.settings { padding: 6px 12px }
+.settings .grp { background: var(--ui-surface); border-radius: 24px; overflow: hidden; margin-bottom: 10px }
+.srow { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--outline-variant); border-bottom: 1px solid color-mix(in srgb, var(--ui-on-variant) 16%, transparent) }
+.srow:last-child { border-bottom: 0 }
+.srow .k { width: 24px; height: 24px; border-radius: 50%; background: var(--ui-accent); color: var(--ui-on-accent); display: grid; place-items: center; font-size: 11px; flex: none }
+.srow .txt b { display: block; font-size: 11.5px; font-weight: 600 }
+.srow .txt small { font-size: 10px; color: var(--ui-on-variant) }
+.settings h4 { margin: 14px 4px 8px; font-size: 15px; font-weight: 500; color: var(--ui-accent) }
+.switch { width: 34px; height: 20px; border-radius: 10px; background: var(--ui-surface2); position: relative; margin-left: auto; flex: none }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--ui-on-variant) }
+.switch.on { background: var(--ui-accent) }
+.switch.on::after { left: 17px; background: var(--ui-on-accent) }
+
+/* footer */
+footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant); color: var(--on-surface-variant); font-size: .92rem }
+.foot { display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap; align-items: center }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto } * { transition: none !important } }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap bar">
+    <a class="brand" href="#top">
+      <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="9" fill="#1B1C24"/>
+        <path d="M16 6l8 5v10l-8 5-8-5V11z" fill="none" stroke="#B6C4FF" stroke-width="2"/>
+      </svg>
+      TesseraOS
+    </a>
+    <nav class="links">
+      <a href="#about">Що це</a>
+      <a href="#look">Як виглядає</a>
+      <a href="#try">Спробувати</a>
+      <a href="#status">Статус</a>
+      <a href="#limits">Межі</a>
+      <a href="https://github.com/nothing12-glitch/Tessera-OS">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <div class="hero">
+    <div class="wrap">
+      <div class="chip"><span class="dot"></span> Каркас, документація й CI — образ ще не випущено</div>
+      <h1>TesseraOS</h1>
+      <p class="lead">Вільний дистрибутив Android на базі LineageOS&nbsp;22.2 (Android&nbsp;15) із власним
+      UI-шаром за Material Design&nbsp;3. Без пропрієтарних бінарників, з відкритим кодом і
+      зрозумілою межею того, що взагалі можна легально зробити.</p>
+      <div class="actions">
+        <a class="btn primary" href="#look">Спробувати інтерфейс</a>
+        <a class="btn text" href="https://github.com/nothing12-glitch/Tessera-OS">Код на GitHub</a>
+      </div>
+    </div>
+  </div>
+
+  <section id="about">
+    <div class="wrap">
+      <p class="eyebrow">Що це</p>
+      <h2>Дистрибутив, а не нова система з нуля</h2>
+      <p class="muted" style="max-width:720px">
+        Android — це AOSP: мільйони рядків кода й роки роботи інженерів. Жоден проєкт не пише
+        заново ядро та системні сервіси. Він бере вільну базу і додає свій шар — тему, додатки,
+        політики, оновлення. TesseraOS робить саме це, і каже про це прямо.
+      </p>
+      <div class="grid g2" style="margin-top:28px;align-items:start">
+        <div class="layers">
+          <div class="layer ours">
+            <b>Шар TesseraOS</b>
+            <span>RRO-оверлеї, конфіг продукту, маніфест, CI, профіль GApps</span>
+          </div>
+          <div class="layer base">
+            <b>LineageOS 22.2</b>
+            <span>стабільна вільна база: збірка, пристрої, оновлення безпеки (Android 15)</span>
+          </div>
+          <div class="layer aosp">
+            <b>AOSP</b>
+            <span>ядро, HAL, системні сервіси, застосунки-компоненти</span>
+          </div>
+        </div>
+        <div class="grid" style="gap:14px">
+          <div class="card">
+            <p class="stack-num">01</p>
+            <h3>Інтерфейс</h3>
+            <p class="muted" style="margin:0">Стоковий AOSP + Material You: палітра народжується з кольору шпалер,
+            як у Pixel. Це не копія чужого бренду, а відкритий стандарт Material Design 3.</p>
+          </div>
+          <div class="card">
+            <p class="stack-num">02</p>
+            <h3>Легальність</h3>
+            <p class="muted" style="margin:0">Apache-2.0, жодних чужих бінарників у репозиторії. Плей-маркет не
+            вшитий: його видають виробнику після сертифікації. Є microG у образі та профіль для
+            встановлення GApps самому.</p>
+          </div>
+          <div class="card">
+            <p class="stack-num">03</p>
+            <h3>Перша ціль</h3>
+            <p class="muted" style="margin:0">x86_64 віртуальна машина та емулятор — щоб перевірити збірку ще на
+            компʼютері, перш ніж просити когось прошивати телефон.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="look">
+    <div class="wrap">
+      <p class="eyebrow">Як виглядає</p>
+      <h2>Живий макет інтерфейсу</h2>
+      <p class="muted" style="max-width:700px">
+        Це інтерактивний макет у браузері, а не скриншот прошивки: він показує, що дає Material You
+        і що саме підміняють наші оверлеї. Оберіть колір-основу — палітра перерахується, як це робить
+        Monet на пристрої.
+      </p>
+
+      <div class="preview-layout" style="margin-top:32px">
+        <div class="controls">
+          <div class="ctl-group">
+            <label for="seeds">Колір-основа</label>
+            <div class="swatches" id="seeds"></div>
+            <div class="seed-row" style="margin-top:12px">
+              <input type="color" id="customSeed" value="#3350C8" aria-label="Власний колір-основа">
+              <span class="hint">свій відтінок</span>
+            </div>
+          </div>
+          <div class="ctl-group">
+            <label>Тема</label>
+            <div class="seg" role="group" aria-label="Світла чи темна тема">
+              <button id="themeDark" aria-pressed="true">Темна</button>
+              <button id="themeLight" aria-pressed="false">Світла</button>
+            </div>
+          </div>
+          <div class="ctl-group">
+            <label>Форма іконок</label>
+            <div class="seg" role="group" aria-label="Форма adaptive-іконок">
+              <button id="shapeRound" aria-pressed="true">Круглі</button>
+              <button id="shapeSquircle" aria-pressed="false">Squircle</button>
+            </div>
+            <p class="hint" style="margin:8px 0 0">Це справжній важіль нашого оверлею:
+            <code>config_useRoundIcon</code> і <code>config_icon_mask</code> у framework.</p>
+          </div>
+          <div class="ctl-group">
+            <label>Сітка робочого стола</label>
+            <div class="seg" role="group" aria-label="Кількість іконок у рядку">
+              <button data-cols="4" aria-pressed="true">4 в рядку</button>
+              <button data-cols="5" aria-pressed="false">5 в рядку</button>
+              <button data-cols="3" aria-pressed="false">3 в рядку</button>
+            </div>
+            <p class="hint" style="margin:8px 0 0">Кількість рядків задає той самий
+            <code>device_profiles.xml</code> застосунку. Це відкрите рішення проєкту, а не
+            готовий оверлей.</p>
+          </div>
+          <div class="ctl-group">
+            <label>Екран</label>
+            <div class="seg" role="group" aria-label="Екран макета" id="screens">
+              <button data-screen="lock" aria-pressed="false">Блокування</button>
+              <button data-screen="launcher" aria-pressed="true">Лаунчер</button>
+              <button data-screen="qs" aria-pressed="false">Швидкі панелі</button>
+              <button data-screen="settings" aria-pressed="false">Налаштування</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="stage" id="stage">
+          <div class="device">
+            <div class="screen" id="screen">
+              <div class="wall" aria-hidden="true"></div>
+              <div class="statusbar">
+                <span id="sbTime">9:41</span>
+                <span class="marks">
+                  <svg width="15" height="11" viewBox="0 0 15 11" fill="none" aria-hidden="true"><path d="M1 10l3-3 3 3M7.5 6.5L10.5 3.5l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                  <svg width="13" height="11" viewBox="0 0 13 11" fill="none" aria-hidden="true"><rect x="1" y="2.5" width="11" height="8" rx="2" stroke="currentColor" stroke-width="1.4"/><rect x="2.8" y="4.3" width="6" height="4.4" rx="1" fill="currentColor"/></svg>
+                </span>
+              </div>
+              <div class="body" id="screenBody"></div>
+            </div>
+          </div>
+          <p class="hint" style="max-width:420px;text-align:center;margin:0">
+            Макет не стверджує, що образ уже зібраний: він показує цільову поведінку палітри й геометрії.
+          </p>
+        </div>
+      </div>
+
+      <h3 style="margin-top:44px">Що саме змінюють наші оверлеї</h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Ефект</th><th>Ресурс</th><th>Стан</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Круглі adaptive-іконки</td>
+              <td><code>config_useRoundIcon</code>, <code>config_icon_mask</code> (framework)</td>
+              <td class="state ok">✓ працює</td>
+            </tr>
+            <tr>
+              <td>Material You як джерело кольору</td>
+              <td>Monet у базі; наш fallback-оверлей активний лише за <code>dynamic_color=0</code></td>
+              <td class="state ok">✓ працює</td>
+            </tr>
+            <tr>
+              <td>Акцент у Налаштуваннях</td>
+              <td><code>icon_accent</code> (packages/apps/Settings)</td>
+              <td class="state ok">✓ працює</td>
+            </tr>
+            <tr>
+              <td>Панель швидких у 2 колонки, радіус 28&nbsp;dp</td>
+              <td><code>quick_settings_num_columns</code>, <code>qs_corner_radius</code></td>
+              <td class="state warn">△ вже таке в базі</td>
+            </tr>
+            <tr>
+              <td>Сітка лаунчера 5 × 6</td>
+              <td><code>device_profiles.xml</code> застосунку-лаунчера</td>
+              <td class="state warn">△ рішення ухвалюємо</td>
+            </tr>
+            <tr>
+              <td>Тональні поверхні, <code>surfaceContainer</code>, форми</td>
+              <td>не існує у framework — це рівень Compose&nbsp;+ Material&nbsp;3</td>
+              <td class="state bad">✕ не можна оверлеєм</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted" style="margin-top:14px">
+        Цю таблицю не написано «на око»: кожне імя перевірено сирцевими файлами бази LineageOS&nbsp;22.2
+        скриптом <code>build/scripts/check-overlay-names.sh</code>. Він же стоїть у CI, бо збірка
+        RRO-пакета проходить успішно навіть тоді, коли імен ресурсів у цілі не існує.
+      </p>
+    </div>
+  </section>
+
+  <section id="try">
+    <div class="wrap">
+      <p class="eyebrow">Спробувати</p>
+      <h2>Три шляхи, від найшвидшого до справжнього</h2>
+      <div class="grid g3" style="margin-top:26px">
+        <div class="card">
+          <p class="stack-num">ШЛЯХ 1 · 10 СЕК</p>
+          <h3>Макет вище</h3>
+          <p class="muted">Посуньте колір-основу, перемикайте тему й сітку. Це найдоступніший спосіб
+          побачити задуману поведінку — без збірки й без прошивання.</p>
+        </div>
+        <div class="card">
+          <p class="stack-num">ШЛЯХ 2 · ГОДИНА</p>
+          <h3>Оверлеї на емулятор</h3>
+          <p class="muted">Зберіть три RRO-пакети локально (потрібен лише Android SDK, повна збірка
+          не потрібна) і поставте на будь-який Android&nbsp;15-емулятор.</p>
+<pre style="margin-top:12px"><code>build/scripts/build-themes.sh
+adb install -r overlay/out/TesseraIconShapeTheme.apk
+adb shell cmd overlay enable os.tessera.theme.iconshape</code></pre>
+        </div>
+        <div class="card">
+          <p class="stack-num">ШЛЯХ 3 · ВЕЧІР</p>
+          <h3>Повний образ</h3>
+          <p class="muted">Для цього потрібен Linux, ~32&nbsp;ГБ оперативної памʼяті та 400&nbsp;ГБ місця.
+          Збірка AOSP на Windows чи macOS неможлива — це обмеження самої системи збірки.</p>
+        </div>
+      </div>
+
+      <div class="code-caption" style="margin-top:28px">
+        <span>Повний шлях: синхронізація бази, підключення шару TesseraOS, збірка для x86_64</span>
+        <button class="copy" id="copyBuild">Скопіювати</button>
+      </div>
+<pre id="buildSnippet"><code># 1. Середовище (Debian 12 / Ubuntu 22.04+)
+build/scripts/bootstrap.sh
+
+# 2. Джерела бази + наш шар
+repo init -u https://github.com/LineageOS/manifest -b lineage-22.2
+repo sync -c -j"$(nproc)"
+mkdir -p vendor/tessera
+git clone https://github.com/nothing12-glitch/Tessera-OS vendor/tessera/os
+
+# 3. Розв'язати linkfile з маніфесту, потім — ланч і збірка
+source build/envsetup.sh
+lunch tessera_x86_64-userdebug
+m -j"$(nproc)"
+
+# 4. Запуск у віртуальній машині
+build/scripts/run-avd.sh</code></pre>
+      <p class="hint" style="margin-top:14px">
+        Деталі й типові помилки: <code>docs/BUILD.md</code> та <code>docs/EMULATOR.md</code> у репозиторії.
+      </p>
+
+      <div class="notice" style="margin-top:24px">
+        <b>Чесно про готовність.</b> Прошивку ще ніхто не збирав і не запускав на пристрої: образ —
+        наступна віха. Якщо шлях 2 чи 3 у вас впав, відкрийте issue у репозиторії з логом — це саме та
+        інформація, якої проєкту бракує.
+      </div>
+    </div>
+  </section>
+
+  <section id="status">
+    <div class="wrap">
+      <p class="eyebrow">Статус</p>
+      <h2>Де проєкт зараз</h2>
+      <div class="grid g2" style="margin-top:26px;align-items:start">
+        <div>
+          <div class="card">
+            <h3>Зроблено</h3>
+            <p class="muted" style="margin:0">
+              Структура дистрибутива, конфіг продукту та BoardConfig, маніфест із <code>linkfile</code>,
+              три RRO-оверлеї з перевіреними іменами, захист імен у CI, документація зі збірки,
+              емулятора, GApps і тем, ліцензія Apache-2.0.
+            </p>
+          </div>
+          <div class="card" style="margin-top:16px">
+            <h3>Наступне</h3>
+            <p class="muted" style="margin:0 0 10px">
+              Перший зібраний образ, який запускається в емуляторі; звірка імен <code>settingslib_*</code>
+              зі зібраного <code>Settings.apk</code>; рішення про сітку лаунчера; власні Compose-застосунки.
+            </p>
+            <p class="muted" style="margin:0"><b>Не перевірено на пристрої.</b> Поки образ не зібрано,
+            пункти про ефект оверлеїв — гіпотеза з доказом на рівні імен ресурсів, а не факт.</p>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Як перевірити самому</h3>
+          <p class="muted">Усе, що заявляє ця сторінка, відтворюється однією командою на звичайному
+          компʼютері — збірка образу для цього не потрібна.</p>
+<pre style="margin-top:12px"><code># чи існують імена ресурсів у базі
+bash build/scripts/check-overlay-names.sh
+
+# чи збираються й підписуються оверлеї
+bash build/scripts/build-themes.sh
+
+# що всередині пакета
+aapt2 dump resources overlay/out/TesseraIconShapeTheme.apk</code></pre>
+          <p class="muted" style="margin:14px 0 0">CI-воркфлоу <code>build-themes</code> і <code>policy</code>
+          женуть ці самі перевірки на кожен пуш.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="limits">
+    <div class="wrap">
+      <p class="eyebrow">Межі</p>
+      <h2>Чого тут навмисне немає</h2>
+      <div class="grid g3" style="margin-top:26px">
+        <div class="card">
+          <h3>Пропрієтарних бінарників</h3>
+          <p class="muted" style="margin:0">У репозиторії заборонені <code>.so</code>, <code>.apk</code>,
+          <code>.jar</code>, <code>.img</code> й архіви — це перевіряє окремий воркфлоу. Жодних
+          витягнутих з телефону шматків системи.</p>
+        </div>
+        <div class="card">
+          <h3>Чужого бренду</h3>
+          <p class="muted" style="margin:0">Вільний відповідник шрифту Product Sans, логотип «G»,
+          назва «Pixel», шпалери та звуки Google, анімація завантаження — усе це захищені марки. Ми
+          запозичуємо геометрію й поведінку Material Design 3, а не чужу айдентику.</p>
+        </div>
+        <div class="card">
+          <h3>Підставних скриншотів</h3>
+          <p class="muted" style="margin:0">Тут немає знімків «готової системи», бо готової системи ще
+          немає. Макет вище підписаний як макет — інакше це була б реклама, а не інженерія.</p>
+        </div>
+      </div>
+      <div class="notice bad" style="margin-top:24px">
+        <b>Google-сервіси.</b> Легально вшити Плей-маркет у образ не може жоден ROM-проєкт: ліцензію
+        видають виробнику пристрою після сертифікації. Тому в образі є microG (вільна реалізація
+        Push/Location/Auth), а для справжніх GApps проєкт дає лише коректний профіль встановлення.
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site">
+  <div class="wrap foot">
+    <span>TesseraOS · Apache-2.0 · не повʼязаний із Google чи LineageOS</span>
+    <span><a href="https://github.com/nothing12-glitch/Tessera-OS">Репозиторій</a> ·
+      <a href="https://github.com/nothing12-glitch/Tessera-OS/blob/main/docs/UI.md">UI</a> ·
+      <a href="https://github.com/nothing12-glitch/Tessera-OS/blob/main/docs/BUILD.md">Збірка</a></span>
+  </div>
+</footer>
+
+<script>
+/* ---------- Material You: спрощена тональна палітра ----------
+   Справжній Monet працює в HCT. Тут on-device-сумісна апроксимація через
+   OKLCH: той самий хід тональних поверхонь, без залежностей у браузері. */
+
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  const v = h.length === 3 ? h.replace(/./g, c => c + c) : h;
+  return [0, 2, 4].map(i => parseInt(v.slice(i, i + 2), 16));
+}
+function srgbToLinear(c) {
+  c /= 255;
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+function rgbToOklch(hex) {
+  const [r, g, b] = hexToRgb(hex).map(srgbToLinear);
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514456439 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073648309 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
+  const A = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+  const B = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+  return { l: L * 100, c: Math.hypot(A, B), h: (Math.atan2(B, A) * 180 / Math.PI + 360) % 360 };
+}
+/* Тональна крива: тон(L) для довільного L у межах 0–100 з апроксимацією
+   хроматичності Material. Значення повертаються як sRGB-hex, а не oklch():
+   так макет не залежить від підтримки простору кольору в браузері. */
+function oklchToHex(L, C, Hdeg) {
+  const h = Hdeg * Math.PI / 180;
+  const a = C * Math.cos(h), b = C * Math.sin(h);
+  const l_ = L / 100 + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = L / 100 - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = L / 100 - 0.0894841775 * a - 1.2914855480 * b;
+  const [l, m, s] = [l_, m_, s_].map(v => v * v * v);
+  let r = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+  let g = -1.2684380046 * l + 2.6097574091 * m - 0.3413193965 * s;
+  let bl = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+  const enc = v => {
+    v = v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+    return Math.max(0, Math.min(255, Math.round(v * 255)));
+  };
+  const inGamut = r >= -0.001 && r <= 1.001 && g >= -0.001 && g <= 1.001 && bl >= -0.001 && bl <= 1.001;
+  if (!inGamut) {
+    // поза sRGB: зменшуємо хроматичність, не чіпаючи світлоти (gamut clip)
+    if (C < 0.0005) return null;
+    return oklchToHex(L, C * 0.92, Hdeg);
+  }
+  return '#' + [r, g, bl].map(x => enc(x).toString(16).padStart(2, '0')).join('');
+}
+function tonal(seed, scale) {
+  const { c, h } = rgbToOklch(seed);
+  return (L) => {
+    let C = c * scale;
+    if (L < 30) C *= 0.55 + L / 60;
+    else if (L > 85) C *= 0.5 + (100 - L) / 40;
+    return oklchToHex(L, Math.min(C, 0.32), h) || oklchToHex(L, 0, h) || '#000000';
+  };
+}
+const SEEDS = [
+  ['#3350C8', 'індиго'], ['#7A59B0', 'фіолет'], ['#1F6E5C', 'смарагд'],
+  ['#B1452E', 'цегла'], ['#4A6570', 'сталь'], ['#8A6D1F', 'бурштин']
+];
+
+const state = { seed: SEEDS[0][0], dark: true, round: true, cols: 4, screen: 'launcher' };
+
+function applyPalette() {
+  const p = tonal(state.seed, 1.0);
+  const n = tonal(state.seed, 0.09);      // neutral
+  const nv = tonal(state.seed, 0.22);     // neutral variant
+  const stage = document.getElementById('stage');
+  const set = (k, v) => stage.style.setProperty(k, v);
+  if (state.dark) {
+    set('--ui-bg', n(6)); set('--ui-surface', n(12)); set('--ui-surface2', n(20));
+    set('--ui-on', n(96)); set('--ui-on-variant', nv(84));
+    set('--ui-accent', p(80)); set('--ui-on-accent', p(20));
+    set('--app-bg', p(40)); set('--app-fg', n(100));
+    set('--ui-wall', `radial-gradient(120% 80% at 25% 15%, ${p(25)}, transparent 60%),` +
+      `radial-gradient(100% 70% at 85% 90%, ${nv(15)}, transparent 55%), ${n(4)}`);
+  } else {
+    set('--ui-bg', n(98)); set('--ui-surface', n(94)); set('--ui-surface2', n(90));
+    set('--ui-on', n(12)); set('--ui-on-variant', nv(35));
+    set('--ui-accent', p(40)); set('--ui-on-accent', n(100));
+    set('--app-bg', p(40)); set('--app-fg', p(100));
+    set('--ui-wall', `radial-gradient(120% 80% at 20% 10%, ${p(90)}, transparent 62%),` +
+      `radial-gradient(100% 70% at 90% 95%, ${nv(92)}, transparent 58%), ${n(96)}`);
+  }
+  set('--icon-clip', state.round ? 'circle(50% at 50% 50%)' :
+    'url(#tesseraSquircle)');
+  render();
+}
+
+/* ---------- екрани ---------- */
+const APPS = [
+  ['Телефон', '#2F6B4F'], ['Повідомлення', '#3E6A96'], ['Камера', '#7A4A6E'], ['Годинник', '#5B5F70'],
+  ['Налаштування', '#48505E'], ['Музика', '#8A5A22'], ['Пошта', '#2E6D77'], ['Карти', '#55693A'],
+  ['Календар', '#7C3047'], ['Файли', '#6A5B8C'], ['Контакти', '#34656B'], ['Браузер', '#8C4A2F']
+];
+function ico(lbl) { return lbl.trim()[0].toUpperCase(); }
+function statusBarTime() {
+  const d = new Date();
+  return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+const UK_DATE = new Intl.DateTimeFormat('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' });
+
+function launcherMarkup() {
+  const cells = APPS.map(([name]) =>
+    `<div class="app"><div class="ico">${ico(name)}</div><div class="lbl">${name}</div></div>`).join('');
+  const dock = APPS.slice(0, 4).map(([name]) => `<div class="ico">${ico(name)}</div>`).join('');
+  return `<div class="widget">
+      <div class="big">${statusBarTime()}</div>
+      <div class="sub">${UK_DATE.format(new Date())} · ясно, 12°</div>
+    </div>
+    <div class="apps" style="--cols:${state.cols}">${cells}</div>
+    <div class="pager"><i class="on"></i><i></i><i></i></div>
+    <div class="dock">${dock}</div>`;
+}
+function lockMarkup() {
+  return `<div class="lock-clock">
+      <div class="t">${statusBarTime()}</div>
+      <div class="d">${UK_DATE.format(new Date())}</div>
+    </div>
+    <div class="lock-notif">
+      <div class="row"><span class="app-dot">П</span>
+        <div><b>Пошта · 2 нові</b><i>Звіт за квартал — перевірте вкладення</i></div></div>
+    </div>
+    <div class="lock-shortcuts">
+      <span class="sc"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M5 4h4l2 5-3 2a12 12 0 006 6l2-3 5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg></span>
+      <span class="sc"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="7" width="18" height="13" rx="3"/><circle cx="12" cy="13.5" r="3.4"/></svg></span>
+    </div>`;
+}
+function qsMarkup() {
+  const tiles = [
+    ['Мережа', 'Домашня', true], ['Bluetooth', 'Вимкнено', false],
+    ['Ліхтарик', '30%', false], ['Не хвилювати', 'до 22:00', true],
+    ['Роздільність', 'Авто', false], ['Тема', 'Темна', true],
+  ];
+  const t = tiles.map(([name, sub, on]) =>
+    `<div class="tile ${on ? 'on' : ''}"><span class="ic">●</span><b>${name}</b><small>${sub}</small></div>`).join('');
+  return `<div class="qs">
+      ${t}
+      <div class="tile wide"><b>Яскравість</b><div class="slider" style="--w:64%"><span></span><div class="fill"></div></div></div>
+      <div class="tile wide"><b>Гучність</b><div class="slider" style="--w:38%"><span></span><div class="fill"></div></div></div>
+    </div>`;
+}
+function settingsMarkup() {
+  const row = (k, t, s, sw) => `<div class="srow"><span class="k">${k}</span>
+    <div class="txt"><b>${t}</b><small>${s}</small></div>${sw ? '<span class="switch on"></span>' : ''}</div>`;
+  return `<h4>Мережа та доступ</h4>
+    <div class="grp">
+      ${row('▣', 'Wi-Fi', 'Домашня · підʼєднано', true)}
+      ${row('◈', 'Bluetooth', '2 пристрої в радіусі', false)}
+    </div>
+    <h4>Дисплей</h4>
+    <div class="grp">
+      ${row('◐', 'Тема', 'Динамічна, з кольору шпалер', true)}
+      ${row('◇', 'Яскравість', 'Адаптивна', false)}
+    </div>
+    <h4>Система</h4>
+    <div class="grp">
+      ${row('≡', 'Про пристрій', 'TesseraOS 15.22.2.0 · x86_64', false)}
+      ${row('↻', 'Оновлення', 'Перевірити доступні', false)}
+    </div>`;
+}
+const MARKUP = { lock: lockMarkup, launcher: launcherMarkup, qs: qsMarkup, settings: settingsMarkup };
+
+function render() {
+  document.getElementById('screenBody').innerHTML = MARKUP[state.screen]();
+  document.getElementById('sbTime').textContent = statusBarTime();
+}
+
+/* ---------- керування ---------- */
+const seedsBox = document.getElementById('seeds');
+for (const [hex, name] of SEEDS) {
+  const b = document.createElement('button');
+  b.className = 'swatch';
+  b.title = name;
+  b.setAttribute('aria-label', `Колір-основа: ${name}`);
+  b.setAttribute('aria-pressed', String(hex === state.seed));
+  b.innerHTML = `<span style="background:${hex}"></span>`;
+  b.addEventListener('click', () => {
+    state.seed = hex;
+    document.getElementById('customSeed').value = hex;
+    seedsBox.querySelectorAll('.swatch').forEach(s => s.setAttribute('aria-pressed', 'false'));
+    b.setAttribute('aria-pressed', 'true');
+    applyPalette();
+  });
+  seedsBox.append(b);
+}
+document.getElementById('customSeed').addEventListener('input', e => {
+  state.seed = e.target.value;
+  seedsBox.querySelectorAll('.swatch').forEach(s => s.setAttribute('aria-pressed', 'false'));
+  applyPalette();
+});
+function pair(idA, idB, onA, onB) {
+  const a = document.getElementById(idA), b = document.getElementById(idB);
+  a.addEventListener('click', () => { a.setAttribute('aria-pressed', 'true'); b.setAttribute('aria-pressed', 'false'); onA(); });
+  b.addEventListener('click', () => { b.setAttribute('aria-pressed', 'true'); a.setAttribute('aria-pressed', 'false'); onB(); });
+}
+pair('themeDark', 'themeLight', () => { state.dark = true; applyPalette(); },
+                () => { state.dark = false; applyPalette(); });
+pair('shapeRound', 'shapeSquircle', () => { state.round = true; applyPalette(); },
+                     () => { state.round = false; applyPalette(); });
+document.querySelectorAll('[data-cols]').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('[data-cols]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  btn.setAttribute('aria-pressed', 'true');
+  state.cols = +btn.dataset.cols;
+  render();
+}));
+document.querySelectorAll('#screens [data-screen]').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('#screens [data-screen]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  btn.setAttribute('aria-pressed', 'true');
+  state.screen = btn.dataset.screen;
+  render();
+}));
+document.getElementById('copyBuild').addEventListener('click', async e => {
+  try {
+    await navigator.clipboard.writeText(document.getElementById('buildSnippet').innerText);
+    e.target.textContent = 'Скопійовано';
+  } catch { e.target.textContent = 'Не вдалося'; }
+  setTimeout(() => { e.target.textContent = 'Скопіювати'; }, 1800);
+});
+
+/* squircle-маска для іконок: той самий path, що в config_icon_mask */
+const svgNS = 'http://www.w3.org/2000/svg';
+const defs = document.createElementNS(svgNS, 'svg');
+defs.setAttribute('aria-hidden', 'true');
+defs.style.cssText = 'position:absolute;width:0;height:0';
+defs.innerHTML = `<clipPath id="tesseraSquircle" clipPathUnits="objectBoundingBox">
+  <path d="M0.5,0 C0.776,0 1,0.224 1,0.5 C1,0.776 0.776,1 0.5,1 C0.224,1 0,0.776 0,0.5 C0,0.224 0.224,0 0.5,0 Z"/>
+</clipPath>`;
+document.body.append(defs);
+
+applyPalette();
+setInterval(() => { if (state.screen !== 'settings') render(); }, 30000);
+</script>
+</body>
+</html>
