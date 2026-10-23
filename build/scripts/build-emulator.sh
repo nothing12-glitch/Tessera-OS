@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Повна збірка образу Zirka OS для x86_64-віртуальної машини.
+# Повна збірка образу TesseraOS для x86_64-віртуальної машини.
 # Тільки Linux, 250+ ГБ, 16+ ГБ RAM. Перший прохід — 2-6 годин.
 set -euo pipefail
 
@@ -12,7 +12,7 @@ export WITH_DEXPREOPT=true
 # Відтворюваність: один і той самий timestamp для всіх файлів образу.
 export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git -C "$(dirname "${BASH_SOURCE[0]}")/../.." log -1 --format=%cI 2>/dev/null | xargs -I{} date -u -d {} +%s 2>/dev/null || date -u +%s)}"
 
-TARGET="${1:-zirka_x86_64-userdebug}"
+TARGET="${1:-tessera_x86_64-userdebug}"
 
 source build/envsetup.sh
 lunch "$TARGET"
@@ -24,13 +24,13 @@ JOBS=$(( CORES < MEM_JOBS ? CORES : MEM_JOBS ))
 JOBS=$(( JOBS < 1 ? 1 : JOBS ))
 
 echo ">>> m -j$JOBS (target: $TARGET)"
-m -j"$JOBS" 2>&1 | tee "${LOG_DIR:-/tmp}/zirka-build-$(date -u +%Y%m%dT%H%M%SZ).log"
+m -j"$JOBS" 2>&1 | tee "${LOG_DIR:-/tmp}/tessera-build-$(date -u +%Y%m%dT%H%M%SZ).log"
 
 PRODUCT="${TARGET%%-*}"
-OUT="out/target/product/${PRODUCT#zirka_}"
+OUT="out/target/product/${PRODUCT#tessera_}"
 echo ">>> Образи у $OUT:"
 ls -1 "$OUT"/*.img 2>/dev/null || {
   echo "Не знайдено .img — переві назву таргета (docs/BUILD.md, крок 3)." >&2
   exit 1
 }
-( cd "$OUT" && sha256sum *.img > zirka-images-sha256.txt && cat zirka-images-sha256.txt )
+( cd "$OUT" && sha256sum *.img > tessera-images-sha256.txt && cat tessera-images-sha256.txt )

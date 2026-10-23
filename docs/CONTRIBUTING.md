@@ -1,15 +1,15 @@
 # Як долучитися
 
-Zirka OS — відкритий проєкт Apache-2.0. Найкорисніші внески не вимагають
+TesseraOS — відкритий проєкт Apache-2.0. Найкорисніші внески не вимагають
 збірки ROM.
 
 ## Шлях 1: тема (найпростіший, 20 хвилин)
 
 1. Форк, гілка `theme/<акцент>`.
-2. Відредагуй `overlay/themes/ZirkaFrameworkTheme/res/values*/colors.xml`.
+2. Відредагуй `overlay/themes/TesseraFrameworkTheme/res/values*/colors.xml`.
 3. Перевірка без образу: `build/scripts/build-themes.sh`, потім
-   `adb install -r overlay/out/ZirkaFrameworkTheme.apk` на будь-якому
-   Android 12+ та `adb shell cmd overlay enable os.zirka.theme.framework`.
+   `adb install -r overlay/out/TesseraFrameworkTheme.apk` на будь-якому
+   Android 12+ та `adb shell cmd overlay enable os.tessera.theme.framework`.
 4. PR із двома скріншотами (світла/темна) і контраст-перевіркою:
    `on*` на поверхні ≥ 4.5:1.
 
@@ -26,7 +26,7 @@ Pixel.
 ## Шлях 3: пристрої
 
 Порт на телефон — це device tree. Якщо LineageOS уже підтримує твій
-пристрій, достатньо `local_manifest` + наш `build/zirka.mk`. Очікуємо
+пристрій, достатньо `local_manifest` + наш `build/tessera.mk`. Очікуємо
 PR у каталозі `devices/<codename>/` із: `BoardConfig.mk`, `device.mk`,
 списком vendor-бібліотек (посилання + checksum, не бінарники), known issues.
 
@@ -48,7 +48,7 @@ live-region/доступності, без нових залежностей б�
 
 ## Відповідальність і безпека
 
-- Вразливості — приватно: `security@zirka-os.example`, поки не піднято
+- Вразливості — приватно: `security@tessera-os.example`, поки не піднято
   публічний трекер звітів. Не відкривай issue з деталями вразливості.
 - Проєкт не дає гарантії: прошивка пристрою може знищити дані. Завжди
   резервна копія й розблокований bootloader лише з твоєї волі.

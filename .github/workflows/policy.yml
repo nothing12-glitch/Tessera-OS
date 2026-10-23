@@ -28,7 +28,7 @@ jobs:
           set -euo pipefail
           if grep -rniE 'pixel launcher|product sans|google material icon|bootanimation.*pixel' \
                --include='*.xml' --include='*.mk' --include='*.md' . ; then
-            echo "Знайшов ознаки чужого бренда (Google/Pixel). Zirka OS — власна айдентика."
+            echo "Знайшов ознаки чужого бренда (Google/Pixel). TesseraOS — власна айдентика."
             exit 1
           fi
 

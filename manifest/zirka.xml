@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Маніфест Zirka OS. Дозволяє ініціювати все дерево однією командою:
+  Маніфест TesseraOS. Дозволяє ініціювати все дерево однією командою:
 
-    repo init -u https://github.com/nothing12-glitch/zirka-os \
-              -b main -m manifest/zirka.xml
+    repo init -u https://github.com/nothing12-glitch/tessera-os \
+              -b main -m manifest/tessera.xml
     repo sync -c -j"$(nproc)"
 
   База — LineageOS 22.2 (Android 15). Наш шар підключається через linkfile,
@@ -11,7 +11,7 @@
 -->
 <manifest>
   <remote name="lineage" fetch="https://github.com/LineageOS/" />
-  <remote name="zirka"   fetch="https://github.com/" />
+  <remote name="tessera"   fetch="https://github.com/" />
 
   <default remote="lineage" revision="lineage-22.2"
            sync-c="true" sync-j="4" sync-tags="false" />
@@ -33,24 +33,24 @@
   <project name="android_hardware_google_gps"     path="hardware/google/gps"
            optional="true" />
 
-  <!-- ==== Шар Zirka OS ==== -->
-  <project name="nothing12-glitch/zirka-os" remote="zirka" revision="main"
-           path="vendor/zirka/os">
-    <!-- Конфіг продукту: `lunch zirka_x86_64-userdebug` -->
-    <linkfile src="build/zirka.mk"
-              dest="build/make/target/product/zirka_x86_64.mk" />
+  <!-- ==== Шар TesseraOS ==== -->
+  <project name="nothing12-glitch/tessera-os" remote="tessera" revision="main"
+           path="vendor/tessera/os">
+    <!-- Конфіг продукту: `lunch tessera_x86_64-userdebug` -->
+    <linkfile src="build/tessera.mk"
+              dest="build/make/target/product/tessera_x86_64.mk" />
     <!-- Конфіг платформи x86_64 VM -->
     <linkfile src="build/board/BoardConfig.mk"
-              dest="device/zirka/x86_64/BoardConfig.mk" />
-    <linkfile src="config/branding/zirka.prop"
-              dest="vendor/zirka/etc/zirka.prop" />
+              dest="device/tessera/x86_64/BoardConfig.mk" />
+    <linkfile src="config/branding/tessera.prop"
+              dest="vendor/tessera/etc/tessera.prop" />
   </project>
 
   <!-- microG: вільна заміна власницьких Google-сервісів -->
-  <project name="nothing12-glitch/zirka-microg-prebuilt" remote="zirka"
+  <project name="nothing12-glitch/tessera-microg-prebuilt" remote="tessera"
            revision="main" path="vendor/microg" optional="true" />
 
-  <!-- Власні застосунки Zirka OS (Milestone M2) -->
-  <project name="nothing12-glitch/zirka-apps" remote="zirka" revision="main"
-           path="packages/apps/Zirka" optional="true" />
+  <!-- Власні застосунки TesseraOS (Milestone M2) -->
+  <project name="nothing12-glitch/tessera-apps" remote="tessera" revision="main"
+           path="packages/apps/Tessera" optional="true" />
 </manifest>

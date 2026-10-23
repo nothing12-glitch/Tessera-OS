@@ -6,7 +6,7 @@
 
   Це власні значення оверлею; їх споживає styles.xml, який уже
   перевизначає атрибути Theme.DeviceDefault у framework. RRO підмінює
-  лише існуючі ресурси цільового пакету, тому самі назви Zirka тут нічого
+  лише існуючі ресурси цільового пакету, тому самі назви Tessera тут нічого
   не змінюють — вони є джерелом значень для items у стилях.
 
   Контраст перевірено: on* на своїй поверхні >= 4.5:1, outline >= 3:1.
@@ -52,5 +52,5 @@
     <color name="colorOnErrorContainer">#410002</color>
 
     <!-- Seed для динамічної палітри (Material You) -->
-    <color name="zirkaDynamicSeed">#3350C8</color>
+    <color name="tesseraDynamicSeed">#3350C8</color>
 </resources>

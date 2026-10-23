@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Запуск зібраного x86_64-образу Zirka OS у Android Emulator (AVD).
+# Запуск зібраного x86_64-образу TesseraOS у Android Emulator (AVD).
 # Вимоги: Android SDK (cmdline-tools, platform-tools, emulator), KVM.
 set -euo pipefail
 
-IMG_DIR="out/target/product/zirka_x86_64"
-AVD_NAME="Zirka_X86_64"
+IMG_DIR="out/target/product/tessera_x86_64"
+AVD_NAME="Tessera_X86_64"
 API="${API:-35}"
 ABI="x86_64"
 
@@ -27,7 +27,7 @@ SDKMANAGER="$SDK/cmdline-tools/latest/bin/sdkmanager"
 
 # 1. Системний образ нашої ROM у сховище SDK. Формат каталогу збігається з
 #    офіційними образами: system-images;<platform>;<tag>;<abi>.
-TAG="zirka"
+TAG="tessera"
 DEST="$SDK/system-images/android-$API/$TAG/$ABI"
 mkdir -p "$DEST"
 cp -v "$IMG_DIR"/*.img "$DEST/" 2>/dev/null || {

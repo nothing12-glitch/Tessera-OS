@@ -1,8 +1,8 @@
 // Static RRO-пакет MD3 для Android framework.
-// Збирається Soong у дереві AOSP (`m os.zirka.theme.framework`).
+// Збирається Soong у дереві AOSP (`m os.tessera.theme.framework`).
 // Для швидкої CI-збірки без дерева — build/scripts/build-themes.sh (aapt2).
 runtime_resource_overlay {
-    name: "os.zirka.theme.framework",
+    name: "os.tessera.theme.framework",
     manifest: "AndroidManifest.xml",
     resource_dirs: ["res"],
     sdk_version: "current",

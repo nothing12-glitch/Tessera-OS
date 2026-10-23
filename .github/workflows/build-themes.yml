@@ -26,19 +26,19 @@ jobs:
       - name: Згенерувати тестовий ключ
         run: |
           mkdir -p build/testkey
-          keytool -genkeypair -keystore build/testkey/zirka-debug.jks \
-            -alias zirka -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass zirka -keypass zirka \
-            -dname "CN=Zirka OS test key, O=Zirka OS Project"
+          keytool -genkeypair -keystore build/testkey/tessera-debug.jks \
+            -alias tessera -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass tessera -keypass tessera \
+            -dname "CN=TesseraOS test key, O=TesseraOS Project"
         env:
-          ZIRKA_KEYSTORE_PASSWORD: zirka
+          TESSERA_KEYSTORE_PASSWORD: tessera
 
       - name: Build overlays
         run: |
           chmod +x build/scripts/*.sh
           build/scripts/build-themes.sh
         env:
-          ZIRKA_KEYSTORE: ${{ github.workspace }}/build/testkey/zirka-debug.jks
+          TESSERA_KEYSTORE: ${{ github.workspace }}/build/testkey/tessera-debug.jks
 
       - name: Перевірити вміст APK (лише ресурси, без коду)
         run: |
@@ -51,7 +51,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: zirka-md3-overlays
+          name: tessera-md3-overlays
           path: |
             overlay/out/*.apk
             overlay/out/sha256sum.txt

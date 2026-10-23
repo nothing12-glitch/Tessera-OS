@@ -5,7 +5,7 @@
   перевизначаємо, лежать у packages/apps/Settings/res/values/styles*.xml.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="os.zirka.theme.settings"
+    package="os.tessera.theme.settings"
     android:versionCode="1502"
     android:versionName="15.22.2.0">
 
@@ -14,5 +14,5 @@
         android:priority="700"
         android:isStatic="true" />
 
-    <application android:hasCode="false" android:label="Zirka MD3 (Settings)" />
+    <application android:hasCode="false" android:label="Tessera MD3 (Settings)" />
 </manifest>

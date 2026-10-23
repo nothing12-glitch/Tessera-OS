@@ -1,4 +1,4 @@
-# Material Design 3 у Zirka OS
+# Material Design 3 у TesseraOS
 
 ## Механіка: RRO замість правки AOSP
 
@@ -11,12 +11,12 @@ Runtime Resource Overlay — пакет `.apk`, що не містить код�
 - `android:priority` — вищий пріоритет перемагає при конфлікті;
 - оверлей не чіпає код, тому `repo sync` і апстрім-патчі його не ламають.
 
-Zirka OS постачає два static-оверлеї:
+TesseraOS постачає два static-оверлеї:
 
 | Пакет | Ціль | Що змінює |
 |---|---|---|
-| `os.zirka.theme.framework` | `android` | палітра framework, форми, кути, типографіка, іконки |
-| `os.zirka.theme.settings` | `com.android.settings` | картки, відступи, стиль списків Settings |
+| `os.tessera.theme.framework` | `android` | палітра framework, форми, кути, типографіка, іконки |
+| `os.tessera.theme.settings` | `com.android.settings` | картки, відступи, стиль списків Settings |
 
 ## Токени, які ми визначаємо
 
@@ -59,7 +59,7 @@ Android 12+ уже вміє генерувати палітру від шпал�
 
 - `config_dynamic_color_default_enabled` — увімкнено;
 - якщо користувач не обрав шпалери-джерело, застосовується базова палітра
-  Zirka (див. `colors.xml`);
+  Tessera (див. `colors.xml`);
 - `theme_customization_overlay_packages` дозволяє перемикати акцент у
   *Settings → Wallpaper & style*.
 
@@ -69,7 +69,7 @@ Android 12+ уже вміє генерувати палітру від шпал�
 ## Як додати свою палітру
 
 ```bash
-cd overlay/themes/ZirkaFrameworkTheme
+cd overlay/themes/TesseraFrameworkTheme
 python3 tools/derive_palette.py --seed "#3B5BDB" --out res/values/colors.xml
 ```
 
@@ -82,8 +82,8 @@ python3 tools/derive_palette.py --seed "#3B5BDB" --out res/values/colors.xml
 ## Перевірка на зібраному образі
 
 ```bash
-adb shell cmd overlay list | grep zirka
-adb shell cmd overlay enable os.zirka.theme.framework
+adb shell cmd overlay list | grep tessera
+adb shell cmd overlay enable os.tessera.theme.framework
 adb shell settings put secure theme_customization_accent_color 0xFF3B5BDB
 adb shell uiautomator dump /sdcard/ui.xml   # знімок структури для тестів
 ```

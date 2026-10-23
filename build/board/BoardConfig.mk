@@ -1,5 +1,5 @@
-# Конфіг платформи x86_64 для віртуальної машини Zirka OS.
-# Маніфест лінкує цей файл у device/zirka/x86_64/BoardConfig.mk.
+# Конфіг платформи x86_64 для віртуальної машини TesseraOS.
+# Маніфест лінкує цей файл у device/tessera/x86_64/BoardConfig.mk.
 #
 # Зверни увагу: значна частина параметрів успадковується від
 # device/generic/x86_64. Сюди додаємо лише те, що відрізняє наш образ.
@@ -14,7 +14,7 @@ TARGET_2ND_ARCH_VARIANT := x86_64
 TARGET_2ND_CPU_ABI := x86
 
 # 64-бітний system; без translation layer для ARM-бібліотек
-# (libhoudini — власницький, у Zirka OS відсутній). Див. docs/EMULATOR.md.
+# (libhoudini — власницький, у TesseraOS відсутній). Див. docs/EMULATOR.md.
 TARGET_SUPPORTS_64_BIT_APPS := true
 TARGET_SUPPORTS_32_BIT_APPS := true
 
@@ -51,4 +51,4 @@ TARGET_USES_SWSHADER := true
 # --- Відтворюваність -------------------------------------------------------
 # Вимикаємо випадкові мітки часу в образах.
 BUILD_BROKEN_DUP_RULES := true
-$(warning "Zirka OS BoardConfig: перевір BOARD_*_PARTITION_SIZE для своєї гілки")
+$(warning "TesseraOS BoardConfig: перевір BOARD_*_PARTITION_SIZE для своєї гілки")

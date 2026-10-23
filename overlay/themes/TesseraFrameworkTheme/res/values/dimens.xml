@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Геометрія Material Design 3 для власних застосунків Zirka OS (apps/) та
+  Геометрія Material Design 3 для власних застосунків TesseraOS (apps/) та
   як єдине джерело правди для дизайнерських токенів. У framework-оверлеї ці
   значення застосовуються лише там, де target-ресурс уже має type="dimen".
 -->

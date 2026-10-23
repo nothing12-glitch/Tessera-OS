@@ -10,17 +10,17 @@
 # Публічний android.jar з SDK їх не містить, тому без --framework-jar
 # скрипт будує «палітровий» варіант оверлею (colors/dimens) і друкує
 # попередження. Повний оверлей збирається всередині дерева AOSP:
-#   m os.zirka.theme.framework os.zirka.theme.settings
+#   m os.tessera.theme.framework os.tessera.theme.settings
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 OUT="$ROOT/overlay/out"
-FRAMEWORK_JAR="${ZIRKA_ANDROID_JAR:-}"
+FRAMEWORK_JAR="${TESSERA_ANDROID_JAR:-}"
 AAPT2="${AAPT2:-aapt2}"
 ZIPALIGN="${ZIPALIGN:-zipalign}"
 APKSIGNER="${APKSIGNER:-apksigner}"
-KEYSTORE="${ZIRKA_KEYSTORE:-$ROOT/build/testkey/zirka-debug.jks}"
-KS_PASS="${ZIRKA_KEYSTORE_PASSWORD:-zirka}"
+KEYSTORE="${TESSERA_KEYSTORE:-$ROOT/build/testkey/tessera-debug.jks}"
+KS_PASS="${TESSERA_KEYSTORE_PASSWORD:-tessera}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -48,9 +48,9 @@ fi
 # приходить з secrets і сюди не потрапляє.
 if [[ ! -f "$KEYSTORE" ]]; then
   mkdir -p "$(dirname "$KEYSTORE")"
-  keytool -genkeypair -v -keystore "$KEYSTORE" -alias zirka \
+  keytool -genkeypair -v -keystore "$KEYSTORE" -alias tessera \
     -keyalg RSA -keysize 2048 -validity 10000 -storepass "$KS_PASS" \
-    -keypass "$KS_PASS" -dname "CN=Zirka OS test key, O=Zirka OS Project" >/dev/null
+    -keypass "$KS_PASS" -dname "CN=TesseraOS test key, O=TesseraOS Project" >/dev/null
   echo "Згенеровано тестовий ключ: $KEYSTORE"
 fi
 

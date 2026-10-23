@@ -5,7 +5,7 @@ set -euo pipefail
 
 VENDOR="mtg"      # mtg | microg | opengapps (last — legacy)
 VARIANT="basic"   # pico | nano | basic | stock | full
-API="35"; ARCH="x86_64"; FLAVOR="zirka"
+API="35"; ARCH="x86_64"; FLAVOR="tessera"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in

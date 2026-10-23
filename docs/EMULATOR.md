@@ -2,7 +2,7 @@
 
 Чому емулятор, а не телефон: образ, який можна запустити за 5 хвилин без
 розблокування bootloader і ризику «цегли», доступний кожному, хто хоче
-подивитися на Zirka OS. Телефон — наступний milestone, бо там потрібні
+подивитися на TesseraOS. Телефон — наступний milestone, бо там потрібні
 device tree і vendor-бібліотеки конкретного заліза.
 
 ## Два шляхи запуску
@@ -10,19 +10,19 @@ device tree і vendor-бібліотеки конкретного заліза.
 ### A. QEMU / AVD зі зібраними образами (для тих, хто зібрав ROM)
 
 ```bash
-build/scripts/run-avd.sh --api 35 --abi x86_64 --image out/target/product/zirka_x86_64
+build/scripts/run-avd.sh --api 35 --abi x86_64 --image out/target/product/tessera_x86_64
 ```
 
 Скрипт робить AVD-каталог, копіює `system.img`, `vendor.img`, `userdata.img`,
-`ramdisk.img` у `system-images/zirka/35/x86_64/` і запускає
-`emulator -avd Zirka_X86_64 -writable-system -gpu host -no-snapshot`.
+`ramdisk.img` у `system-images/tessera/35/x86_64/` і запускає
+`emulator -avd Tessera_X86_64 -writable-system -gpu host -no-snapshot`.
 
 Вимоги на хості: Android SDK (`cmdline-tools`, `emulator`), KVM для x86_64
 (`egrep -c '(vmx|svm)' /proc/cpuinfo` > 0), інакше буде повільна емуляція.
 
 ### B. Готовий образ зі сторінки релізів
 
-У GitHub Release лежить `zirka-x86_64-<ver>.tar.xz` + `sha256sum.txt`.
+У GitHub Release лежить `tessera-x86_64-<ver>.tar.xz` + `sha256sum.txt`.
 Розпакуй і вкажи `run-avd.sh --image <dir>`. Жодної збірки не потрібно.
 
 ## Що працює в VM-образі
@@ -45,9 +45,9 @@ build/scripts/run-avd.sh --api 35 --abi x86_64 --image out/target/product/zirka_
 # зібрати лише оверлей
 build/scripts/build-themes.sh
 # накласти на вже запущений емулятор
-adb install -r overlay/out/os.zirka.theme.framework.apk
-adb shell cmd overlay enable os.zirka.theme.framework
-adb shell cmd overlay disable os.zirka.theme.framework
+adb install -r overlay/out/os.tessera.theme.framework.apk
+adb shell cmd overlay enable os.tessera.theme.framework
+adb shell cmd overlay disable os.tessera.theme.framework
 ```
 
 Для static-оверлеїв зміни потребують `adb reboot` через early-boot-завантаження
@@ -58,9 +58,9 @@ adb shell cmd overlay disable os.zirka.theme.framework
 `tools/emulator-smoke.sh` на запущеному образі перевіряє:
 
 1. `sys.boot_completed == 1`;
-2. обидва Zirka-оверлеї в `cmd overlay list` активні;
+2. обидва Tessera-оверлеї в `cmd overlay list` активні;
 3. базові екрани доступні: launcher, Settings → Display, About (версія
-   `ro.zirka.version`);
+   `ro.tessera.version`);
 4. колір `?attr/colorSurface` у світлій і темній темі відрізняється від
    стокового (порівняння пікселя в точці 10,10 скріншота);
 5. `pm list packages` містить microG-компоненти.
@@ -68,8 +68,8 @@ adb shell cmd overlay disable os.zirka.theme.framework
 ## Обмеження, які варто знати заздалегідь
 
 - Архітектурне обмеження: x86_64-образ не запускає ARM-бібліотеки без
-  translation layer (`libhoudini`/`libndk` — власницькі, у Zirka OS їх
+  translation layer (`libhoudini`/`libndk` — власницькі, у TesseraOS їх
   немає). Частина застосунків у VM не стартує. Для ARM-обладнання це
   не проблема.
-- 35 API — умовний рівень Android 15; звір із `build/zirka.mk`.
+- 35 API — умовний рівень Android 15; звір із `build/tessera.mk`.
 - Перевір розмір `userdata` (за замовчуванням 6 ГБ) перед тестами оновлень.

@@ -10,7 +10,7 @@ on:
     inputs:
       target:
         description: "lunch-таргет"
-        default: "zirka_x86_64-userdebug"
+        default: "tessera_x86_64-userdebug"
       branch:
         description: "гілка бази LineageOS"
         default: "lineage-22.2"
@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          path: zirka-os
+          path: tessera-os
 
       - name: Синхронізація джерел (repo init/sync)
         run: |
@@ -44,21 +44,21 @@ jobs:
           if [[ -d .repo ]]; then
             repo sync -c -j"$(nproc)" --fail-fast
           else
-            repo init -u "$GITHUB_WORKSPACE/zirka-os/manifest/zirka.xml" -b "${{ inputs.branch || 'lineage-22.2' }}"
+            repo init -u "$GITHUB_WORKSPACE/tessera-os/manifest/tessera.xml" -b "${{ inputs.branch || 'lineage-22.2' }}"
             repo sync -c -j"$(nproc)" --fail-fast
           fi
-          ln -sfn "$GITHUB_WORKSPACE/zirka-os" vendor/zirka/os
+          ln -sfn "$GITHUB_WORKSPACE/tessera-os" vendor/tessera/os
 
       - name: Збірка
         run: |
           cd "$GITHUB_WORKSPACE/rom"
-          "$PWD/vendor/zirka/os/build/scripts/build-emulator.sh" \
-            "${{ inputs.target || 'zirka_x86_64-userdebug' }}"
+          "$PWD/vendor/tessera/os/build/scripts/build-emulator.sh" \
+            "${{ inputs.target || 'tessera_x86_64-userdebug' }}"
 
       - name: Артефакти образів
         uses: actions/upload-artifact@v4
         with:
-          name: zirka-x86_64-images
+          name: tessera-x86_64-images
           path: |
             rom/out/target/product/*/system.img
             rom/out/target/product/*/vendor.img

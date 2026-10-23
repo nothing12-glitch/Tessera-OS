@@ -2,7 +2,7 @@
 
 ## Коротко
 
-У образі Zirka OS **немає** застосунків Google, і так має бути. Причина не
+У образі TesseraOS **немає** застосунків Google, і так має бути. Причина не
 технічна, а правова:
 
 - `com.google.android.gsf`, GMS Core, Play Store, Gmail, Maps — це
@@ -14,13 +14,13 @@
 
 ## Три варіанти для користувача
 
-### 1. microG — безкоштовно, без сертифікатів (за замовчуванням у Zirka OS)
+### 1. microG — безкоштовно, без сертифікатів (за замовчуванням у TesseraOS)
 
 Вільна реалізація GmsCore: push-сповіщення (Firebase), Locator, OAuth
 для «Увійти через Google». Працює без GMS-ліцензії й без закритих бинарів.
 
 ```
-PRODUCT_PACKAGES += microG (профіль zirka_microg)
+PRODUCT_PACKAGES += microG (профіль tessera_microg)
 ```
 
 За потреби — signature spoofing, який LineageOS уже підтримує з меню
@@ -51,7 +51,7 @@ build/scripts/package-gapps.sh --vendor mtg --variant basic \
 
 ## Чому GApps на емуляторі — особливий випадок
 
-x86_64-образ Zirka OS не сертифікований, тому Play Store у ньому:
+x86_64-образ TesseraOS не сертифікований, тому Play Store у ньому:
 
 - встановиться, але може показувати «Device is not Play Protect certified»;
 - частина застосунків (BankID-подібні, Netflix, Google Wallet) не запуститься,
@@ -62,7 +62,7 @@ x86_64-образ Zirka OS не сертифікований, тому Play Stor
 1. **microG + fake store** (Aurora Store) — для більшості застосунків.
 2. Увімкнути `Settings → Security → Device certification` і отримати
    attestation-key через власний Google-акаунт (працює для помірної частини застосунків).
-3. Для розробки — стоковий Google-образ AVD замість Zirka, а Zirka-образ
+3. Для розробки — стоковий Google-образ AVD замість Tessera, а Tessera-образ
    тримати як ціль UI-тестів.
 
 ## Що робить скрипт пакування

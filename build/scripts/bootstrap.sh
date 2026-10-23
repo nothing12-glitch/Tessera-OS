@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Підготовка білд-боксу Zirka OS (Linux: Debian 12 / Ubuntu 22.04+).
+# Підготовка білд-боксу TesseraOS (Linux: Debian 12 / Ubuntu 22.04+).
 # Не поспішай: спочатку прочитай вимоги в docs/BUILD.md.
 set -euo pipefail
 
@@ -53,6 +53,6 @@ fi
 
 echo
 echo "Далі:"
-echo "  repo init -u https://github.com/nothing12-glitch/zirka-os -b main -m manifest/zirka.xml"
+echo "  repo init -u https://github.com/nothing12-glitch/tessera-os -b main -m manifest/tessera.xml"
 echo "  repo sync -c -j\$(nproc)"
 echo "  build/scripts/build-emulator.sh"

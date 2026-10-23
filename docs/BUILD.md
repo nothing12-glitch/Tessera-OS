@@ -1,4 +1,4 @@
-# Збірка Zirka OS
+# Збірка TesseraOS
 
 ## Вимоги до білд-боксу
 
@@ -32,38 +32,38 @@ build/scripts/bootstrap.sh
 ### 2. Джерела
 
 ```bash
-mkdir -p ~/zirka && cd ~/zirka
+mkdir -p ~/tessera && cd ~/tessera
 repo init -u https://github.com/LineageOS/manifest -b lineage-22.2
 repo sync -c -j"$(nproc)" --force-sync --no-clone-bundle
 ```
 
-Кладемо наш репозиторій у `vendor/zirka/os` (шлях очікує `build/zirka.mk`):
+Кладемо наш репозиторій у `vendor/tessera/os` (шлях очікує `build/tessera.mk`):
 
 ```bash
-mkdir -p vendor/zirka
-git clone https://github.com/<you>/zirka-os vendor/zirka/os
+mkdir -p vendor/tessera
+git clone https://github.com/<you>/tessera-os vendor/tessera/os
 ```
 
 ### 3. Конфіг продукту
 
 Конфіг продукту має бути у списку, який зчитує `lunch`. Маніфест
-`manifest/zirka.xml` робить це автоматично через `<linkfile>`: при
-`repo sync` наш `build/zirka.mk` з'являється як
-`build/make/target/product/zirka_x86_64.mk`, а `BoardConfig.mk` — у
-`device/zirka/x86_64/`. Якщо ти клонуєш репозиторій вручну (без `repo`),
+`manifest/tessera.xml` робить це автоматично через `<linkfile>`: при
+`repo sync` наш `build/tessera.mk` з'являється як
+`build/make/target/product/tessera_x86_64.mk`, а `BoardConfig.mk` — у
+`device/tessera/x86_64/`. Якщо ти клонуєш репозиторій вручну (без `repo`),
 створи symlink вручну:
 
 ```bash
-ln -sfn "$PWD/vendor/zirka/os/build/zirka.mk" \
-        build/make/target/product/zirka_x86_64.mk
+ln -sfn "$PWD/vendor/tessera/os/build/tessera.mk" \
+        build/make/target/product/tessera_x86_64.mk
 ```
 
 ### 4. Збірка
 
 ```bash
 source build/envsetup.sh
-lunch zirka_x86_64-userdebug
-m -j"$(nproc)" 2>&1 | tee /tmp/zirka-build.log
+lunch tessera_x86_64-userdebug
+m -j"$(nproc)" 2>&1 | tee /tmp/tessera-build.log
 ```
 
 Або все одразу з кешем і логами:
@@ -77,7 +77,7 @@ build/scripts/build-emulator.sh
 
 ### 5. Результат
 
-Image лежать у `out/target/product/zirka_x86_64/`:
+Image лежать у `out/target/product/tessera_x86_64/`:
 `system.img`, `vendor.img`, `ramdisk.img`, `super.img`, `userdata.img`.
 Для AVD потрібен `arm64/x86_64`-набір з `run-avd.sh` — див.
 [EMULATOR.md](EMULATOR.md).
@@ -86,11 +86,11 @@ Image лежать у `out/target/product/zirka_x86_64/`:
 
 | Помилка | Причина | Рішення |
 |---|---|---|
-| `No rule to make target 'zirka_x86_64'` | `.mk` не в шляху пошуку | symlink із кроку 3, потім `m clean-outputs` |
+| `No rule to make target 'tessera_x86_64'` | `.mk` не в шляху пошуку | symlink із кроку 3, потім `m clean-outputs` |
 | `out of memory` / `Killed` під час `soong` | замало RAM | `-j$(nproc --all)` → `-j4`, вимкнути `USE_CCACHE=0` тимчасово |
 | `Android platform requires the host tool 'repo'` | `repo` не в `PATH` | поставити у `~/bin` і експорт |
 | `error: cannot find SDK` у own-app | немає Android SDK | `bootstrap.sh --apps` |
-| Оверлей не застосований | `isStatic="true"` + не в `PRODUCT_PACKAGES` | додай пакет у `zirka.mk`, перевіри `cmd overlay list` |
+| Оверлей не застосований | `isStatic="true"` + не в `PRODUCT_PACKAGES` | додай пакет у `tessera.mk`, перевіри `cmd overlay list` |
 
 ## Відтворюваність
 

@@ -1,8 +1,8 @@
-# Конфіг продукту Zirka OS для x86_64-віртуальної машини.
-# Маніфест лінкує цей файл у build/make/target/product/zirka_x86_64.mk,
-# тому `lunch zirka_x86_64-userdebug` працює без ручних symlink.
+# Конфіг продукту TesseraOS для x86_64-віртуальної машини.
+# Маніфест лінкує цей файл у build/make/target/product/tessera_x86_64.mk,
+# тому `lunch tessera_x86_64-userdebug` працює без ручних symlink.
 #
-#   source build/envsetup.sh && lunch zirka_x86_64-userdebug && m -j$(nproc)
+#   source build/envsetup.sh && lunch tessera_x86_64-userdebug && m -j$(nproc)
 
 # --- 1. База ---------------------------------------------------------------
 # Повний конфіг AOSP для x86_64: framework, SystemUI, STOCK_AOSP застосунки.
@@ -18,8 +18,8 @@ $(call inherit-product-if-exists, build/make/target/product/lineage_base.mk)
 # (Android.bp поряд з кожним пакетом); isStatic="true" в маніфесті
 # означає, що окрема активація через `cmd overlay enable` не потрібна.
 PRODUCT_PACKAGES += \
-    os.zirka.theme.framework \
-    os.zirka.theme.settings
+    os.tessera.theme.framework \
+    os.tessera.theme.settings
 
 # --- 3. Сервіси, замість власницьких бінарів -------------------------------
 # microG — вільна реалізація push/location/oauth. Профіль GApps користувача
@@ -35,29 +35,29 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES_REMOVE := Dialer Messaging
 
 # --- 4. Ідентичність -------------------------------------------------------
-PRODUCT_NAME := zirka_x86_64
+PRODUCT_NAME := tessera_x86_64
 PRODUCT_DEVICE := x86_64
-PRODUCT_MANUFACTURER := Zirka OS Project
-PRODUCT_BRAND := zirka
-PRODUCT_MODEL := Zirka OS (x86_64 VM)
+PRODUCT_MANUFACTURER := TesseraOS Project
+PRODUCT_BRAND := tessera
+PRODUCT_MODEL := TesseraOS (x86_64 VM)
 
-# Версія проєкту: <android>.<lineage>.<zirka>. Теги GitHub — v<версія>.
-ZIRKA_VERSION := 15.22.2.0
-ZIRKA_CODENAME := vega
+# Версія проєкту: <android>.<lineage>.<tessera>. Теги GitHub — v<версія>.
+TESSERA_VERSION := 15.22.2.0
+TESSERA_CODENAME := vega
 
 PRODUCT_PROPERTY_OVERRIDES += \
-    ro.zirka.version=$(ZIRKA_VERSION) \
-    ro.zirka.codename=$(ZIRKA_CODENAME) \
-    ro.zirka.base=LineageOS-22.2 \
-    ro.zirka.theme=material3 \
-    persist.zirka.dynamic_color=1 \
+    ro.tessera.version=$(TESSERA_VERSION) \
+    ro.tessera.codename=$(TESSERA_CODENAME) \
+    ro.tessera.base=LineageOS-22.2 \
+    ro.tessera.theme=material3 \
+    persist.tessera.dynamic_color=1 \
     ro.product.first_api_level=35
 
 # --- 5. Розміри розділів для VM -------------------------------------------
 # image-розміри задаються з BoardConfig; тут лише logical-партиції.
 # Звір ці значення з розділами в device/generic/x86_64/BoardConfig.mk.
 PRODUCT_SYSTEM_EXT_PROPERTIES += \
-    ro.zirka.partition.scheme=non-a-b
+    ro.tessera.partition.scheme=non-a-b
 
 # Dynamic partitions: у VM простіше без super.img.
 PRODUCT_USE_DYNAMIC_PARTITIONS := false
