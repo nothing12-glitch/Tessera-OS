@@ -46,11 +46,12 @@ git clone https://github.com/<you>/zirka-os vendor/zirka/os
 
 ### 3. Конфіг продукту
 
-`vendor/zirka/os/build/zirka.mk` має потрапити в пошук AAPT/product-conf.
-У гілці LineageOS це робить `PRODUCT_PACKAGES`-механіка з
-`build/make/target/product/AndroidProducts.mk` — скрипт `build-emulator.sh`
-додає наш `.mk` через `$(call add-json-file, ...)`-style include, а якщо
-твоя версія вимагає явного symlink:
+Конфіг продукту має бути у списку, який зчитує `lunch`. Маніфест
+`manifest/zirka.xml` робить це автоматично через `<linkfile>`: при
+`repo sync` наш `build/zirka.mk` з'являється як
+`build/make/target/product/zirka_x86_64.mk`, а `BoardConfig.mk` — у
+`device/zirka/x86_64/`. Якщо ти клонуєш репозиторій вручну (без `repo`),
+створи symlink вручну:
 
 ```bash
 ln -sfn "$PWD/vendor/zirka/os/build/zirka.mk" \

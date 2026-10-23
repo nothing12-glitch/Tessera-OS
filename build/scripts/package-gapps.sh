@@ -59,9 +59,15 @@ EOF
 
 echo "Профіль: $OUT/profile.json"
 echo
-echo "Завантаження і перевірка (виконує користувач, не CI):"
-echo "  curl -fL -o /tmp/gapps.zip '$URL'"
-echo "  sha256sum /tmp/gapps.zip   # звір з оголошенням вендора"
+echo "Далі (виконує користувач, не CI):"
+if [[ "$VENDOR" == "microg" ]]; then
+  echo "  Відкрий $URL і завантаж APK для потрібної архітектури."
+  echo "  microG уже в образі, тож цей крок — лише оновлення компонентів."
+else
+  echo "  curl -fL -o /tmp/gapps.zip '$URL'"
+  echo "  sha256sum /tmp/gapps.zip   # звір з офіційним оголошенням вендора"
+fi
 echo
-echo "Важливо: власницькі бінари не комітяться. CI (policy.yml) блокує ."
-echo "Якщо потрібна вільна стека — вимкни цей профіль і лиши microG."
+echo "Важливо: власницькі бінари не комітяться — workflow policy.yml блокує"
+echo "будь-який .apk/.so/.jar у дереві. Якщо потрібна повністю вільна стека,"
+echo "лиши microG і не встановлюй GApps."
