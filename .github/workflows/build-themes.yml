@@ -17,35 +17,87 @@ permissions:
 jobs:
   rro:
     runs-on: ubuntu-latest
+    env:
+      KEYSTORE_PASS: tessera-ci
     steps:
       - uses: actions/checkout@v4
 
-      - name: Android SDK (build-tools + platform)
-        uses: android-actions/setup-android@v3
+      # ubuntu-latest уже має Android SDK; ставити його через сторонній
+      # екстейшн непотрібно — і саме цей крок падав раніше.
+      - name: Знайти SDK і build-tools на раннері
+        id: sdk
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          if [[ ! -d "$SDK" ]]; then
+            echo "Не знайдено Android SDK за шляхом $SDK" >&2
+            ls -1 /usr/local/lib/android 2>/dev/null || true
+            exit 1
+          fi
+          BT="$(ls -1d "$SDK"/build-tools/*/ 2>/dev/null | sort -V | tail -1)"
+          if [[ -z "$BT" ]]; then
+            echo "У $SDK немає пакунка build-tools" >&2; exit 1
+          fi
+          PLAT="$(ls -1d "$SDK"/platforms/android-*/ 2>/dev/null | sort -V | tail -1)"
+          if [[ -z "$PLAT" ]]; then
+            echo "У $SDK немає жодного platforms/android-*" >&2; exit 1
+          fi
+          echo "sdk=$SDK" >> "$GITHUB_OUTPUT"
+          echo "build_tools=${BT%/}" >> "$GITHUB_OUTPUT"
+          echo "platform=$PLAT" >> "$GITHUB_OUTPUT"
+          echo "SDK: $SDK"
+          echo "build-tools: ${BT%/}"
+          echo "platform: ${PLAT%/}"
+
+      - name: Перевірити наявність інструментів
+        run: |
+          set -euo pipefail
+          export PATH="${{ steps.sdk.outputs.build_tools }}:$PATH"
+          for t in aapt2 zipalign apksigner keytool; do
+            if ! command -v "$t" >/dev/null 2>&1; then
+              echo "на раннері немає $t" >&2; exit 1
+            fi
+            echo "ok: $t -> $(command -v "$t")"
+          done
 
       - name: Згенерувати тестовий ключ
         run: |
+          set -euo pipefail
           mkdir -p build/testkey
           keytool -genkeypair -keystore build/testkey/tessera-debug.jks \
             -alias tessera -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass tessera -keypass tessera \
+            -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS" \
             -dname "CN=TesseraOS test key, O=TesseraOS Project"
-        env:
-          TESSERA_KEYSTORE_PASSWORD: tessera
 
-      - name: Build overlays
+      - name: Зібрати оверлеї
         run: |
+          set -euo pipefail
           chmod +x build/scripts/*.sh
+          export PATH="${{ steps.sdk.outputs.build_tools }}:$PATH"
+          # Навмисне НЕ передаємо --framework-jar: публічний android.jar з SDK
+          # не містить прихованих ресурсів framework, тому скрипт сам
+          # зрізає styles.xml і будує «палітровий» варіант оверлею.
+          # Повний оверлей збирається лише всередині дерева AOSP.
           build/scripts/build-themes.sh
         env:
+          ANDROID_HOME: ${{ steps.sdk.outputs.sdk }}
           TESSERA_KEYSTORE: ${{ github.workspace }}/build/testkey/tessera-debug.jks
+          TESSERA_KEYSTORE_PASSWORD: ${{ env.KEYSTORE_PASS }}
 
       - name: Перевірити вміст APK (лише ресурси, без коду)
         run: |
-          for apk in overlay/out/*.apk; do
-            unzip -l "$apk" | grep -E "resources.arsc|AndroidManifest.xml" > /dev/null
-            unzip -l "$apk" | grep -qE "\.dex|lib/" && {
-              echo "$apk містить код — RRO має бути ресурсним"; exit 1; }
+          set -euo pipefail
+          shopt -s nullglob
+          apks=(overlay/out/*.apk)
+          if [[ ${#apks[@]} -eq 0 ]]; then
+            echo "жодного APK не зібрано" >&2; exit 1
+          fi
+          for apk in "${apks[@]}"; do
+            unzip -l "$apk" | grep -q 'resources.arsc' || {
+              echo "$apk не має resources.arsc"; exit 1; }
+            if unzip -l "$apk" | grep -qE '\.dex|lib/'; then
+              echo "$apk містить код — RRO має бути суто ресурсним"; exit 1
+            fi
             echo "ok: $apk"
           done
 
@@ -55,3 +107,4 @@ jobs:
           path: |
             overlay/out/*.apk
             overlay/out/sha256sum.txt
+          if-no-files-found: error
