@@ -1,0 +1,43 @@
+# Перевірка site/index.html. Публікацією займається GitHub Pages у режимі
+# «Deploy from a branch» (headless-збірки тут немає — файл самодостатній);
+# цей воркфлоу лише не пускає у main сторінку, яка не парситься.
+name: Перевірка сайту
+
+on:
+  push:
+    paths:
+      - 'site/**'
+      - '.github/workflows/check-site.yml'
+  pull_request:
+    paths:
+      - 'site/**'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Перевірити, що сайт валідний
+        run: |
+          set -euo pipefail
+          test -s site/index.html
+          node -e '
+          const fs = require("fs");
+          const vm = require("vm");
+          const h = fs.readFileSync("site/index.html", "utf8");
+          for (const m of h.matchAll(/<script>([\s\S]*?)<\/script>/g)) new vm.Script(m[1]);
+          const declared = new Set([...h.matchAll(/id="([A-Za-z][\w-]*)"/g)].map(x => x[1]));
+          const used = [...h.matchAll(/getElementById\(\s*[\x27"]([A-Za-z][\w-]*)[\x27"]\s*\)/g)]
+            .map(x => x[1]);
+          const missing = used.filter(id => !declared.has(id));
+          if (missing.length) { console.error("немає id в HTML:", missing.join(", ")); process.exit(1); }
+          // жодного зовнішнього запиту: сайт має працювати офлайн і без чужих CDN
+          const remote = [...h.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)]
+            .map(x => x[1]).filter(u => !u.startsWith("https://github.com/"));
+          if (remote.length) { console.error("зовнішні ресурси:", remote.join(", ")); process.exit(1); }
+          console.log("ok: скрипт парситься, " + used.length + " id знайдено, ресурси локальні");
+          '
