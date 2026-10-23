@@ -19,15 +19,16 @@ $(call inherit-product-if-exists, build/make/target/product/lineage_base.mk)
 # поряд з кожним пакетом; isStatic="true" в маніфесті означає, що окрема
 # активація через `cmd overlay enable` не потрібна.
 #
-# Семантика: інтерфейс = stock AOSP + Material You. Тематичні файли
-# (framework, settings) працюють лише як fallback, коли динамічна палітра
-# вимкнена; структурні файли (launcher3, systemui) міняють лише геометрію
-# — сітку, маску іконок, колонки Quick Settings — а не кольори.
+# Семантика: інтерфейс = stock AOSP + Material You.
+#  - framework — fallback-палітра, активна лише за dynamic_color=0;
+#  - iconshape  — круглі adaptive-іконки (config_useRoundIcon + config_icon_mask);
+#  - settings   — один підтверджений токен, решту дає Theme.DeviceDefault.
+#
+# Імена всіх трьох перевірені деревом бази: build/scripts/check-overlay-names.sh.
 PRODUCT_PACKAGES += \
     os.tessera.theme.framework \
-    os.tessera.theme.settings \
-    os.tessera.theme.launcher3 \
-    os.tessera.theme.systemui
+    os.tessera.theme.iconshape \
+    os.tessera.theme.settings
 
 # --- 3. Сервіси, замість власницьких бінарів -------------------------------
 # microG — вільна реалізація push/location/oauth. Профіль GApps користувача

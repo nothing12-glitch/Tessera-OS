@@ -12,52 +12,60 @@ Runtime Resource Overlay — пакет `.apk`, що не містить код�
 - `android:requiredSystemPropertyName` + `Value` — умова активності; саме так
   тематичний оверлей стає fallback, а не переможцем.
 
-TesseraOS постачає чотири static-оверлеї. Два перші — тематичні (кольори,
-форми), два інші — структурні (компоновка).
+TesseraOS постачає три static-оверлеї.
 
 | Пакет | Ціль | Що змінює |
 |---|---|---|
-| `os.tessera.theme.framework` | `android` | палітра framework, форми, кути, типографіка — **лише коли динамічна палітра вимкнена** |
-| `os.tessera.theme.settings` | `com.android.settings` | картки, відступи, стиль списків Settings |
-| `os.tessera.theme.launcher3` | `com.android.launcher3` | маска іконок, сітка 5×6, док, підписи |
-| `os.tessera.theme.systemui` | `com.android.systemui` | колонки Quick Settings, радіуси плиток |
+| `os.tessera.theme.framework` | `android` | fallback-палітра DeviceDefault — **лише коли динамічна палітра вимкнена** |
+| `os.tessera.theme.iconshape` | `android` | форма adaptive-іконок: `config_useRoundIcon`, `config_icon_mask` |
+| `os.tessera.theme.settings` | `com.android.settings` | `icon_accent` — колір акцентних іконок Налаштувань |
 
-Кольори в двох останніх рядках не перезаписуються: палітру їм дає система.
+Раніше тут було ще `os.tessera.theme.launcher3` і `os.tessera.theme.systemui`
+(сітка лаунчера й колонки Quick Settings). Вони прибрані: імена ресурсів,
+які вони підміняли, не існують у базі, тобто пакети були інертними.
+Деталі — §8 документа [UI.md](UI.md), повторити тест:
+`build/scripts/check-overlay-names.sh`.
 
-## Токени, які ми визначаємо
+## Токени, які ми задаємо — і які не можемо
 
-Material Design 3 оперує ролями, а не сирими кольорами. У framework-оверлеї
-ми задаємо:
+Material Design 3 оперує ролями, а не сирими кольорами. Але framework
+(пакет `android`) має далеко не всі ролі MD3. Перевірено по `attrs.xml` і
+`public-final.xml` бази:
 
-**Кольорові ролі (світла й темна тема)**
-
-| Роль | Призначення |
+| Роль MD3 | Чи можна задати framework-оверлеєм |
 |---|---|
-| `colorPrimary` / `onPrimary` / `primaryContainer` | головна дія, верхня панель |
-| `colorSecondaryContainer` | чіпи, фон перемикачів |
-| `colorSurface` + `surfaceVariant` | фон екрана і тоніровані панелі |
-| `colorOutline` / `outlineVariant` | роздільники, обводки полів |
-| `colorError` | деструктивні дії |
+| `colorPrimary`, `colorSecondary`, `colorAccent`, `colorError`, `colorBackground` | ✅ public-атрибути, задаємо |
+| `colorSurface`, `colorSurfaceVariant` | ⚠️ існують, але private — лише збірка всередині дерева AOSP |
+| `colorOnPrimary`, `onSurface`, `primaryContainer`, `secondaryContainer`, `surfaceContainer*`, `surfaceDim`, `outline`, `outlineVariant` | ❌ таких атрибутів у framework немає взагалі |
+
+Останній рядок — принциповий: повна тональна шкала й `on*`-пари живуть у
+бібліотеці Material (com.google.android.material) і в SettingsLib, тобто їх
+фарбує **застосунок**, а не система. Повноцінного theme-оверлею на всю
+MD3-палітру з framework не зробити: перекрашуємо сім ролей DeviceDefault,
+решту дають самі застосунки.
 
 MD3 у темній темі не інвертує світлу: поверхні йдуть по тональній шкалі
 (surface → surfaceContainerLowest…Highest), тому картка відрізняється від
-фона тоном, а не яскравістю.
+фона тоном, а не яскравістю. Цю шкалу у власних застосунках задаємо самі
+(Compose Material 3), у системній темі доступні лише `surface` і
+`surfaceVariant`.
 
 **Форми (геометрія)**
 
-| Елемент | Радіус |
-|---|---|
-| повноекранні панелі, нижні листи | 28 dp |
-| картки, діалоги | 12–16 dp |
-| кнопки, поля | 12 dp (пігулка — лише для дій типу FAB) |
-| іконки застосунків | коло; силует задає `config_icon_mask` у Launcher3 |
+| Елемент | Радіус | Де живе |
+|---|---|---|
+| панель Quick Settings | 28 dp | уже так у базі (`qs_corner_radius`) |
+| картки, діалоги | 12–16 dp | у застосунку (Material attrs) |
+| кнопки, поля | 12 dp | у застосунку |
+| іконки застосунків | коло | `config_useRoundIcon` + `config_icon_mask` у **framework** (`core/res/res/values/config.xml:4526`, `:4626`) — наш `iconshape`-оверлей |
 
 **Типографіка** — масштаб Roboto Flex: display/headline/title/body/label з
-навантаженням 400/500, міжрядковий крок за MD3.
+навантаженням 400/500, міжрядковий крок за MD3. Roboto Flex — частина AOSP;
+власних шрифтових замін не робимо.
 
 **Підняття (elevation)** — тіні в MD3 не «сірі», а tonal: на поверхні
 використовується `surfaceContainer` замість підняття з тінню, тінь лишається
-для FAB і меню.
+для FAB і меню. Це теж рівень застосунку, не framework-оверлею.
 
 ## Динамічна палітра (Material You)
 
@@ -68,7 +76,7 @@ Android 12+ уже вміє генерувати палітру від шпал�
   **не** активний (його умова — `persist.tessera.dynamic_color=0`);
 - якщо динамічну палітру вимкнуто — перший запуск, AOD, безпечний режим або
   свідомий вибір користувача — застосовується базова палітра Tessera
-  (див. [colors.xml](../overlay/themes/TesseraFrameworkTheme/res/values/colors.xml));
+  (див. [colors.xml](../overlay/themes/TesseraFrameworkTheme/res/values/local_palette.xml));
 - `theme_customization_overlay_packages` дозволяє перемикати акцент у
   *Налаштування → Шпалери й стиль*.
 
@@ -77,20 +85,29 @@ Android 12+ уже вміє генерувати палітру від шпал�
 
 ## Перевірка на зібраному образі
 
-Сама збірка валідується без пристрою. На локальному SDK (build-tools 36.0.0,
-android.jar 36) скрипт дає чотири підписані APK, і в кожному — рівно два
-файли, які мають значення:
+Збірка валідується без пристрою, у два кроки: спершу перевірка імен проти
+бази, потім — сам пакет. На локальному SDK (build-tools 36.0.0, android.jar 36)
+вийодять три підписані APK, і в кожному — рівно два файли, які мають значення:
 
 ```bash
+build/scripts/check-overlay-names.sh     # вихід 1 = є мертві імена
 build/scripts/build-themes.sh
 for apk in overlay/out/*.apk; do unzip -l "$apk"; done
 # → AndroidManifest.xml + resources.arsc, без .dex і без lib/
 ```
 
-`aapt2 dump resources overlay/out/TesseraLauncher3Theme.apk` показує, що
-значення потрапили в таблицю з правильними типами (`integer/num_columns = 5`,
-`string/config_icon_mask = M50,0C…`). Це підтверджує пакет, але не імена
-ресурсів цільового застосунку — далі.
+`aapt2 dump resources overlay/out/TesseraIconShapeTheme.apk` показує значення
+в таблиці з правильними типами:
+
+```
+bool/config_useRoundIcon   () true
+string/config_icon_mask    () "M50 0C77.6 0 100 22.4 100 50C…"
+```
+
+Це підтверджує пакет, але **не** те, що ці імена підміняють щось у цільовому
+пакеті — для цього й існує `check-overlay-names.sh`. Зверни увагу: `styles.xml`
+поза деревом AOSP скрипт видаляє (private-посилання framework не резолвляться
+через публічний `android.jar`), тож у CI перевіряється лише палітра й форми.
 
 На пристрої:
 
@@ -111,7 +128,7 @@ adb shell uiautomator dump /sdcard/ui.xml         # знімок структу�
 
 ```bash
 cd overlay/themes/TesseraFrameworkTheme
-python3 tools/derive_palette.py --seed "#3B5BDB" --out res/values/colors.xml
+python3 tools/derive_palette.py --seed "#3B5BDB" --out res/values/local_palette.xml
 ```
 
 Скрипт (у наступному milestone) робить tonal palette за MD3: тони 0–100 для

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Темний варіант fallback-палітри. Той самий набір із семи ролей, які
+  реально існують у framework (див. values/colors.xml).
+  Фон не чорний: #12131A, щоб поверхні розділялись тоном.
+-->
+<resources>
+    <color name="tesseraPrimary">#B6C4FF</color>
+    <color name="tesseraAccent">#B6C4FF</color>
+    <color name="tesseraSecondary">#C4C5E1</color>
+    <color name="tesseraSurface">#12131A</color>
+    <color name="tesseraSurfaceVariant">#45464F</color>
+    <color name="tesseraBackground">#12131A</color>
+    <color name="tesseraError">#FFB4AB</color>
+</resources>

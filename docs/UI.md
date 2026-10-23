@@ -19,7 +19,7 @@ Pixel, — але складений виключно з відкритих ме
 - за замовчуванням `dynamic_color` увімкнено;
 - framework-оверлей **не** перевизначає `system_accent1_*` — інакше він
   перебиває Monet і система стає пласкою;
-- значення з [colors.xml](../overlay/themes/TesseraFrameworkTheme/res/values/colors.xml)
+- значення з [colors.xml](../overlay/themes/TesseraFrameworkTheme/res/values/local_palette.xml)
   лишаються **fallback** для випадку без шпалер-джерела (перший запуск,
   AOD, безпечний режим).
 
@@ -30,18 +30,28 @@ Pixel, — але складений виключно з відкритих ме
 
 ## 2. Геометрія й компоновка
 
-| Елемент | Значення | Механізм |
-|---|---|---|
-| Маска іконок | коло | RRO `config_icon_mask` у Launcher3 |
-| Сітка домашнього екрана | 5 колонок × 6 рядків | RRO `num_columns` / `num_rows` / `cell_height` |
-| Док | 4 іконки, без підкладки | RRO `num_hotseat_icons` |
-| Пошук | пігулка внизу, поверх фону | видимість `search_widget` |
-| Рядок «дата + погода» | вгорі, без картки | віджет у Launcher3 |
-| Картки в Налаштуваннях | радіус 22 dp, групою | уже в AOSP Settings; тон через оверлей |
-| Контейнер іконки в списку | коло 26 dp | `settingslib` оверлей |
-| Quick Settings | 2 колонки, радіус 20 dp | RRO `qs_columns_portrait`, `quick_settings_tile_corner_radius` |
-| Повзунок яскравості | угорі, пігулка | стандарт QS |
-| Годинник на локі | великий, зліва вгорі | вбудований вибір стилю годинника |
+Стан кожного рядка — після тесту імен ресурсів проти дерев LineageOS 22.2
+(див. §8). «Вільно» = не потребує нашого коду взагалі.
+
+| Елемент | Значення | Як досягається | Стан |
+|---|---|---|---|
+| Маска іконок | коло | RRO на `android`: `config_useRoundIcon=true`, `config_icon_mask=<коло>` | ✅ зроблено, імена підтверджені (framework `config.xml:4526`, `:4626`) |
+| Сітка домашнього екрана | 5 колонок × 6 рядків | у базі це `<grid-option launcher:numColumns>` у `res/xml/device_profiles.xml`, **не** integer-ресурс | ⚠️ потребує заміни всього `device_profiles.xml` оверлеєм — окреме рішення |
+| Док | 4 іконки | те саме: `launcher:numHotseatIcons` у device_profiles.xml | ⚠️ як вище |
+| Пошук | пігулка внизу | уже так у стоці | ✅ вільно |
+| Рядок «дата + погода» | вгорі | віджет/компонент лаунчера | ⚠️ лише власний лаунчер (M2) |
+| Картки в Налаштуваннях | радіус 22 dp, групою | уже так у стоці (`Theme.DeviceDefault`) | ✅ вільно |
+| Контейнер іконки в списку | коло | уже так у стоці | ✅ вільно |
+| Quick Settings | 2 колонки | `<integer name="quick_settings_num_columns">2</integer>` — **у базі вже 2** | ✅ вільно, оверлей не потрібен |
+| Панель QS | радіус 28 dp | `<dimen name="qs_corner_radius">28dp</dimen>` — **у базі вже 28dp** | ✅ вільно |
+| Повзунок яскравості | угорі, пігулка | стандарт QS | ✅ вільно |
+| Годинник на локі | великий, зліва вгорі | вбудований вибір стилю годинника | ✅ вільно |
+
+Головний висновок з таблиці: майже вся «pixel-подібність» — це вже стан
+бази. Реально наша робота залишилася дві речі: круглі іконки (оверлей) і
+палітра fallback (оверлей). Сітка — єдиний пункт, де доведеться свідомо
+коштувати: або замінювати `device_profiles.xml`, або лишити вибір користувачеві
+в налаштуваннях лаунчера, як робить сток.
 
 ## 3. Типографіка
 
@@ -81,35 +91,57 @@ Roboto Flex, ваги 400 і 500 — як у стоку. Єдина вимога
 
 ## 6. Що з цього випливає для реалізації
 
-Порядок робіт, від найдешевшого до найдорожчого. Стан на момент цього документу:
+Порядок робіт, від найдешевшого до найдорожчого. Стан після тесту §8:
 
-1. ✅ **`TesseraFrameworkTheme` переведено на fallback-семантику** — RRO
-   з `requiredSystemPropertyName` / `Value="0"`, тож увімкнена динамічна
-   палітра його не бачить.
-2. ✅ **`TesseraLauncher3Theme`** — маска іконок, сітка 5×6, док на 4 іконки.
-   Збирається в CI тим самим шляхом, що й решта оверлеїв.
-3. ✅ **`TesseraSystemUITheme`** — 2 колонки Quick Settings, радіуси плиток.
-4. ⬜ **Власний лаунчер в `apps/launcher`** (Compose + Material 3) — потрібен
-   лише для того, чого не можна досягти оверлеєм: рядок «дата + погода»,
-   поведінка дока, жести.
-5. ⬜ **Екран блокування** — годинник і сповіщення: спершу перевірити, що вистачить
-   стокового вибору стилю; власний компонент потрібен, якщо хочемо інше
-   компонування.
-
-> Зверни увагу: пункти 1–3 реалізовані як зібрані, валідні RRO-пакети, але
-> **імена ресурсів ще не звірені з реальним checkout** LineageOS 22.2.
-> `num_columns`, `config_icon_mask`, `qs_columns_portrait` у різних релізах
-> називаються інакше. Перш ніж чекати ефекту на пристрої, перевір
-> `packages/apps/Launcher3/res/values/config.xml` і
-> `frameworks/base/packages/SystemUI/res/values/config.xml` у своєму дереві.
+1. ✅ **`TesseraFrameworkTheme` на fallback-семантиці** — RRO з
+   `requiredSystemPropertyName` / `Value="0"`, тож увімкнена динамічна палітра
+   його не бачить. Палітру скорочено до семи атрибутів, які framework справді
+   має; два з них private, тобто живі лише при збірці в дереві.
+2. ✅ **`TesseraIconShapeTheme`** — круглі adaptive-іконки через
+   `config_useRoundIcon` + `config_icon_mask` у пакеті `android`. Єдиний
+   підтверджений «pixel-подібний» гачок, який не є станом бази за замовчуванням.
+3. ✅ **`TesseraSettingsTheme`** — один підтверджений токен `icon_accent`;
+   решту кольору Settings бере з `Theme.DeviceDefault`, тобто з пункту 1.
+4. ⬜ **Сітка лаунчера 5×6** — у базі це `<grid-option launcher:numColumns>` у
+   `res/xml/device_profiles.xml`. Оверлей може лише замінити весь файл.
+   Рішення не ухвалено: міняємо файл чи лишаємо вибір користувачеві.
+5. ⬜ **Власний лаунчер в `apps/launcher`** (Compose + Material 3) — потрібен
+   для того, чого не можна досягти оверлеєм: рядок «дата + погода», поведінка
+   дока, жести.
+6. ⬜ **Екран блокування** — спершу перевірити, чи вистачить стокового вибору
+   стилю годинника.
 
 ## 7. Відкриті питання
 
-- ~~Чи лишаємо фіксований акцент?~~ Вирішено: лишаємо, але як fallback,
-  увімкнений лише за `persist.tessera.dynamic_color=0`.
-- Який рівень «схожості» влаштовує: компоновка й поведінка — так; іконки
-  застосунків — залежать від самого застосунку, ми їх не перефарбовуємо.
+- Чи лишаємо фіксований акцент: так, як fallback за `dynamic_color=0`.
+- Сітка 5×6: заміна `device_profiles.xml` оверлеєм чи стоковий вибір у
+  налаштуваннях лаунчера.
 - Чи робимо власний лаунчер зараз, чи спершу збираємо образ із оверлеями.
-- **Не перевірено на пристрої.** Чи справді `num_columns`, `cell_height`,
-  `qs_columns_portrait` у LineageOS 22.2 мають ці імена і ці типизації. Поки
-  не звірено з checkout, вважай пункти 2–3 гіпотезою, а не фактом.
+- Чи є сенс в `TesseraSettingsTheme` взагалі, якщо один токен — можливо,
+  простіше прибрати пакет і лишити лише framework-оверлей.
+
+## 8. Результат тесту імен ресурсів (2026-10-23)
+
+Тест: кожне ім'я, яке ми підмінюємо, порівняне з реальним деревом бази
+(гілка `lineage-22.2`, файли беруться з GitHub raw; повторюється командою
+`build/scripts/check-overlay-names.sh`).
+
+| Що перевіряли | Результат |
+|---|---|
+| 30 імен палітри framework (`colorPrimary`, `colorOnPrimary`, `colorSurfaceContainer*`, `colorOutline`…) | **мертві**: у `colors_device_defaults.xml` їх немає |
+| ті самі назви як **атрибути теми** (`attrs.xml`, `public-final.xml`) | живуть лише `colorPrimary`, `colorSecondary`, `colorError`, `colorBackground`, `colorAccent`, `windowLightStatusBar`; `colorSurface`/`colorSurfaceVariant` — private; решти (on\*, Container, Outline, surfaceContainer-шкала) **у framework не існує** |
+| 8 імен лаунчера (`num_columns`, `config_icon_mask`, `cell_height`, `icon_size`, `num_hotseat_icons`, …) | **усі мертві**. Сітка живе в `res/xml/device_profiles.xml` як атрибути `launcher:numColumns`/`numRows`/`numHotseatIcons`; через resource-values нею не керувати |
+| маска іконок | `config_icon_mask` і `config_useRoundIcon` існують, але в **framework** (`core/res/res/values/config.xml:4626` і `:4526`), а не в лаунчері |
+| 5 імен SystemUI (`qs_columns_portrait`, `quick_settings_tile_corner_radius`, `qs_tile_vertical_padding`, `qs_detail_corner_radius_top`) | **усі мертві**. Реальні: `quick_settings_num_columns` (=2), `quick_settings_max_rows` (=4), `qs_corner_radius` (=28dp), `qs_tile_height` (=80dp) |
+| 7 імен Settings (`settingslib_theme_*`, `ic_info_color`, `summary_card_bg_color`, `blue_grey_600`, `memory_info_description_color`) | **усі мертві** у `packages/apps/Settings/res/values/colors.xml` (227 імен). Живий, підтверджений: `icon_accent` |
+
+Головний висновок: чотири оверлеї зібралися б і підписалися без
+жодної помилки в CI — aapt2 з `--auto-add-overlay` не знає, що імена
+нікому не потрібні. Тест імен — єдиний, що це ловить; відтепер він у репо і
+працює з вихідним кодом 0/1.
+
+Ще не перевірено (потребує зібраного APK, а не з сирцевини): `settingslib_*`
+ресурси можуть з'являтися після статичного лінкування SettingsLib —
+`aapt2 dump resources Settings.apk`. І те, чи приватні framework-ресурси
+`config_icon_mask`/`config_useRoundIcon` дійсно перебиваються static RRO у
+виправленому image (це вже M1 на білд-боксі).

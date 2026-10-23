@@ -1,15 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Підмінуємо лише ті імена ресурсів, які справді існують у
-  packages/apps/Settings. Назви нижче — типові для Settings; перед збіркою
-  звір зі своїм checkout (grep -n name= packages/apps/Settings/res/values/colors.xml).
+  Палітра Налаштувань.
+
+  Перевірено (2026-10-23) проти packages/apps/Settings/res/values/colors.xml
+  гілки lineage-22.2 — там 227 імен. Лише одне з них має сенс як наш гачок:
+      res/values/colors.xml:29  <color name="icon_accent">#ffabffec</color>
+  Решту раніше перелічених тут імен (`settingslib_theme_*`, `ic_info_color`,
+  `memory_info_description_color`, `summary_card_bg_color`, `blue_grey_600`)
+  у базі немає — це були мертві рядки, їх прибрано.
+
+  Чому так мало: у сучасному Settings майже весь колір іде через
+  Theme.DeviceDefault, тобто через наш framework-оверлей. Окремий RRO на
+  Settings потрібен лише для того, що Settings тримає у власних ресурсах.
+
+  Можливий наступний крок (не зроблено): Settings лінкує SettingsLib
+  статично, тому `settingslib_*`-ресурси можуть існувати вже у зібраному
+  APK. Перевіряється так:
+    aapt2 dump resources Settings.apk | grep settingslib_
+  Саме за цим списком і треба додавати наступні рядки.
 -->
 <resources>
-    <color name="settingslib_theme_accent_custom_primary">#3350C8</color>
-    <color name="settingslib_theme_primary">#3350C8</color>
-    <color name="settingslib_theme_secondary">#5A5D75</color>
-    <color name="ic_info_color">#3350C8</color>
-    <color name="memory_info_description_color">#45464F</color>
-    <color name="summary_card_bg_color">#EFECF1</color>
-    <color name="blue_grey_600">#757680</color>
+    <color name="icon_accent">#3350C8</color>
 </resources>

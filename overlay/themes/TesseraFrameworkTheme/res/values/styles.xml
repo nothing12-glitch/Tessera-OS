@@ -1,55 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Оверлей стилів DeviceDefault. Саме тут значення палітри стають видимими:
-  RRO перевизначає items у існуючих style/theme ресурсах пакету `android`.
+  Оверлей стилів DeviceDefault: саме тут значення палітри стають видимими.
 
-  Темна тема не дублюється в цьому файлі: ті самі імена ресурсів
-  резолвляться через res/values-night/colors.xml, коли система в dark mode.
+  Список атрибутів перевірено проти бази LineageOS 22.2, а не «за чутками»:
+    core/res/res/values/public-final.xml  →  public attr
+      colorPrimary, colorSecondary, colorError, colorBackground,
+      colorAccent, windowLightStatusBar  — усі присутні
+    core/res/res/values/attrs.xml
+      colorSurface (рядок 1178)        — declared, але НЕ public
+      colorSurfaceVariant (1184)       — declared, але НЕ public
 
-  ПЕРЕД ЗБІРКОЮ звір список атрибутів зі своїм checkout:
-    frameworks/base/core/res/res/values/styles_device_defaults.xml
-    frameworks/base/core/res/res/values/attrs.xml
-  Атрибути surfaceContainer* та shapeAppearance* з'явилися у новіших
-  релізах; для старішої гілки прибрати відповідні items.
+  Наслідок: два останні items у кожному стилі збираються лише всередині
+  дерева AOSP, де aapt2 лінкує оверлей проти повних символів framework-res.
+  Поза деревом build/scripts/build-themes.sh видаляє styles.xml, тому
+  невалідований файл у CI просто не перевіряється — див. docs/THEME-MD3.md.
 -->
 <resources>
     <style name="Theme.DeviceDefault.Light"
            parent="@*android:style/Theme.DeviceDefault.Light">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorOnPrimary">@color/colorOnPrimary</item>
-        <item name="colorPrimaryContainer">@color/colorPrimaryContainer</item>
-        <item name="colorOnPrimaryContainer">@color/colorOnPrimaryContainer</item>
-        <item name="colorSecondary">@color/colorSecondary</item>
-        <item name="colorSecondaryContainer">@color/colorSecondaryContainer</item>
-        <item name="colorOnSecondaryContainer">@color/colorOnSecondaryContainer</item>
-        <item name="colorTertiaryContainer">@color/colorTertiaryContainer</item>
-        <item name="colorSurface">@color/colorSurface</item>
-        <item name="colorOnSurface">@color/colorOnSurface</item>
-        <item name="colorSurfaceVariant">@color/colorSurfaceVariant</item>
-        <item name="colorOnSurfaceVariant">@color/colorOnSurfaceVariant</item>
-        <item name="colorSurfaceContainerLow">@color/colorSurfaceContainerLow</item>
-        <item name="colorSurfaceContainerHigh">@color/colorSurfaceContainerHigh</item>
-        <item name="colorOutline">@color/colorOutline</item>
-        <item name="colorOutlineVariant">@color/colorOutlineVariant</item>
-        <item name="colorError">@color/colorError</item>
-        <item name="colorErrorContainer">@color/colorErrorContainer</item>
+        <item name="colorPrimary">@color/tesseraPrimary</item>
+        <item name="colorSecondary">@color/tesseraSecondary</item>
+        <item name="colorAccent">@color/tesseraAccent</item>
+        <item name="colorError">@color/tesseraError</item>
+        <item name="colorBackground">@color/tesseraBackground</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
+        <!-- Тільки для збірки в дереві: private-атрибути framework. -->
+        <item name="colorSurface">@color/tesseraSurface</item>
+        <item name="colorSurfaceVariant">@color/tesseraSurfaceVariant</item>
     </style>
 
     <style name="Theme.DeviceDefault" parent="@*android:style/Theme.DeviceDefault">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorSurface">@color/colorSurface</item>
-        <item name="colorSurfaceContainer">@color/colorSurfaceContainer</item>
-        <item name="colorOutline">@color/colorOutline</item>
+        <item name="colorPrimary">@color/tesseraPrimary</item>
+        <item name="colorSecondary">@color/tesseraSecondary</item>
+        <item name="colorAccent">@color/tesseraAccent</item>
+        <item name="colorError">@color/tesseraError</item>
+        <item name="colorBackground">@color/tesseraBackground</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
+        <item name="colorSurface">@color/tesseraSurface</item>
+        <item name="colorSurfaceVariant">@color/tesseraSurfaceVariant</item>
     </style>
 
     <!--
-      Геометрія MD3 задається окремими style-ресурсами shapeAppearance*,
-      а не dimen-атрибутами; власні назви не резолвляться у framework,
-      тому вони лишаються у dimens.xml як документація для дизайну і
-      застосовуються через наші власні застосунки (apps/, Compose M3).
+      Чого тут свідомо немає:
+      - colorOn*, *Container, colorSurfaceContainer*, colorOutline — таких
+        атрибутів у framework не існує взагалі; це атрибути бібліотеки
+        Material і SettingsLib, їх фарбує застосунок, не система;
+      - shapeAppearance* — теж style-ресурси Material, не dimen.
+      Геометрію дивись у overlay/themes/TesseraIconShapeTheme (config_icon_mask)
+      і в dimens.xml як документацію для власних застосунків.
     -->
 </resources>

@@ -60,6 +60,14 @@ jobs:
             echo "ok: $t -> $(command -v "$t")"
           done
 
+      # aapt2 з --auto-add-overlay не скаржиться на невідоме ім'я ресурсу,
+      # тому «зелений» APK нічого не гарантує. Цей крок ловить мертві імена
+      # до збірки — саме так ми знайшли 20+ інертних рядків у перших темах.
+      - name: Перевірити імена ресурсів проти бази
+        run: |
+          set -euo pipefail
+          build/scripts/check-overlay-names.sh
+
       - name: Згенерувати тестовий ключ
         run: |
           set -euo pipefail

@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 TesseraOS Project
+
+// Static RRO форми adaptive-іконок.
+// Збирати всередині дерева AOSP: m os.tessera.theme.iconshape
+// (обидва ресурси — private-символи framework, поза деревом їх не резолвиться).
+runtime_resource_overlay {
+    name: "os.tessera.theme.iconshape",
+    manifest: "AndroidManifest.xml",
+    resource_dirs: ["res"],
+    sdk_version: "current",
+    product_specific: true,
+    certificate: "platform",
+}

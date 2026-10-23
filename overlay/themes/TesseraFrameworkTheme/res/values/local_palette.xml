@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Палітра fallback-теми (світла), seed #3350C8.
+
+  Чому так мало ролей. Перевірено проти бази LineageOS 22.2
+  (frameworks/base/core/res/res/values/attrs.xml): з MD3-найменувань у
+  framework існують ЛИШЕ ці атрибути теми —
+      colorPrimary, colorSecondary, colorSurface, colorSurfaceVariant,
+      colorError, colorBackground, colorAccent
+  А `colorOnPrimary`, `*Container`, `colorOutline`, `colorSurfaceContainer*`
+  — це атрибути бібліотеки Material (com.google.android.material) і
+  SettingsLib, їх framework не має. Оверлей, який их оголошує, не збереться
+  в AOSP, а поза деревом мовчки проковтнеться й ні на що не вплине.
+  Отже: framework-тема фарбує лише ці сім ролей, решту дають застосунки.
+
+  Цей оверлей активний лише за persist.tessera.dynamic_color=0, тобто коли
+  користувач свідомо вимкнув динамічну палітру.
+-->
+<resources>
+    <color name="tesseraPrimary">#3350C8</color>
+    <color name="tesseraAccent">#3350C8</color>
+    <color name="tesseraSecondary">#5A5D75</color>
+    <color name="tesseraSurface">#FBF8FC</color>
+    <color name="tesseraSurfaceVariant">#E3E1EB</color>
+    <color name="tesseraBackground">#FBF8FC</color>
+    <color name="tesseraError">#BA1A1A</color>
+</resources>
