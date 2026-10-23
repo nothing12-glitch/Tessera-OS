@@ -6,9 +6,11 @@ on:
   push:
     paths:
       - "overlay/**"
+      - "overlay-packages/**"
+      - "build/scripts/**"
       - ".github/workflows/build-themes.yml"
   pull_request:
-    paths: ["overlay/**"]
+    paths: ["overlay/**", "overlay-packages/**", "build/scripts/**"]
   workflow_dispatch:
 
 permissions:
