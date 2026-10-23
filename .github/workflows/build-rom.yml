@@ -1,0 +1,68 @@
+# Повна збірка ROM потребує Linux-білдбоксу з 32 ГБ RAM, 400 ГБ і 6+ годин.
+# GitHub-hosted раннери (7 ГБ / 14 ГБ RAM, 6-годинний ліміт) цього не витягнуть,
+# тому workflow іде на self-hosted раннері з власними labels.
+#
+# Як підняти білд-бокс: docs/BUILD.md.
+name: build-rom
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "lunch-таргет"
+        default: "zirka_x86_64-userdebug"
+      branch:
+        description: "гілка бази LineageOS"
+        default: "lineage-22.2"
+  schedule:
+    - cron: "0 3 * * 6"   # щосуботи: нічна збірка
+
+concurrency:
+  group: rom-build-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  rom:
+    runs-on: [self-hosted, linux, x86_64, rom-build]
+    timeout-minutes: 720
+    env:
+      CCACHE_DIR: /cache/ccache
+      USE_CCACHE: 1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: zirka-os
+
+      - name: Синхронізація джерел (repo init/sync)
+        run: |
+          export PATH="$HOME/bin:$PATH"
+          mkdir -p "$GITHUB_WORKSPACE/rom"
+          cd "$GITHUB_WORKSPACE/rom"
+          if [[ -d .repo ]]; then
+            repo sync -c -j"$(nproc)" --fail-fast
+          else
+            repo init -u "$GITHUB_WORKSPACE/zirka-os/manifest/zirka.xml" -b "${{ inputs.branch || 'lineage-22.2' }}"
+            repo sync -c -j"$(nproc)" --fail-fast
+          fi
+          ln -sfn "$GITHUB_WORKSPACE/zirka-os" vendor/zirka/os
+
+      - name: Збірка
+        run: |
+          cd "$GITHUB_WORKSPACE/rom"
+          "$PWD/vendor/zirka/os/build/scripts/build-emulator.sh" \
+            "${{ inputs.target || 'zirka_x86_64-userdebug' }}"
+
+      - name: Артефакти образів
+        uses: actions/upload-artifact@v4
+        with:
+          name: zirka-x86_64-images
+          path: |
+            rom/out/target/product/*/system.img
+            rom/out/target/product/*/vendor.img
+            rom/out/target/product/*/userdata.img
+            rom/out/target/product/*/*.txt
+          retention-days: 14
+          if-no-files-found: error

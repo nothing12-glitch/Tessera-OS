@@ -1,0 +1,13 @@
+// Static RRO-пакет MD3 для Android framework.
+// Збирається Soong у дереві AOSP (`m os.zirka.theme.framework`).
+// Для швидкої CI-збірки без дерева — build/scripts/build-themes.sh (aapt2).
+runtime_resource_overlay {
+    name: "os.zirka.theme.framework",
+    manifest: "AndroidManifest.xml",
+    resource_dirs: ["res"],
+    sdk_version: "current",
+    product_specific: true,
+    // Static-оверлей не має коду і не потребує privapp-розширень.
+    // platform-підпис потрібен, бо оверлей іде в system-розділ.
+    certificate: "platform",
+}

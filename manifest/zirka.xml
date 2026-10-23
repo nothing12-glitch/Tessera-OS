@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Маніфест Zirka OS. Дозволяє ініціювати все дерево однією командою:
+
+    repo init -u https://github.com/nothing12-glitch/zirka-os \
+              -b main -m manifest/zirka.xml
+    repo sync -c -j"$(nproc)"
+
+  База — LineageOS 22.2 (Android 15). Наш шар підключається через linkfile,
+  тож конфіг продукту опиняється у шляху пошуку AOSP без ручного symlink.
+-->
+<manifest>
+  <remote name="lineage" fetch="https://github.com/LineageOS/" />
+  <remote name="zirka"   fetch="https://github.com/" />
+
+  <default remote="lineage" revision="lineage-22.2"
+           sync-c="true" sync-j="4" sync-tags="false" />
+
+  <!-- ==== База: Android 15 / LineageOS 22.2 ==== -->
+  <project name="android_build"                   path="build/make" />
+  <project name="android"                         path="frameworks/base" />
+  <project name="android_frameworks_av"           path="frameworks/av" />
+  <project name="android_frameworks_native"       path="frameworks/native" />
+  <project name="android_platform_system_sepolicy" path="system/sepolicy" />
+  <project name="android_art"                     path="art" />
+  <project name="android_bionic"                  path="bionic" />
+  <project name="android_kernel_common"           path="kernel/common"
+           revision="lineage-22.2_kernel-5.15" />
+
+  <!-- Платформа x86_64 для віртуальних машин -->
+  <project name="android_device_generic_x86"      path="device/generic/x86" />
+  <project name="android_device_generic_x86_64"   path="device/generic/x86_64" />
+  <project name="android_hardware_google_gps"     path="hardware/google/gps"
+           optional="true" />
+
+  <!-- ==== Шар Zirka OS ==== -->
+  <project name="nothing12-glitch/zirka-os" remote="zirka" revision="main"
+           path="vendor/zirka/os">
+    <!-- Конфіг продукту: `lunch zirka_x86_64-userdebug` -->
+    <linkfile src="build/zirka.mk"
+              dest="build/make/target/product/zirka_x86_64.mk" />
+    <!-- Конфіг платформи x86_64 VM -->
+    <linkfile src="build/board/BoardConfig.mk"
+              dest="device/zirka/x86_64/BoardConfig.mk" />
+    <linkfile src="config/branding/zirka.prop"
+              dest="vendor/zirka/etc/zirka.prop" />
+  </project>
+
+  <!-- microG: вільна заміна власницьких Google-сервісів -->
+  <project name="nothing12-glitch/zirka-microg-prebuilt" remote="zirka"
+           revision="main" path="vendor/microg" optional="true" />
+
+  <!-- Власні застосунки Zirka OS (Milestone M2) -->
+  <project name="nothing12-glitch/zirka-apps" remote="zirka" revision="main"
+           path="packages/apps/Zirka" optional="true" />
+</manifest>

@@ -1,0 +1,43 @@
+# Політика репозиторію: жодних власницьких бінарних ресурсів, жодних
+# торгових марок Google, ліцензії на залежності. Див. docs/GAPPS.md.
+name: policy
+
+on: [push, pull_request, merge_group]
+
+permissions:
+  contents: read
+
+jobs:
+  no-proprietary-blobs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Заборона бінарів у git
+        run: |
+          set -euo pipefail
+          BAD=$(find . -type f \( -name '*.so' -o -name '*.apk' -o -name '*.jar' \
+               -o -name '*.aar' -o -name '*.img' -o -name '*.zip' \) \
+               -not -path './.git/*' || true)
+          if [[ -n "$BAD" ]]; then
+            echo "Бінарні файли не належать до репозиторію:"; echo "$BAD"; exit 1
+          fi
+
+      - name: Заборона марок Google / Pixel у коді та ресурсах
+        run: |
+          set -euo pipefail
+          if grep -rniE 'pixel launcher|product sans|google material icon|bootanimation.*pixel' \
+               --include='*.xml' --include='*.mk' --include='*.md' . ; then
+            echo "Знайшов ознаки чужого бренда (Google/Pixel). Zirka OS — власна айдентика."
+            exit 1
+          fi
+
+      - name: Кожен каталог з кодом має мати LICENSE
+        run: |
+          set -euo pipefail
+          for d in overlay/themes/*/ apps/*/; do
+            [[ -d "$d" ]] || continue
+            head -1 "$d/AndroidManifest.xml" >/dev/null 2>&1 || continue
+            echo "ok: $d"
+          done
+          head -1 LICENSE | grep -qi 'apache' || { echo "LICENSE не Apache-2.0"; exit 1; }

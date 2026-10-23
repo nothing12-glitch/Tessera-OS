@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Темна тема за MD3: не інверсія світлої, а тональна шкала поверхонь.
+  Фон — не чорний (#12131A), щоб картки (surfaceContainer*) читались тоном.
+-->
+<resources>
+    <color name="colorPrimary">#B6C4FF</color>
+    <color name="colorOnPrimary">#00259C</color>
+    <color name="colorPrimaryContainer">#1A3492</color>
+    <color name="colorOnPrimaryContainer">#DCE1FF</color>
+
+    <color name="colorSecondary">#C4C5E1</color>
+    <color name="colorOnSecondary">#2C2F45</color>
+    <color name="colorSecondaryContainer">#42455C</color>
+    <color name="colorOnSecondaryContainer">#E0E1F9</color>
+    <color name="colorTertiary">#EBBDF1</color>
+    <color name="colorTertiaryContainer">#603A57</color>
+    <color name="colorOnTertiaryContainer">#FAD8EE</color>
+
+    <color name="colorSurface">#12131A</color>
+    <color name="colorOnSurface">#E4E2E9</color>
+    <color name="colorSurfaceVariant">#45464F</color>
+    <color name="colorOnSurfaceVariant">#C5C5D0</color>
+    <color name="colorSurfaceContainerLowest">#0C0D13</color>
+    <color name="colorSurfaceContainerLow">#1A1B22</color>
+    <color name="colorSurfaceContainer">#1E1F27</color>
+    <color name="colorSurfaceContainerHigh">#282A32</color>
+    <color name="colorSurfaceContainerHighest">#33353D</color>
+    <color name="colorSurfaceDim">#12131A</color>
+    <color name="colorBackground">#12131A</color>
+    <color name="colorOnBackground">#E4E2E9</color>
+
+    <color name="colorOutline">#8E8E9A</color>
+    <color name="colorOutlineVariant">#44464F</color>
+
+    <color name="colorError">#FFB4AB</color>
+    <color name="colorOnError">#690005</color>
+    <color name="colorErrorContainer">#93000A</color>
+    <color name="colorOnErrorContainer">#FFDAD6</color>
+</resources>

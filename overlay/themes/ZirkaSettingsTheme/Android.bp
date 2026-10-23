@@ -1,0 +1,8 @@
+runtime_resource_overlay {
+    name: "os.zirka.theme.settings",
+    manifest: "AndroidManifest.xml",
+    resource_dirs: ["res"],
+    sdk_version: "current",
+    product_specific: true,
+    certificate: "platform",
+}

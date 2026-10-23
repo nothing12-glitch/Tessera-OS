@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Static RRO: Material Design 3 для Android framework.
+  targetPackage="android" => змінюємо ресурси frameworks/base/core/res.
+
+  Зверни увагу: імена токенів (colorPrimary, *Container, shapeAppearance)
+  відрізняються між релізами Android. Перевір свій checkout у
+  frameworks/base/core/res/res/values/colors_device_defaults.xml та
+  styles_device_defaults.xml, перш ніж чекати ефекту.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="os.zirka.theme.framework"
+    android:versionCode="1502"
+    android:versionName="15.22.2.0">
+
+    <overlay
+        android:targetPackage="android"
+        android:priority="700"
+        android:isStatic="true"
+        android:requiredSystemPropertyName="persist.zirka.dynamic_color"
+        android:requiredSystemPropertyValue="1" />
+
+    <!-- Тема не містить коду і не має компонентів. -->
+    <application android:hasCode="false" android:label="Zirka MD3 (framework)" />
+</manifest>

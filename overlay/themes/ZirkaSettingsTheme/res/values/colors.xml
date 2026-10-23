@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Підмінуємо лише ті імена ресурсів, які справді існують у
+  packages/apps/Settings. Назви нижче — типові для Settings; перед збіркою
+  звір зі своїм checkout (grep -n name= packages/apps/Settings/res/values/colors.xml).
+-->
+<resources>
+    <color name="settingslib_theme_accent_custom_primary">#3350C8</color>
+    <color name="settingslib_theme_primary">#3350C8</color>
+    <color name="settingslib_theme_secondary">#5A5D75</color>
+    <color name="ic_info_color">#3350C8</color>
+    <color name="memory_info_description_color">#45464F</color>
+    <color name="summary_card_bg_color">#EFECF1</color>
+    <color name="blue_grey_600">#757680</color>
+</resources>

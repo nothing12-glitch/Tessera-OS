@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Геометрія Material Design 3 для власних застосунків Zirka OS (apps/) та
+  як єдине джерело правди для дизайнерських токенів. У framework-оверлеї ці
+  значення застосовуються лише там, де target-ресурс уже має type="dimen".
+-->
+<resources>
+    <!-- Radii -->
+    <!-- Повністю заокруглена (pill) форма: радіус = половині висоти кнопки -->
+    <dimen name="shapeRadiusFull">20dp</dimen>
+    <dimen name="shapeRadiusExtraLarge">28dp</dimen>
+    <dimen name="shapeRadiusLarge">16dp</dimen>
+    <dimen name="shapeRadiusMedium">12dp</dimen>
+    <dimen name="shapeRadiusSmall">8dp</dimen>
+    <dimen name="appIconShapeRadius">28dp</dimen>
+
+    <!-- 8-подібна сітка відступів -->
+    <dimen name="spacingNone">0dp</dimen>
+    <dimen name="spacingXxs">2dp</dimen>
+    <dimen name="spacingXs">4dp</dimen>
+    <dimen name="spacingSm">8dp</dimen>
+    <dimen name="spacingMd">16dp</dimen>
+    <dimen name="spacingLg">24dp</dimen>
+    <dimen name="spacingXl">32dp</dimen>
+
+    <!-- Елементи керування -->
+    <dimen name="buttonHeight">40dp</dimen>
+    <dimen name="fabSize">56dp</dimen>
+    <dimen name="listItemMinHeight">56dp</dimen>
+    <dimen name="topAppBarHeight">64dp</dimen>
+    <dimen name="bottomSheetTopRadius">28dp</dimen>
+    <dimen name="dividerThickness">1dp</dimen>
+    <dimen name="outlineThickness">1dp</dimen>
+</resources>

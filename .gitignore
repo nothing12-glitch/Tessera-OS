@@ -1,0 +1,27 @@
+# Білди й артефакти
+out/
+overlay/out/
+*.img
+*.apk
+*.apk.idsig
+*.zip
+*.tar.xz
+build/testkey/*.jks
+
+# Середовище збірки AOSP
+.repo/
+.ccache/
+*.log
+.vscode/
+.idea/
+
+# Ключі підпису — ніколи не в git
+*.pk8
+*.pem
+*.keystore
+secrets/
+.env
+
+# Метадані користувача GApps
+config/gapps/profile.json
+config/gapps/installed.json

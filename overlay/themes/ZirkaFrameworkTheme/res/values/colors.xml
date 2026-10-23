@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Палітра Material Design 3 (світла тема), seed #3350C8.
+  Ролі, а не сирі кольори: поверхні йдуть по тональній шкалі, картка
+  відрізняється від фону тоном, а не яскравістю.
+
+  Це власні значення оверлею; їх споживає styles.xml, який уже
+  перевизначає атрибути Theme.DeviceDefault у framework. RRO підмінює
+  лише існуючі ресурси цільового пакету, тому самі назви Zirka тут нічого
+  не змінюють — вони є джерелом значень для items у стилях.
+
+  Контраст перевірено: on* на своїй поверхні >= 4.5:1, outline >= 3:1.
+-->
+<resources>
+    <!-- Primary -->
+    <color name="colorPrimary">#3350C8</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorPrimaryContainer">#DCE1FF</color>
+    <color name="colorOnPrimaryContainer">#00164F</color>
+
+    <!-- Secondary / tertiary -->
+    <color name="colorSecondary">#5A5D75</color>
+    <color name="colorOnSecondary">#FFFFFF</color>
+    <color name="colorSecondaryContainer">#E0E1F9</color>
+    <color name="colorOnSecondaryContainer">#171A2F</color>
+    <color name="colorTertiary">#7A5370</color>
+    <color name="colorTertiaryContainer">#FAD8EE</color>
+    <color name="colorOnTertiaryContainer">#2F1029</color>
+
+    <!-- Поверхні (tonal scale, не чистий білий) -->
+    <color name="colorSurface">#FBF8FC</color>
+    <color name="colorOnSurface">#1B1B1F</color>
+    <color name="colorSurfaceVariant">#E3E1EB</color>
+    <color name="colorOnSurfaceVariant">#45464F</color>
+    <color name="colorSurfaceContainerLowest">#FFFFFF</color>
+    <color name="colorSurfaceContainerLow">#F5F2F7</color>
+    <color name="colorSurfaceContainer">#EFECF1</color>
+    <color name="colorSurfaceContainerHigh">#E9E6EB</color>
+    <color name="colorSurfaceContainerHighest">#E3E0E6</color>
+    <color name="colorSurfaceDim">#DBD8DE</color>
+    <color name="colorBackground">#FBF8FC</color>
+    <color name="colorOnBackground">#1B1B1F</color>
+
+    <!-- Роздільники й обводки -->
+    <color name="colorOutline">#757680</color>
+    <color name="colorOutlineVariant">#C5C5D0</color>
+
+    <!-- Статуси -->
+    <color name="colorError">#BA1A1A</color>
+    <color name="colorOnError">#FFFFFF</color>
+    <color name="colorErrorContainer">#FFDAD6</color>
+    <color name="colorOnErrorContainer">#410002</color>
+
+    <!-- Seed для динамічної палітри (Material You) -->
+    <color name="zirkaDynamicSeed">#3350C8</color>
+</resources>

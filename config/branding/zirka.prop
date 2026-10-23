@@ -1,0 +1,12 @@
+# Ідентичність образу. Комерційні властивості (brand/manufacturer) мають
+# відповідати Apache-2.0 §4 і не імітувати чужі торгові марки.
+ro.zirka.version=15.22.2.0
+ro.zirka.codename=vega
+ro.zirka.base=LineageOS-22.2
+ro.zirka.theme=material3
+ro.zirka.theme.seed=#3350C8
+ro.zirka.support.url=https://github.com/nothing12-glitch/zirka-os/issues
+ro.zirka.donate.url=
+persist.zirka.dynamic_color=1
+persist.zirka.telemetry=0
+ro.product.first_api_level=35

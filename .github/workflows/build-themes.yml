@@ -1,0 +1,57 @@
+# Збірка MD3-оверлеїв. Працює на безкоштовних GitHub-hosted раннерах,
+# бо aapt2 не потребує дерева AOSP.
+name: build-themes
+
+on:
+  push:
+    paths:
+      - "overlay/**"
+      - ".github/workflows/build-themes.yml"
+  pull_request:
+    paths: ["overlay/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rro:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Android SDK (build-tools + platform)
+        uses: android-actions/setup-android@v3
+
+      - name: Згенерувати тестовий ключ
+        run: |
+          mkdir -p build/testkey
+          keytool -genkeypair -keystore build/testkey/zirka-debug.jks \
+            -alias zirka -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass zirka -keypass zirka \
+            -dname "CN=Zirka OS test key, O=Zirka OS Project"
+        env:
+          ZIRKA_KEYSTORE_PASSWORD: zirka
+
+      - name: Build overlays
+        run: |
+          chmod +x build/scripts/*.sh
+          build/scripts/build-themes.sh
+        env:
+          ZIRKA_KEYSTORE: ${{ github.workspace }}/build/testkey/zirka-debug.jks
+
+      - name: Перевірити вміст APK (лише ресурси, без коду)
+        run: |
+          for apk in overlay/out/*.apk; do
+            unzip -l "$apk" | grep -E "resources.arsc|AndroidManifest.xml" > /dev/null
+            unzip -l "$apk" | grep -qE "\.dex|lib/" && {
+              echo "$apk містить код — RRO має бути ресурсним"; exit 1; }
+            echo "ok: $apk"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zirka-md3-overlays
+          path: |
+            overlay/out/*.apk
+            overlay/out/sha256sum.txt
