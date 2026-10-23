@@ -77,6 +77,23 @@ Android 12+ уже вміє генерувати палітру від шпал�
 
 ## Перевірка на зібраному образі
 
+Сама збірка валідується без пристрою. На локальному SDK (build-tools 36.0.0,
+android.jar 36) скрипт дає чотири підписані APK, і в кожному — рівно два
+файли, які мають значення:
+
+```bash
+build/scripts/build-themes.sh
+for apk in overlay/out/*.apk; do unzip -l "$apk"; done
+# → AndroidManifest.xml + resources.arsc, без .dex і без lib/
+```
+
+`aapt2 dump resources overlay/out/TesseraLauncher3Theme.apk` показує, що
+значення потрапили в таблицю з правильними типами (`integer/num_columns = 5`,
+`string/config_icon_mask = M50,0C…`). Це підтверджує пакет, але не імена
+ресурсів цільового застосунку — далі.
+
+На пристрої:
+
 ```bash
 adb shell getprop persist.tessera.dynamic_color   # 1 => тематичний оверлей вимкнений
 adb shell cmd overlay list | grep tessera         # [x] активні, [ ] неактивні

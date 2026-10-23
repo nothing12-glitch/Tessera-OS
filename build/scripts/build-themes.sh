@@ -5,6 +5,9 @@
 #   build/scripts/build-themes.sh
 #   build/scripts/build-themes.sh --framework-jar out/soong/framework-res/android.jar
 #
+# Windows (Git Bash): apksigner постачається як .bat і bash не знаходить його
+# без повного шляху, тому APKSIGNER="$SDK/build-tools/36.0.0/apksigner.bat".
+#
 # Обмеження, яке варто розуміти: res/values/styles.xml посилається на
 # приховані ресурси framework (@*android:style/Theme.DeviceDefault*).
 # Публічний android.jar з SDK їх не містить, тому без --framework-jar
@@ -64,7 +67,7 @@ build_theme() {
   rm -rf "$stage"; mkdir -p "$stage/res"
   cp -r "$dir/res/." "$stage/res/"
 
-  if [[ -z "$full" ]]; then
+  if [[ -z "$full" ]] && find "$stage/res" -name styles.xml -print -quit | grep -q .; then
     echo "[$name] styles.xml пропущено: private-посилання framework потребують AOSP android.jar"
     find "$stage/res" -name styles.xml -delete
   fi
