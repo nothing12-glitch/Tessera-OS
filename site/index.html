@@ -433,6 +433,37 @@ input[type="color"] { width: 44px; height: 34px; border: 1px solid var(--outline
 .frow .txt b { display: block; font-size: 11.5px; font-weight: 500; color: var(--ui-on) }
 .frow .txt small { font-size: 10px; color: var(--ui-on-variant) }
 
+/* годинник — AlarmsScreen: рядок на surfaceContainerLow з радіусом 28 dp,
+   час headlineMedium Light, підпис bodyMedium, «щодня/один раз» і
+   «наступний через» — bodySmall; перемикач і кошик праворуч.
+   Внизу NavigationBar з трьох вкладок і ExtendedFloatingActionButton. */
+.clock { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 0 10px }
+.clock-top { font-size: 13px; font-weight: 500; color: var(--ui-on); padding: 4px 4px 8px }
+.arow { display: flex; align-items: center; gap: 6px; background: var(--ui-surface-low);
+  border-radius: 20px; padding: 8px 4px 8px 12px; margin-bottom: 7px }
+.arow .col { flex: 1; min-width: 0 }
+.arow .t { font-size: 20px; font-weight: 300; line-height: 1.15; color: var(--ui-on) }
+.arow.off .t { color: var(--ui-on-variant) }
+.arow .l { font-size: 10.5px; color: var(--ui-on) }
+.arow .r { font-size: 9.5px; color: var(--ui-on-variant) }
+.arow .n { font-size: 9.5px; color: var(--ui-accent) }
+.arow.off .n { color: var(--ui-on-variant) }
+.sw { width: 20px; height: 12px; border-radius: 7px; flex: none; position: relative;
+  background: var(--ui-surface2); border: 1.5px solid var(--ui-on-variant) }
+.sw.on { background: var(--ui-accent); border-color: var(--ui-accent) }
+.sw i { position: absolute; top: 50%; left: 1px; width: 7px; height: 7px; margin-top: -3.5px;
+  border-radius: 50%; background: var(--ui-on-variant); transition: none }
+.sw.on i { width: 10px; height: 10px; margin-top: -5px; background: var(--ui-on-accent); transform: translateX(8px) }
+.trash { width: 14px; height: 14px; flex: none; color: var(--ui-on-variant) }
+.efab { align-self: center; margin-top: 2px; padding: 7px 13px; border-radius: 15px;
+  background: var(--ui-pri-cont); color: var(--ui-on-pri-cont); font-size: 10px; font-weight: 600 }
+.navbar { margin-top: auto; display: flex; justify-content: space-around; background: var(--ui-surface);
+  border-radius: 18px 18px 0 0; padding: 6px 0 8px }
+.ntab { display: grid; justify-items: center; gap: 3px; font-size: 8px; color: var(--ui-on-variant) }
+.ntab .pill { width: 17px; height: 7px; border-radius: 4px }
+.ntab.sel { color: var(--ui-on) }
+.ntab.sel .pill { background: var(--ui-sec-cont) }
+
 /* footer */
 footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant); color: var(--on-surface-variant); font-size: .92rem }
 .foot { display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap; align-items: center }
@@ -595,6 +626,7 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
               <button data-screen="settings" aria-pressed="false">Налаштування</button>
               <button data-screen="calculator" aria-pressed="false">Калькулятор</button>
               <button data-screen="files" aria-pressed="false">Файли</button>
+              <button data-screen="clock" aria-pressed="false">Годинник</button>
             </div>
           </div>
         </div>
@@ -1002,13 +1034,21 @@ function oklchToHex(L, C, Hdeg) {
   }
   return '#' + [r, g, bl].map(x => enc(x).toString(16).padStart(2, '0')).join('');
 }
+/* Тон Material — це L* у CIELAB, а не L в OKLCH. Подавати його напряму
+   некоректно: тона 6 стає майже чорною, і тоді surface, surfaceContainerLow
+   та фон на темній темі нерозрізнені. Спершу L* → Y, далі OKLab L = ∛Y. */
+function toneToOkl(Lstar) {
+  const y = Lstar > 8 ? Math.pow((Lstar + 16) / 116, 3) : Lstar / 903.2963;
+  return Math.cbrt(y) * 100;
+}
 function tonal(seed, scale) {
   const { c, h } = rgbToOklch(seed);
   return (L) => {
     let C = c * scale;
     if (L < 30) C *= 0.55 + L / 60;
     else if (L > 85) C *= 0.5 + (100 - L) / 40;
-    return oklchToHex(L, Math.min(C, 0.32), h) || oklchToHex(L, 0, h) || '#000000';
+    const Lo = toneToOkl(L);
+    return oklchToHex(Lo, Math.min(C, 0.32), h) || oklchToHex(Lo, 0, h) || '#000000';
   };
 }
 const SEEDS = [
@@ -1032,9 +1072,10 @@ function applyPalette() {
   const set = (k, v) => stage.style.setProperty(k, v);
   if (state.dark) {
     set('--ui-bg', n(6)); set('--ui-surface', n(12)); set('--ui-surface2', n(20));
+    set('--ui-surface-low', n(11));
     set('--ui-on', n(96)); set('--ui-on-variant', nv(84));
     set('--ui-accent', p(80)); set('--ui-on-accent', p(20));
-    set('--ui-sec-cont', s(80)); set('--ui-on-sec-cont', s(20));
+    set('--ui-sec-cont', s(30)); set('--ui-on-sec-cont', s(90));
     set('--ui-pri-cont', p(30)); set('--ui-on-pri-cont', p(90));
     set('--app-bg', p(40)); set('--app-fg', n(100));
     set('--ui-wall-base', n(4));
@@ -1042,6 +1083,7 @@ function applyPalette() {
       `radial-gradient(100% 70% at 85% 90%, ${nv(15)}, transparent 55%)`);
   } else {
     set('--ui-bg', n(98)); set('--ui-surface', n(94)); set('--ui-surface2', n(90));
+    set('--ui-surface-low', n(96));
     set('--ui-on', n(12)); set('--ui-on-variant', nv(35));
     set('--ui-accent', p(40)); set('--ui-on-accent', n(100));
     set('--ui-sec-cont', s(90)); set('--ui-on-sec-cont', s(20));
@@ -1201,7 +1243,35 @@ function filesMarkup() {
       <div class="flist">${rows}</div>
     </div>`;
 }
-const MARKUP = { lock: lockMarkup, launcher: launcherMarkup, drawer: drawerMarkup, qs: qsMarkup, settings: settingsMarkup, calculator: calculatorMarkup, files: filesMarkup };
+/* рядки — з AlarmsScreen: timeText / label / «щодня»-«один раз» /
+   «наступний через …», праворуч перемикач і видалення.
+   Вкладки — три, як у NavigationBar застосунку; обрана «Будильники». */
+const CLOCK_ALARMS = [
+  ['06:30', 'Підйом', true, 'наступний через 8 год 43 хв', true],
+  ['08:15', 'Парна', true, 'через 10 год 28 хв', true],
+  ['23:40', 'Ліки', false, 'вимкнено', false],
+];
+const CLOCK_TABS = ['Секундомір', 'Таймер', 'Будильники'];
+function clockMarkup() {
+  const rows = CLOCK_ALARMS.map(([t, label, daily, next, on]) =>
+    `<div class="arow${on ? '' : ' off'}"><div class="col">
+        <div class="t">${t}</div><div class="l">${label}</div>
+        <div class="r">${daily ? 'Щодня' : 'Один раз'}</div><div class="n">${next}</div>
+      </div>
+      <span class="sw${on ? ' on' : ''}"><i></i></span>
+      <svg class="trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round"><path d="M4 7h16M9 7V4.6h6V7M6.5 7l1 13h9l1-13"/></svg>
+    </div>`).join('');
+  const tabs = CLOCK_TABS.map((label, i) =>
+    `<div class="ntab${i === 2 ? ' sel' : ''}"><span class="pill"></span>${label}</div>`).join('');
+  return `<div class="clock">
+      <div class="clock-top">Годинник Tessera</div>
+      ${rows}
+      <div class="efab">+ Новий будильник</div>
+      <div class="navbar">${tabs}</div>
+    </div>`;
+}
+const MARKUP = { lock: lockMarkup, launcher: launcherMarkup, drawer: drawerMarkup, qs: qsMarkup, settings: settingsMarkup, calculator: calculatorMarkup, files: filesMarkup, clock: clockMarkup };
 
 function render() {
   document.getElementById('screenBody').innerHTML = MARKUP[state.screen]();
