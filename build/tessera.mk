@@ -19,8 +19,8 @@ $(call inherit-product-if-exists, build/make/target/product/lineage_base.mk)
 # поряд з кожним пакетом; isStatic="true" в маніфесті означає, що окрема
 # активація через `cmd overlay enable` не потрібна.
 #
-# Семантика: інтерфейс = stock AOSP + Material You.
-#  - framework — fallback-палітра, активна лише за dynamic_color=0;
+# Семантика: інтерфейс = stock AOSP + Material You, геометрія — як на Pixel.
+#  - framework  — fallback-палітра, активна лише за dynamic_color=0;
 #  - iconshape  — круглі adaptive-іконки (config_useRoundIcon + config_icon_mask);
 #  - settings   — один підтверджений токен, решту дає Theme.DeviceDefault.
 #
@@ -29,6 +29,17 @@ PRODUCT_PACKAGES += \
     os.tessera.theme.framework \
     os.tessera.theme.iconshape \
     os.tessera.theme.settings
+
+# Стартова сітка лаунчера 5x6 лежить окремим шаром: це не RRO, а build-time
+# overlay (змінні досі живі: build/make/core/product.mk:120-121). Причина
+# з'ясувалась на збірці — aapt2 линкує RRO проти власного пакету, тому файл
+# з атрибутами власного namespace (launcher:numColumns, launcher:canBeDefault)
+# не збирається як RRO взагалі:
+#   error: attribute deviceCategory (aka ...:deviceCategory) not found
+# Під час збірки застосунку в дереві ті атрибути належать пакету Trebuchet,
+# і підміна файлу працює. Не перевірено на зібраному образі — див. docs/UI.md §9
+# і docs/PIXEL-PARITY.md.
+DEVICE_PACKAGE_OVERLAYS += vendor/tessera/os/overlay-packages
 
 # --- 3. Сервіси, замість власницьких бінарів -------------------------------
 # microG — вільна реалізація push/location/oauth. Профіль GApps користувача

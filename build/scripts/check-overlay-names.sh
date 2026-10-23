@@ -68,8 +68,11 @@ for theme in "$ROOT"/overlay/themes/*/; do
   # Файли local_* — навмисно наші власні ресурси (дизайн-токени, папірці
   # палітри для styles.xml). Їх у базі немає і бути не може, тому далі
   # grep ідуть лише файли, які претендують на роль override.
+  # res/xml/* тут цілеспрямовано немає: такі ресурси перевіряються нижче
+  # окремо — як файли, а не як імена (launcher:name="..." там не our name=).
   names=$(
-    find "$theme/res" -name '*.xml' -not -name 'local_*' -not -name 'public.xml' \
+    find "$theme/res" -path '*/values*' -name '*.xml' \
+      -not -name 'local_*' -not -name 'public.xml' \
       -exec grep -hoP '<(color|dimen|integer|bool|string|item)[^>]*\bname="\K[^"]+' {} + 2>/dev/null |
     grep -vE '^(Theme\.|.*shapeAppearance)' |
     sed 's/^android://' | sort -u
@@ -98,18 +101,84 @@ for theme in "$ROOT"/overlay/themes/*/; do
     fi
   done
 
-  if [[ -n "$dead" ]]; then
+  # Ресурси поза values/ (xml/, layout/, drawable/) підміняються ЦІЛИМИ
+  # файлами. Тут немає імен для grep — треба лише, щоб такий самий файл
+  # існував у цільовому пакеті з тим самим шляхом.
+  dead_xml=""
+  xml_n=0
+  for rel in $(cd "$theme/res" 2>/dev/null && find . -mindepth 2 -name '*.xml' \
+                 -not -path './values*' | sed 's|^\./||' | sort); do
+    xml_n=$((xml_n + 1))
+    case "$target" in
+      android)               url="$FB/core/res/res/$rel" ;;
+      com.android.settings)  url="$SETTINGS/res/$rel" ;;
+      com.android.launcher3) url="$LAUNCHER/res/$rel" ;;
+      com.android.systemui)  url="$FB/$rel" ;;
+    esac
+    code=$(curl -s -o /dev/null -w '%{http_code}' "$url")
+    [[ "$code" == "200" ]] || dead_xml="$dead_xml $rel (HTTP $code)"
+    checked=$((checked + 1))
+  done
+
+  if [[ -n "$dead_xml" ]]; then
+    echo "[$name → $target] НЕМАЄ ФАЙЛІВ У БАЗІ:$dead_xml"
+    echo "     останній перевірений шлях: $url"
+    missing=1
+  elif [[ -n "$dead" ]]; then
     echo "[$name → $target] МЕРТВІ ІМЕНА:$dead"
     missing=1
   elif [[ -n "$priv" ]]; then
     echo "[$name → $target] ok, приватні (підміняються лише в дереві AOSP):$priv"
   else
-    echo "[$name → $target] ok ($(printf '%s\n' $names | wc -l) імен знайдено в базі)"
+    n_names=$(printf '%s\n' $names | grep -c . || true)
+    echo "[$name → $target] ok ($n_names імен + $xml_n файлів поза values/)" \
+         "підтверджено базою"
   fi
 done
 
 echo "---"
 echo "Перевірено ресурсів: $checked, гілка бази: $BASE_BRANCH"
+
+# Build-time оверлеї (DEVICE_PACKAGE_OVERLAYS) — це не імена, а цілі файли,
+# які підміняють файли застосунку під час його збірки. Для них єдиний
+# змістовний тест: такий самий шлях має існувати в базі, і наша правка має
+# бути на місці.
+# Кладка: overlay-packages/<шлях у цільовому репо>/… Наприклад
+#   overlay-packages/packages/apps/Trebuchet/res/xml/device_profiles.xml
+# віддає підміну для
+#   android_packages_apps_Trebuchet/res/xml/device_profiles.xml
+BUILD_OVERLAY_ROOT="$ROOT/overlay-packages"
+if [[ -d "$BUILD_OVERLAY_ROOT" ]]; then
+  while IFS= read -r file; do
+    rel="${file#"$BUILD_OVERLAY_ROOT"/}"
+    base=""; path_in_base=""
+    case "$rel" in
+      packages/apps/Trebuchet/*) base="$LAUNCHER"; path_in_base="${rel#packages/apps/Trebuchet/}" ;;
+      packages/apps/Settings/*)  base="$SETTINGS"; path_in_base="${rel#packages/apps/Settings/}" ;;
+      frameworks/base/*)         base="$FB";       path_in_base="${rel#frameworks/base/}" ;;
+      *) echo "[build-overlay] $rel — невідома цільова теку, додай мапу"
+         missing=1; continue ;;
+    esac
+    code=$(curl -s -o /dev/null -w '%{http_code}' "$base/$path_in_base")
+    if [[ "$code" == "200" ]]; then
+      echo "[build-overlay] $rel → є в базі"
+    else
+      echo "[build-overlay] $rel → Немає в базі (HTTP $code)"
+      missing=1
+    fi
+    # інваріант нашої правки сітки: рівно один дефолтний профіль
+    if [[ "$rel" == *device_profiles.xml ]]; then
+      n=$(grep -cP '^\s*launcher:canBeDefault="true"' "$file")
+      if [[ "$n" == "1" ]]; then
+        echo "[build-overlay] canBeDefault=true: рівно 1 профіль"
+      else
+        echo "[build-overlay] canBeDefault=true: $n профілів — має бути 1"
+        missing=1
+      fi
+    fi
+  done < <(find "$BUILD_OVERLAY_ROOT" -type f | sort)
+fi
+
 if [[ $missing -eq 1 ]]; then
   echo "Є імена, яких немає в цільовому пакеті. Такий оверлей збереться, але"
   echo "нічого не змінить у системі. Виправ імена або прибери рядки."

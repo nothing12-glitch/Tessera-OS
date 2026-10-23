@@ -58,6 +58,7 @@ TesseraOS на цьому етапі його не обирає, бо корис
 | `build/board/BoardConfig.mk` | параметри платформи x86_64 VM |
 | `build/scripts/` | bootstrap, збірка, пакування GApps, запуск AVD |
 | `overlay/themes/` | RRO-пакети MD3 |
+| `overlay-packages/` | build-time підміни файлів застосунків (сітка лаунчера 5×6) — не RRO, бо `res/xml` з атрибутами чужого namespace не лінкується оверлеєм |
 | `config/branding/` | `tessera.prop`: name, version, шпалери, шрифти |
 | `config/gapps/` | профілі встановлення GApps/microG |
 | `.github/workflows/` | CI: оверлеї (hosted), ROM (self-hosted), релізи |

@@ -28,7 +28,7 @@ jobs:
           set -euo pipefail
           # Скануємо лише те, що збирається в image (ресурси, конфіги, маніфест).
           # Документація навмисне називає заборонені речі — її чіпати не треба.
-          SCOPE="overlay build config manifest apps"
+          SCOPE="overlay overlay-packages build config manifest apps"
           HIT=$(grep -rniE 'pixel launcher|product sans|google material icon|bootanimation' \
                  $SCOPE 2>/dev/null || true)
           if [[ -n "$HIT" ]]; then
