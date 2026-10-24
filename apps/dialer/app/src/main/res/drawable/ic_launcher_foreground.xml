@@ -3,8 +3,11 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <group android:pivotX="54" android:pivotY="54" android:scaleX="2.9" android:scaleY="2.9"
-        android:translateX="16" android:translateY="16">
+    <!-- Масштаб 2.9 від сітки 24 dp. Опорна точка — центр самої сітки, а не
+         полотна 108 dp: з pivot 54/54 гліф повністю виходив за краї.
+         Зміщення 40.3/47.8 центрує слухавку (сітка лежить у 3.8..21.4 × 2.2..17.8). -->
+    <group android:pivotX="12" android:pivotY="12" android:scaleX="2.9" android:scaleY="2.9"
+        android:translateX="40.3" android:translateY="47.8">
     <path android:fillColor="@color/dialer_glyph" android:pathData="M6.6,3.6 C6.6,2.7 7.4,2.2 8.2,2.6 L10.4,4 C11.1,4.4 11.2,5.3 10.8,6 L9.6,8 C9.3,8.5 9.4,9.1 9.8,9.6 C11.2,11.4 13.2,13.4 15,14.8 C15.5,15.2 16.1,15.1 16.6,14.8 L18.4,13.4 C19,12.9 19.9,13.1 20.3,13.8 L21.4,15.8 C21.8,16.5 21.3,17.4 20.5,17.5 C18.7,17.8 16.6,17.4 14.2,16.2 C9.8,14 5.6,9.6 4.2,5.2 C3.8,4 4.4,2.7 5.6,3 C6.2,3.1 6.6,3.2 6.6,3.6 Z" />
     </group>
 </vector>
