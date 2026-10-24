@@ -26,11 +26,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Дешево й до збірки: чи кожен застосунок з реєстру справді в образі,
+      # і чи Windows-інсталятор не відстав від того ж реєстру.
+      - name: Перевірити інтеграцію в ROM
+        run: bash build/scripts/check-app-integration.sh
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
           cache: gradle
+
+      # Той самий крок, що й у build-apps.yml: без platforms/android-35
+      # gradle просто не дійде до збірки, а пакунок має збиратися з першого
+      # запуску, а не з третього.
+      - name: Перевірити Android SDK на раннері
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          [[ -d "$SDK" ]] || { echo "немає Android SDK за $SDK" >&2; exit 1; }
+          if ! ls -d "$SDK"/platforms/android-35 >/dev/null 2>&1; then
+            echo "на раннері немає platforms/android-35 — ставимо через sdkmanager" >&2
+            "$SDK"/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null 2>&1 || true
+            "$SDK"/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          fi
+          ls -1 "$SDK/platforms"
 
       - name: Встановити Gradle ${{ env.GRADLE_VERSION }}
         run: |
@@ -50,7 +70,8 @@ jobs:
           while IFS='|' read -r dir module pkg artifact extra; do
             [[ -z "$dir" || "$dir" =~ ^[[:space:]]*# ]] && continue
             echo "::group::$dir"
-            ( cd "apps/$dir" && gradle --no-daemon --console=plain :app:testDebugUnitTest :app:assembleDebug )
+            ( cd "apps/$dir" && gradle --no-daemon --console=plain \
+                -Pandroid.sdk.channel=0 :app:testDebugUnitTest :app:assembleDebug )
             src="apps/$dir/app/build/outputs/apk/debug/app-debug.apk"
             [[ -f "$src" ]] || { echo "немає $src" >&2; exit 1; }
             mkdir -p /tmp/apks
