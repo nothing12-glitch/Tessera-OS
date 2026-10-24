@@ -66,34 +66,60 @@
 
 ### Шлях B. WSL2 на Windows
 
-Два факту, які варто знати до старту. Перший: WSL ставить лише адміністратор, і
-після ввімкнення `VirtualMachinePlatform` обов'язкове перезавантаження. Другий:
-VHDX дистрибутива живе на C:, тому все місце дерева й `out/` від'їдається від
-того самого тому — на 215 ГБ вільного lineage-22.2 не влітає.
-
-Перевірено на ASUS TUF Gaming A16 (FA607NU): 15,3 ГБ RAM, 215 ГБ вільно на C:.
-Після видалення двох найбільших ігор Steam вільних стало 314 ГБ — це нижче за
-400+ ГБ із вікі LineageOS, тому sync робимо з `REPO_DEPTH=1` (без повної історії
-git, дерево приблизно вдвічі менший).
+Три речі варто знати до старту. Перша: WSL ставить лише адміністратор, і після
+ввімкнення `VirtualMachinePlatform` обов'язкове перезавантаження. Друга: VHDX
+дистрибутива живе на C:, тому весь обсяг дерева й `out/` від'їдається від того
+самого тому. Третя, неочевидна: на цьому ноутбуці рядка `hypervisorlaunchtype`
+у завантажувачі взагалі не було, тож гіпервізор не стартував і `wsl --import`
+падав з `HCS_E_SERVICE_NOT_AVAILABLE` — попри увімкнені функції Windows і SVM
+у BIOS. Виправляється однією командою (адміністраторська сесія, потім
+перезавантаження):
 
 ```powershell
-# з адміністраторською сесією (або через вікно UAC)
-wsl --install --web-download -d Ubuntu-24.04 --no-launch
-# → перезавантаження Windows
+bcdedit /set "{current}" hypervisorlaunchtype Auto
 ```
 
-Після перезавантаження — один скрипт замість ручного редагування двох конфігів:
+Перевірено на ASUS TUF Gaming A16 (FA607NU): 15,3 ГБ RAM. Після видалення двох
+найбільших ігор Steam вільно на C: стало 317 ГБ — це нижче за 400+ ГБ із вікі
+LineageOS, тому sync робимо з `REPO_DEPTH=1` (без повної історії git, дерево
+приблизно вдвічі менше).
+
+#### Чому не `wsl --install`
+
+Типова команда качає пакунок із `dl.delivery.mp.microsoft.com`, а той на цьому
+з'єднанні не відповідає (TLS-помилка, у `curl` — exit 60): установка зависає без
+жодного завантаженого байта. Працюючий обхід — два файли з адрес, які віддають
+трафік:
+
+- пакунок WSL 3.0.3 (MSI): `https://github.com/microsoft/WSL/releases/download/3.0.3/wsl.3.0.3.0.x64.msi` — 367 МБ;
+- кореневий образ Ubuntu 24.04 для WSL: `https://cloud-images.ubuntu.com/wsl/releases/noble/current/ubuntu-noble-wsl-amd64-24.04lts.rootfs.tar.gz` — 356 МБ.
+
+GitHub на цьому каналі дає ~0,2 МБ/с на одне з'єднання і ~1,1 МБ/с на чотири,
+тому MSI качають діапазонами, а не одним потоком. Перед установкою перевіряють
+підпис MSI (`Get-AuthenticodeSignature` має дати `Valid` від «Microsoft
+Corporation») і суму образу (має збігатися з `SHA256SUMS` поруч з ним).
+
+```powershell
+# адміністраторська сесія: гіпервізор -> підпис -> msiexec /i -> wsl --import
+powershell -File build\scripts\install-wsl-offline.ps1 -Msi wsl.3.0.3.0.x64.msi -Rootfs ubuntu-rootfs.tar.gz
+```
+
+#### Після встановлення
+
+Один скрипт замість ручного редагування двох конфігів:
 
 ```powershell
 powershell -File build\scripts\setup-wsl.ps1
 ```
 
-Він пише `C:\Users\<you>\.wslconfig` (RAM мінус 4 ГБ для Windows, майже всі
-ядра, своп такого ж розміру, `nestedVirtualization=true` — без нього всередині
-WSL не буде `/dev/kvm` і емулятор не запуститься) і далі викликає
-`build/scripts/wsl-provision.sh` від root. Той створює користувача `tessera`,
-кладе `/etc/wsl.conf` (найголовніше там — `appendWindowsPath = false`: інакше
-`PATH` з Windows підсовує чужі `java` і `git` у Linux-оболонку) і клонує
+Він спершу перевіряє, чи гіпервізор запущений (`HypervisorPresent`), інакше
+нагадує про `bcdedit` вище — краще дізнатися це до першої збірки, ніж через
+двадцять годин качання. Далі пише `C:\Users\<you>\.wslconfig` (RAM мінус 4 ГБ
+для Windows, майже всі ядра, своп такого ж розміру, `nestedVirtualization=true`
+— без нього всередині WSL не буде `/dev/kvm` і емулятор не запуститься) і
+викликає `build/scripts/wsl-provision.sh` від root. Той створює користувача
+`tessera`, кладе `/etc/wsl.conf` (найголовніше там — `appendWindowsPath = false`:
+інакше `PATH` з Windows підсовує чужі `java` і `git` у Linux-оболонку) і клонує
 репозиторій у `~/tessera-os`, тобто в ext4.
 
 Останнє принципово: на `/mnt/c` файлова система не розрізняє регістр літер і не

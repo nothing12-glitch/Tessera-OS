@@ -142,13 +142,26 @@ fi
 # 11. Windows PowerShell 5.1 читає .ps1 без BOM як ANSI: кирилиця збиває
 #     лапки всередині рядків і скрипт не розбирається взагалі. BOM — єдине,
 #     що рятує, а редактори зрізають його мовчки.
-if [[ -f "$PS1" ]]; then
-  if [[ "$(head -c 3 "$PS1" | od -An -tx1 | tr -d ' \n')" == "efbbbf" ]]; then
-    ok "install-on-vm.ps1 починається з UTF-8 BOM (PowerShell 5.1 розбере кирилицю)"
+for ps in "$ROOT"/build/scripts/*.ps1; do
+  [[ -f "$ps" ]] || continue
+  name="$(basename "$ps")"
+  if [[ "$(head -c 3 "$ps" | od -An -tx1 | tr -d ' \n')" == "efbbbf" ]]; then
+    ok "$name: UTF-8 BOM на місці (PowerShell 5.1 розбере кирилицю)"
   else
-    fail "install-on-vm.ps1 не має UTF-8 BOM — Windows PowerShell 5.1 зіпсує український текст і зламає парсер"
+    fail "$name не має UTF-8 BOM — Windows PowerShell 5.1 зіпсує український текст і зламає парсер"
   fi
-fi
+  # "$var:" усередині рядка PowerShell читає як префікс диска і не компілює
+  # файл узагалі; таку помилку видно лише під час першого запуску на Windows.
+  # $env:, $global: та інші подібні префікси — навпаки, законні.
+  badvar="$(grep -o '\$[A-Za-z_][A-Za-z0-9_]*:' "$ps" 2>/dev/null |
+            grep -v -E '^\$(env|global|script|local|private|using|workflow|variable):' |
+            sort -u | tr '\n' ' ')"
+  if [[ -n "$badvar" ]]; then
+    fail "$name: пастка $badvar — PowerShell читає таке як назву диска і не компілює файл; правильний запис: \${allCPU}:"
+  else
+    ok "$name: немає пасток \$var: у рядках"
+  fi
+done
 
 if [[ "$missing" != 0 ]]; then
   echo "[app-integration] Провалено. Див. apps/<застосунок>/Android.bp, build/scripts/apps.list і README застосунків." >&2

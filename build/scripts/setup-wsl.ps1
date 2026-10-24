@@ -22,6 +22,21 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Гіпервізор має бути запущений: без нього імпорт дистрибутива й будь-який
+# запуск WSL падають з HCS_E_SERVICE_NOT_AVAILABLE. На цьому ноутбуці рядка
+# hypervisorlaunchtype у BCD взагалі не було, тому перевірка іде першою —
+# до запису .wslconfig і до будь-якого качання.
+if (-not (Get-CimInstance Win32_ComputerSystem).HypervisorPresent) {
+    Write-Error @'
+гіпервізор Windows не запущений (HypervisorPresent = False).
+Лікується однією командою в адміністраторській сесії:
+
+    bcdedit /set "{current}" hypervisorlaunchtype Auto
+
+і перезавантаженням. Докладніше: docs/BUILD.md, розділ «Шлях B».
+'@
+}
+
 $cs = Get-CimInstance Win32_ComputerSystem
 $totalGB = [math]::Round($cs.TotalPhysicalMemory / 1GB)
 $allCPU = $cs.NumberOfLogicalProcessors
@@ -34,7 +49,7 @@ if ($Processors -le 0) { $Processors = [math]::Max(4, $allCPU - 2) }
 if ($SwapGB -le 0) { $SwapGB = $MemoryGB }
 
 "RAM всього $totalGB ГБ: WSL бере $MemoryGB ГБ, Windows — $($totalGB - $MemoryGB) ГБ"
-"CPU логічних $allCPU: WSL бере $Processors"
+"CPU логічних ${allCPU}: WSL бере $Processors"
 
 $freeGB = [math]::Round((Get-CimInstance Win32_LogicalDisk -Filter 'DeviceID="C:"').FreeSpace / 1GB, 1)
 "вільно на C:: $freeGB ГБ"
@@ -62,7 +77,7 @@ localhostForwarding=true
 sparseVhd=true
 "@ | Set-Content -Path $cfgPath -Encoding ascii
 
-"написано $cfgPath:"
+"написано ${cfgPath}:"
 Get-Content $cfgPath | ForEach-Object { "  $_" }
 
 $installed = (wsl.exe --list --quiet 2>&1 | Out-String)
