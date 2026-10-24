@@ -44,3 +44,7 @@ secrets/
 # Метадані користувача GApps
 config/gapps/profile.json
 config/gapps/installed.json
+
+# Установчі пакунки для VM (make-vm-bundle.sh): бінарники не в git,
+# їх віддає GitHub Release.
+dist/

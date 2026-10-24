@@ -21,7 +21,7 @@ Material Design 3, поверх стабільної бази LineageOS 22.x (An
 | Ядро, HAL, системні сервіси | LineageOS 22.x (Android 15) |
 | Material Design 3 | RRO-оверлеї в `overlay/themes/` |
 | Геометрія (сітка лаунчера 5×6, док) | build-time підміни файлів у `overlay-packages/` |
-| Застосунки | `apps/launcher` (сітка 5×6, док 5, шухляда з пошуком), `apps/calculator` (точна арифметика на `BigDecimal`), `apps/files` (робота з деревом через SAF), `apps/clock` (три вкладки: будильники, секундомір, таймер) і `apps/dialer` (набір номера, `InCallService` з вікном розмови, журнал) — усі Compose + MD3 з Monet. Реєстр модулів: `build/scripts/apps.list` |
+| Застосунки | `apps/launcher` (сітка 5×6, док 5, шухляда з пошуком), `apps/calculator` (точна арифметика на `BigDecimal`), `apps/files` (робота з деревом через SAF), `apps/clock` (три вкладки: будильники, секундомір, таймер), `apps/dialer` (набір номера, `InCallService` з вікном розмови, журнал) і `apps/messaging` (SMS на `ROLE_SMS`: розмови, пошук, набір із `smsto:`, статус надсилання) — усі Compose + MD3 з Monet. Реєстр модулів: `build/scripts/apps.list` |
 | Google-сервіси | не входить у образ; профіль встановлення в `config/gapps/` |
 | Ціль першого релізу | x86_64 Android VM (AVD / qemu) |
 | Збірка | `build/` + GitHub Actions |
@@ -49,6 +49,16 @@ build/scripts/run-avd.sh
 ```
 
 Деталі: [docs/BUILD.md](docs/BUILD.md), [docs/EMULATOR.md](docs/EMULATOR.md).
+
+### Якщо лінукс-білдбоксу немає
+
+Повний образ збирається тільки на Linux. Все решти достатньо для того, щоб
+**побачити TesseraOS у своїй віртуальній машині просто зараз**: пакунок наших
+застосунків, теми й ролей поверх наявного образу Android 13+ ставиться одним
+скриптом — `build/scripts/install-on-vm.sh` (Linux/macOS/Git Bash) або
+`install-on-vm.ps1` (Windows). Три шляхи, їхні вимоги й чесні обмеження
+(чому це ще не ISO для VirtualBox) — в
+[docs/VM-INSTALL.md](docs/VM-INSTALL.md).
 
 ## Google Play (GApps)
 

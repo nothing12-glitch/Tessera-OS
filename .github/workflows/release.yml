@@ -1,0 +1,115 @@
+# Публікація установчого пакунка TesseraOS для віртуальної машини.
+#
+# Чому пакунок APK, а не образ: повний .img збирається лише на Linux-білдбоксі
+# з 250+ ГБ і 6+ годинами роботи (див. docs/BUILD.md), а policy.yml забороняє
+# будь-які бінарники в гілці. Архів із застосунками, темою та інсталяторами
+# зʼявляється в GitHub Release — це те, чим можна скористатися сьогодні.
+#
+# Образ .img публікує build-rom.yml тим самим механізмом (артефакт запуску),
+# коли є self-hosted білд-бокс.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GRADLE_VERSION: "8.14.3"
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Встановити Gradle ${{ env.GRADLE_VERSION }}
+        run: |
+          set -euo pipefail
+          ZIP="gradle-${GRADLE_VERSION}-bin.zip"
+          curl -fsSLO "https://services.gradle.org/distributions/${ZIP}"
+          curl -fsSL "https://services.gradle.org/distributions/${ZIP}.sha256" > "${ZIP}.sha256.expected"
+          printf '%s  %s\n' "$(cat "${ZIP}.sha256.expected")" "$ZIP" | sha256sum --check --strict
+          unzip -q "$ZIP" -d "$HOME/gradle-dist"
+          echo "$HOME/gradle-dist/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+
+      # Збираємо всі застосунки з реєстру: той самий список, що й для образу,
+      # тому «було в CI, але не в пакунку» тут неможливе.
+      - name: Зібрати APK і юніт-тести кожного застосунку
+        run: |
+          set -euo pipefail
+          while IFS='|' read -r dir module pkg artifact extra; do
+            [[ -z "$dir" || "$dir" =~ ^[[:space:]]*# ]] && continue
+            echo "::group::$dir"
+            ( cd "apps/$dir" && gradle --no-daemon --console=plain :app:testDebugUnitTest :app:assembleDebug )
+            src="apps/$dir/app/build/outputs/apk/debug/app-debug.apk"
+            [[ -f "$src" ]] || { echo "немає $src" >&2; exit 1; }
+            mkdir -p /tmp/apks
+            cp "$src" "/tmp/apks/$module.apk"
+            echo "::endgroup::"
+          done < build/scripts/apps.list
+
+      - name: Зібрати оформлення (оверлеї MD3)
+        run: |
+          set -euo pipefail
+          # build-themes.sh потребує Android SDK; на раннері він є. Якщо збірка
+          # оверлеїв не вдається, пакунок виходить без теми — і скрипт, і цей
+          # рядок друкують чому, а не мовчки кладуть порожній каталог.
+          bash build/scripts/build-themes.sh || echo "увага: оверлеї не зібрались — пакунок буде без теми"
+
+      - name: Створити пакунок
+        run: |
+          set -euo pipefail
+          bash build/scripts/make-vm-bundle.sh --from /tmp/apks --themes
+          ls -l dist
+
+      - name: Перевірити, що в dist немає зайвого
+        run: |
+          set -euo pipefail
+          # Пакунок — єдине, що ми віддаємо: жодних .img і жодних ключів.
+          if find dist -type f \( -name '*.img' -o -name '*.pk8' -o -name '*.pem' -o -name '*.keystore' -o -name '*.jks' \) | grep -q .; then
+            echo "у пакунку не має бути образів і ключів" >&2; exit 1
+          fi
+          echo ok
+
+      - name: Оприлюднити реліз
+        run: |
+          set -euo pipefail
+          # Ручний запуск не має тега — тож і реліз буде чернеткою, а не
+          # «оста́точним» з недійсним іменем. Помилкою це не стає навмисно:
+          # перевірити пакунок треба й до віхи.
+          DRAFT=()
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            TAG="bundle-draft"
+            DRAFT=(--draft)
+          fi
+          ARCHIVE="$(ls -1 dist/*.tar.xz | head -1)"
+          NOTES="TesseraOS $TAG — установчий пакунок для VM.
+
+          Розпакуй і запусти \`install-on-vm.sh\` (Linux/macOS/Git Bash) або
+          \`install-on-vm.ps1\` (Windows) проти вже запущеної гостьової системи з
+          Android 13+. Докладно: docs/VM-INSTALL.md.
+
+          APK підписані тестовим ключем: це пакунок для ознайомлення, а не
+          оновлення вже встановленої системи.
+
+          Суми — у \`$(basename "$ARCHIVE").sha256\` і всередині архіву."
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ARCHIVE" "$ARCHIVE.sha256" --clobber
+          else
+            gh release create "$TAG" "$ARCHIVE" "$ARCHIVE.sha256" \
+              --title "TesseraOS $TAG" --notes "$NOTES" "${DRAFT[@]}"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}

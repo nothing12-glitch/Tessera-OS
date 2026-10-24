@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+# Збирає установчий пакунок TesseraOS для віртуальної машини в dist/.
+#
+# Навіщо пакунок, якщо образ ROM збирається build-emulator.sh: .img важить
+# десятки гігабайт, збирається лише на Linux і в git не потрапляє (політика
+# репо). Пакунок APK — те, чим можна скористатися сьогодні на будь-якому
+# образі Android 13+ у VM; саме його публікує .github/workflows/release.yml.
+#
+#   build/scripts/make-vm-bundle.sh [--from <каталог з APK>] [--themes]
+#
+# Без --from APK бере з локальних збірок Gradle (apps/*/app/build/outputs).
+# --from корисний у CI: туди кладуть APK артефакти запуску build-apps.
+set -euo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REGISTRY="$REPO/build/scripts/apps.list"
+MK="$REPO/build/tessera.mk"
+FROM=""
+WITH_THEMES=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --from) FROM="$2"; shift 2 ;;
+    --themes) WITH_THEMES=1; shift ;;
+    *) echo "Невідома опція: $1" >&2; exit 2 ;;
+  esac
+done
+
+[[ -f "$REGISTRY" ]] || { echo "немає реєстру $REGISTRY" >&2; exit 1; }
+
+VERSION="$(sed -n 's/^TESSERA_VERSION := \([0-9.]*\).*/\1/p' "$MK" | head -1)"
+[[ -n "$VERSION" ]] || { echo "не прочитав TESSERA_VERSION з $MK" >&2; exit 1; }
+CODENAME="$(sed -n 's/^TESSERA_CODENAME := \([a-z_]*\).*/\1/p' "$MK" | head -1)"
+
+NAME="tessera-vm-$VERSION${CODENAME:+-$CODENAME}"
+OUT="$REPO/dist/$NAME"
+rm -rf "$OUT"
+mkdir -p "$OUT/apks"
+
+echo ">>> Пакунок $NAME"
+
+found=0
+while IFS='|' read -r dir module pkg _artifact _extra; do
+  [[ -z "$dir" || "$dir" =~ ^[[:space:]]*# ]] && continue
+  src=""
+  for guess in \
+      "${FROM:+$FROM/$module.apk}" \
+      "${FROM:+$FROM/$dir/$module.apk}" \
+      "${FROM:+$FROM/${dir}-debug/}app-debug.apk" \
+      "${FROM:+$FROM}/*/app-debug.apk" \
+      "$REPO/apps/$dir/app/build/outputs/apk/debug/app-debug.apk"; do
+    [[ -n "$guess" ]] || continue
+    # glob у змінній не розкривається сам — розкриваємо через ls і беремо перший
+    [[ "$guess" == *'*'* ]] && guess="$(ls -d $guess 2>/dev/null | head -1 || true)"
+    if [[ -n "$guess" && -f "$guess" ]]; then src="$guess"; break; fi
+  done
+  [[ -n "$src" ]] || { echo "  увага: $dir — APK не знайдено (немає --from і локальної збірки Gradle?)"; continue; }
+  cp "$src" "$OUT/apks/$module.apk"
+  echo "  $module.apk ← $pkg"
+  found=$((found + 1))
+done < "$REGISTRY"
+
+[[ "$found" -gt 0 ]] || { echo "у пакунку немає жодного APK — нічого встановлювати" >&2; exit 1; }
+
+# --- тема ---------------------------------------------------------------
+# Оверлеї — другий шар вигляду. Без них пакунок дає наші застосунки, але
+# стокову палітру, тому їх кладемо, лише коли build-themes.sh уже відпрацював.
+if [[ "$WITH_THEMES" == "1" ]]; then
+  mkdir -p "$OUT/overlays"
+  for apk in "$REPO"/overlay/out/*.apk; do
+    [[ -f "$apk" ]] || continue
+    cp "$apk" "$OUT/overlays/"
+    echo "  overlays/$(basename "$apk")"
+  done
+  ls "$OUT/overlays"/*.apk >/dev/null 2>&1 || { rmdir "$OUT/overlays"; echo "  увага: overlay/out порожній — спочатку build/scripts/build-themes.sh"; }
+fi
+
+# --- скрипти та інструкція ---------------------------------------------
+# apps.list кладемо поруч: install-on-vm.sh читає той самий реєстр, що й CI,
+# і в розпакованому пакунку не змушений шукати каталог репозиторію.
+cp "$REGISTRY" "$OUT/apps.list"
+cp "$REPO/build/scripts/install-on-vm.sh" "$OUT/install-on-vm.sh"
+cp "$REPO/build/scripts/install-on-vm.ps1" "$OUT/install-on-vm.ps1"
+chmod +x "$OUT/install-on-vm.sh"
+
+cat > "$OUT/README.txt" <<EOF
+TesseraOS $VERSION — установчий пакунок для віртуальної машини
+
+Що це. Наші застосунки, тема та ролі поверх наявного образу Android 13+.
+Це не самостійний ROM: повний образ (.img) збирається на Linux-білдбоксі
+скриптом build/scripts/build-emulator.sh і важить десятки гігабайт.
+
+Установлення (гостьова система вже запущена й видима для adb):
+
+  Linux / macOS / Git Bash:  ./install-on-vm.sh
+  Windows (PowerShell):      .\\install-on-vm.ps1
+
+Після цього:
+  adb reboot        # static-оверлеї перечитуються лише перезавантаженням
+
+Що перевірити далі:
+  adb shell settings get secure default_home
+  adb shell dumpsys package role_manager | grep -A2 ROLE_
+
+Дозволи «Телефона» (CALL_PHONE) і «Повідомлень» (READ_SMS) система може
+попросити в діалозі при першому запуску — це очікувано.
+EOF
+
+( cd "$OUT" && find . -type f ! -name sha256sum.txt -print0 | sort -z | xargs -0 sha256sum > sha256sum.txt )
+
+# --- архів -------------------------------------------------------------
+# tar.xz замість .zip: policy.yml забороняє бінарники в гілці, а такий
+# архів Windows 10+ розпаковує без додаткових програм.
+ARCHIVE="$REPO/dist/$NAME.tar.xz"
+tar -C "$REPO/dist" -cJf "$ARCHIVE" "$NAME"
+( cd "$REPO/dist" && sha256sum "$(basename "$ARCHIVE")" > "$(basename "$ARCHIVE").sha256" )
+
+echo
+echo "готово: ${ARCHIVE#"$REPO"/}"
+echo "  $found застосунків, тема: $([[ "$WITH_THEMES" == "1" ]] && echo так || echo ні)"
+echo "У git таке не лежить: dist/ закриває .gitignore, а policy.yml стежить за бінарниками."
