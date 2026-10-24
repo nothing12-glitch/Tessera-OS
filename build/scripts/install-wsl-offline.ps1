@@ -56,9 +56,16 @@ if ($sig.Status -ne 'Valid') {
 "MSI підписано: $($sig.SignerCertificate.Subject)"
 
 # --- 3. установка пакунка --------------------------------------------------
-">>> msiexec /i $Msi"
-$p = Start-Process msiexec.exe -ArgumentList "/i `"$Msi`" /qn /norestart" -Wait -PassThru -NoNewWindow
-if ($p.ExitCode -ne 0) { Write-Error "msiexec повернув $($p.ExitCode)" }
+# MSI вже міг стояти з попереднього запуску: повторний msiexec не потрібен і
+# лише витрачає час, тому спершу питимо wsl.exe напряму.
+$have = (wsl.exe --version 2>&1 | Out-String)
+if ($have -match 'WSL version:\s*3\.0\.3') {
+    'WSL уже встановлено — msiexec пропускаємо: ' + ($have -split "`r?`n")[0].Trim()
+} else {
+    ">>> msiexec /i $Msi"
+    $p = Start-Process msiexec.exe -ArgumentList "/i `"$Msi`" /qn /norestart" -Wait -PassThru -NoNewWindow
+    if ($p.ExitCode -ne 0) { Write-Error "msiexec повернув $($p.ExitCode)" }
+}
 wsl.exe --version
 
 # --- 4. імпорт дистрибутива ------------------------------------------------
