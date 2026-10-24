@@ -77,6 +77,7 @@ PRODUCT_PACKAGES += TesseraLauncher
 # перевіримо на зібраному образі — тоді й додамо overrides.
 PRODUCT_PACKAGES += \
     TesseraCalculator \
+    TesseraCamera \
     TesseraClock \
     TesseraDialer \
     TesseraFiles \

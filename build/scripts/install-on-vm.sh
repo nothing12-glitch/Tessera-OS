@@ -126,6 +126,8 @@ done
 # пропущений CALL_PHONE коштує більше, ніж одне «увага» в кінці.
 echo ">>> Дозволи"
 for row in \
+    "os.tessera.camera|android.permission.CAMERA" \
+    "os.tessera.camera|android.permission.RECORD_AUDIO" \
     "os.tessera.dialer|android.permission.CALL_PHONE" \
     "os.tessera.dialer|android.permission.READ_CALL_LOG" \
     "os.tessera.dialer|android.permission.READ_CONTACTS" \

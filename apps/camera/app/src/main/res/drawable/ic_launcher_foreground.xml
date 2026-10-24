@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Значок застосунку: та сама рамка знімка, лише у масштабі 108 dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Масштаб 2.5 від сітки 24 dp. Опорна точка — центр сітки (12/12), тому
+         після масштабування лишається змістити рівно 54-12 = 42 dp вобидва. -->
+    <group android:pivotX="12" android:pivotY="12" android:scaleX="2.5" android:scaleY="2.5"
+        android:translateX="42" android:translateY="42">
+    <path android:strokeColor="@color/camera_glyph" android:strokeWidth="1.8"
+        android:strokeLineJoin="round"
+        android:pathData="M3.5,5.5 h17 a1,1 0 0 1 1,1 v11 a1,1 0 0 1 -1,1 h-17 a1,1 0 0 1 -1,-1 v-11 a1,1 0 0 1 1,-1 z" />
+    <path android:fillColor="@color/camera_glyph"
+        android:pathData="M8,9.6 m-1.6,0 a1.6,1.6 0 1,0 3.2,0 a1.6,1.6 0 1,0 -3.2,0" />
+    <path android:fillColor="@color/camera_glyph"
+        android:pathData="M4.5,17.5 L10,11.5 L13.5,15 L16.5,12 L19.5,17.5 Z" />
+    </group>
+</vector>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Поворот на 90°: дуга майже в коло зі стрілкою на кінці. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.9"
+        android:strokeLineCap="round"
+        android:pathData="M19.6,11.6 a7.6,7.6 0 1 1 -2.9,-6" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M17.8,1.6 L20.6,6.2 L15.4,5.4 Z" />
+</vector>

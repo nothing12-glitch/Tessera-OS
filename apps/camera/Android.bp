@@ -1,0 +1,18 @@
+// «Камера» TesseraOS у зібраному образі.
+//
+// Той самий шлях, що для годинника, калькулятора й «Телефона»: Gradle збирає
+// APK поза деревом, build/scripts/prepare-app.sh кладе його в
+// apps/camera/prebuilt/, Soong імпортує. У git apk не лежить — політика репо
+// забороняє бінарники.
+//
+// `overrides` свідомо немає: стокова Camera (packages/apps/Camera2) у
+// x86_64-переліку пакетів бази може й не входити, а перекривати її власницьким
+// не-системним APK без перевіреного списку модулів — ризик, а не економія.
+// Дубль видимий, але без наслідків для системи; точні імена модулів бази
+// перевіримо на зібраному образі (див. docs/PIXEL-PARITY.md).
+android_app_import {
+    name: "TesseraCamera",
+    apk: "prebuilt/TesseraCamera.apk",
+    presigned: true,
+    system_ext_specific: true,
+}

@@ -30,6 +30,7 @@ try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 $Apps = @(
     @{ dir = "launcher";  module = "TesseraLauncher";  pkg = "os.tessera.launcher" },
     @{ dir = "calculator"; module = "TesseraCalculator"; pkg = "os.tessera.calculator" },
+    @{ dir = "camera";     module = "TesseraCamera";    pkg = "os.tessera.camera" },
     @{ dir = "clock";     module = "TesseraClock";     pkg = "os.tessera.clock" },
     @{ dir = "dialer";    module = "TesseraDialer";    pkg = "os.tessera.dialer" },
     @{ dir = "files";     module = "TesseraFiles";     pkg = "os.tessera.files" },
@@ -43,6 +44,8 @@ $Roles = @(
 )
 
 $Permissions = @(
+    @{ pkg = "os.tessera.camera";    perm = "android.permission.CAMERA" },
+    @{ pkg = "os.tessera.camera";    perm = "android.permission.RECORD_AUDIO" },
     @{ pkg = "os.tessera.dialer";    perm = "android.permission.CALL_PHONE" },
     @{ pkg = "os.tessera.dialer";    perm = "android.permission.READ_CALL_LOG" },
     @{ pkg = "os.tessera.dialer";    perm = "android.permission.READ_CONTACTS" },

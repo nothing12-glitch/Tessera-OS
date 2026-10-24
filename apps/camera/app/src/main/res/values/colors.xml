@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="camera_background">#101418</color>
+    <color name="camera_glyph">#8CD2FF</color>
+    <!-- Затвор у записі — червоний: Material позначає ним «їде запис», і
+         іншого кольору користувач не впізнає. -->
+    <color name="record_red">#F2555A</color>
+</resources>

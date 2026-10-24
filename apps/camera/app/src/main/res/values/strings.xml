@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Камера</string>
+
+    <!-- Верхня панель затвора -->
+    <string name="mode_photo">Фото</string>
+    <string name="mode_video">Відео</string>
+    <string name="flash_off">Спалах вимкнено</string>
+    <string name="flash_auto">Спалах автоматично</string>
+    <string name="flash_on">Спалах увімкнено</string>
+    <string name="torch_on">Ліхтарик увімкнено</string>
+    <string name="switch_camera">Змінити камеру</string>
+    <string name="camera_front_short">Передня</string>
+    <string name="camera_back_short">Задня</string>
+    <string name="shutter">Зняти</string>
+    <string name="start_recording">Записати відео</string>
+    <string name="stop_recording">Зупинити запис</string>
+    <string name="open_last">Останній знімок</string>
+
+    <!-- Пояси, коли зняти не можна -->
+    <string name="no_camera_title">Камери немає</string>
+    <string name="no_camera_body">Цей пристрій не має жодної камери. На емуляторі увімкни камеру у налаштуваннях AVD — і повертайся сюди.</string>
+    <string name="permission_title">Камера вимкнена</string>
+    <string name="permission_body">Без дозволу на камеру ми не бачимо кадру. Дозволь її у налаштуваннях застосунку — і повертайся.</string>
+    <string name="permission_action">Дозволити</string>
+    <string name="audio_denied">Без мікрофона пишемо відео без звуку</string>
+    <string name="capture_failed">Не вийшло зняти</string>
+    <string name="record_failed">Запис перервався</string>
+    <string name="saved_photo">Знімок збережено</string>
+    <string name="saved_video">Відео збережено</string>
+
+    <!-- Редактор -->
+    <string name="editor_title">Редактор</string>
+    <string name="editor_reset">Скинути</string>
+    <string name="editor_save">Зберегти</string>
+    <string name="editor_close">Закрити</string>
+    <string name="editor_rotate">Повернути на 90°</string>
+    <string name="editor_crop">Пропорція</string>
+    <string name="editor_brightness">Яскравість</string>
+    <string name="editor_contrast">Контраст</string>
+    <string name="editor_saving">Перераховуємо…</string>
+    <string name="editor_saved">Копію збережено</string>
+    <string name="editor_failed">Не вдалося відкрити знімок</string>
+    <string name="aspect_original">Як є</string>
+    <string name="aspect_square">Квадрат</string>
+    <string name="aspect_portrait">3:4</string>
+    <string name="aspect_wide">16:9</string>
+</resources>
