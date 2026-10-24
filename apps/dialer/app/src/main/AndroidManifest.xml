@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Телефонія не обовʼязкова: APK ставиться й на планшет без модема,
+         просто тоді роль основного набору система не пропонує. -->
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
+    <!-- Надсилати дзвінок напряму (ACTION_CALL). Без нього доводилося б
+         кожен раз перепрошитувати систему через ACTION_DIAL. -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- Роль основного набору: без цих трьох журнал і підказки контактів
+         були б порожніми, а «Стерти з журналу» — мертвим. -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Підняти вхідний дзвінок з екрана розмови може лише той, хто тримає
+         цю роль; право запитується окремо, бо воно чутливіше за CALL_PHONE. -->
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
+    <!-- Перемикання динаміка/гарнітури під час розмови. -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.TesseraDialer">
+
+        <activity
+            android:name=".DialerActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|uiMode|density|fontScale"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Цей фільтр — те, чого RoleManager вимагає від основного
+                 набору: ми маємо відкрити tel: за ACTION_DIAL і ACTION_CALL. -->
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <action android:name="android.intent.action.CALL" />
+                <action android:name="android.intent.action.CALL_BUTTON" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tel" />
+                <data android:scheme="sip" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".InCallActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|uiMode|density|fontScale"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:launchMode="singleTask"
+            android:taskAffinity=""
+            android:theme="@style/Theme.TesseraDialer.InCall" />
+
+        <!-- Telecom сам привʼязує цей сервіс, коли нас обрано основним
+             набором; без BIND_INCALL_SERVICE система його не підніме. -->
+        <service
+            android:name=".telecom.TesseraInCallService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_INCALL_SERVICE">
+            <meta-data
+                android:name="android.telecom.IN_CALL_SERVICE_RINGING"
+                android:value="false" />
+            <!-- Зовнішні дзвінки (VoIP, BT-гарнітура) теж приходять до нас,
+                 інакше користувач бачив би лише частину свого журналу. -->
+            <meta-data
+                android:name="android.telecom.INCLUDE_EXTERNAL_CALLS"
+                android:value="true" />
+            <intent-filter>
+                <action android:name="android.telecom.InCallService" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

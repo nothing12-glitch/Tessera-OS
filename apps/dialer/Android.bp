@@ -1,0 +1,20 @@
+// «Телефон» TesseraOS у зібраному образі.
+//
+// Той самий шлях, що для годинника й калькулятора: Gradle збирає APK поза
+// деревом, build/scripts/prepare-app.sh кладе його в apps/dialer/prebuilt/,
+// Soong імпортує. У git apk не лежить — політика репо забороняє бінарники.
+//
+// `overrides` тут свідомо немає: стоковий Dialer (packages/apps/Dialer) прибрано
+// з переліку пакетів фільтром у build/tessera.mk, тож конкурента в образі не
+// лишається і перекривати нічого. Там же пояснено, чому працює фільтр списку, а
+// не PRODUCT_PACKAGES_REMOVE.
+//
+// Чи take-role спрацює на живому образі — не перевірено (немає апаратного
+// прискорення для емулятора). Якщо RoleManager відмовить, є вихід із shell:
+//   adb shell cmd role add-role-packages-as-dialer os.tessera.dialer/.DialerActivity
+android_app_import {
+    name: "TesseraDialer",
+    apk: "prebuilt/TesseraDialer.apk",
+    presigned: true,
+    system_ext_specific: true,
+}

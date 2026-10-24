@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Голосова пошта: два контейдери, зʼєднані полицею. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24" android:tint="#000000">
+    <path android:strokeColor="#000000" android:strokeWidth="1.7"
+        android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"
+        android:pathData="M5.5,15.5 m-2.8,0 a2.8,2.2 0 1,0 5.6,0 a2.8,2.2 0 1,0 -5.6,0" />
+    <path android:strokeColor="#000000" android:strokeWidth="1.7"
+        android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"
+        android:pathData="M18.5,15.5 m-2.8,0 a2.8,2.2 0 1,0 5.6,0 a2.8,2.2 0 1,0 -5.6,0" />
+    <path android:strokeColor="#000000" android:strokeWidth="1.7"
+        android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"
+        android:pathData="M8.3,15.5 H15.7 M12,7 V11 M9.4,9.4 L12,11.6 L14.6,9.4" />
+</vector>

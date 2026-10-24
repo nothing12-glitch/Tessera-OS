@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Системний DeviceDefault дає день/ніч і Monet для вікна до першого кадру
+         Compose; прозорі панелі — щоб edge-to-edge не лишив чорних смуг. -->
+    <style name="Theme.TesseraDialer" parent="android:Theme.DeviceDefault.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
+
+    <!-- Екран розмови показує поверх усього, тому потребує власного show-when-locked. -->
+    <style name="Theme.TesseraDialer.InCall" parent="Theme.TesseraDialer">
+        <item name="android:showWhenLocked">true</item>
+        <item name="android:turnScreenOn">true</item>
+    </style>
+</resources>

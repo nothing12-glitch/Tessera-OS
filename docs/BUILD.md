@@ -93,8 +93,9 @@ build/scripts/build-emulator.sh
 ```
 
 Перед `m` у дереві мають лежати APK наших застосунків: кожен модуль
-(`TesseraLauncher`, `TesseraCalculator`, `TesseraClock`, `TesseraFiles`) — це
-`android_app_import`, а бінарники в git заборонені політикою. Список
+(`TesseraLauncher`, `TesseraCalculator`, `TesseraClock`, `TesseraDialer`,
+`TesseraFiles`) — це `android_app_import`, а бінарники в git заборонені
+політикою. Список
 застосунків тримає `build/scripts/apps.list`; `build-emulator.sh` викликає
 підготовку сам. Вручну це
 
@@ -128,9 +129,9 @@ Image лежать у `out/target/product/tessera_x86_64/`:
 | `out of memory` / `Killed` під час `soong` | замало RAM | `-j$(nproc --all)` → `-j4`, вимкнути `USE_CCACHE=0` тимчасово |
 | `Android platform requires the host tool 'repo'` | `repo` не в `PATH` | поставити у `~/bin` і експорт |
 | `error: cannot find SDK` у own-app | немає Android SDK | `bootstrap.sh --apps` |
-| Оверлей не застосований | `isStatic="true"` + не в `PRODUCT_PACKAGES` | додай пакет у `tessera.mk`, перевіри `cmd overlay list` |
-| `TesseraLauncher` / `TesseraCalculator` / `TesseraClock` / `TesseraFiles`: apk not found | APK готується перед `m`, а не лежить у git | `build/scripts/prepare-app.sh` |
+| `TesseraLauncher` / `TesseraCalculator` / `TesseraClock` / `TesseraDialer` / `TesseraFiles`: apk not found | APK готується перед `m`, а не лежить у git | `build/scripts/prepare-app.sh` |
 | Застосунок зібрався, але його немає на екрані | модуля немає в `PRODUCT_PACKAGES` або застосунок випав з реєстру | `build/scripts/check-app-integration.sh` |
+| Оверлей не застосований | `isStatic="true"` + не в `PRODUCT_PACKAGES` | додай пакет до `tessera.mk`, перевіри `cmd overlay list` |
 | Система щоразу питає, який лаунчер | у образі два HOME-застосунки (сток не перекритий — див. docs/PIXEL-PARITY.md §6) | обери «Завжди» або `cmd package set-home-activity os.tessera.launcher/.LauncherActivity` |
 
 ## Відтворюваність

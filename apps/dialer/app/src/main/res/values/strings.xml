@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Телефон</string>
+
+    <string name="tab_dialpad">Набір</string>
+    <string name="tab_recents">Журнал</string>
+
+    <string name="call">Подзвонити</string>
+    <string name="delete">Стерти</string>
+    <string name="search_calls">Пошук у журналі</string>
+    <string name="unknown_number">Невідомий номер</string>
+    <string name="no_calls">Журнал порожній</string>
+    <string name="no_calls_hint">Дзвінки, які ти надсилатимеш і прийматимеш, зʼявляться тут.</string>
+
+    <string name="today">Сьогодні</string>
+    <string name="yesterday">Учора</string>
+
+    <string name="direction_incoming">Вхідний</string>
+    <string name="direction_outgoing">Вихідний</string>
+    <string name="direction_missed">Пропущений</string>
+    <string name="direction_rejected">Відхилений</string>
+    <string name="direction_voicemail">Голосова пошта</string>
+    <string name="direction_blocked">Заблокований</string>
+
+    <string name="call_active">Розмова</string>
+    <string name="call_incoming">Вхідний дзвінок</string>
+    <string name="call_on_hold">На утриманні</string>
+    <string name="call_connecting">Зʼєднання…</string>
+    <string name="call_answer">Відповісти</string>
+    <string name="call_end">Завершити</string>
+    <string name="call_mute">Без мікрофона</string>
+    <string name="call_unmute">Мікрофон увімкнено</string>
+    <string name="call_hold">Утримання</string>
+    <string name="call_speaker">Динамік</string>
+    <string name="call_keypad">Клавіатура</string>
+    <string name="call_keypad_hide">Сховати клавіатуру</string>
+
+    <string name="call_log_locked_title">Журнал недоступний</string>
+    <string name="call_log_locked_hint">Дозволь «Телефону» читати історію викликів у налаштуваннях застосунку — тоді дзвінки зʼявляться тут.</string>
+    <string name="no_results">Нічого не знайдено</string>
+    <string name="no_results_hint">Спробуй іншу частину номера або літери імені контакту.</string>
+    <string name="write_call_log_needed">Щоб стерти запис із журналу, «Телефону» потрібен дозвіл змінювати історію викликів.</string>
+
+    <string name="perm_dialer_title">Стати основним телефоном</string>
+    <string name="perm_dialer_body">Щоб приймати вхідні дзвінки й показувати екран розмови, Tessera Phone має бути основним набором у системі.</string>
+    <string name="perm_dialer_action">Дозволити</string>
+    <string name="perm_dialer_later">Не зараз</string>
+    <string name="perm_dialer_unavailable">Система не дає запитати роль основного набору на цьому пристрої.</string>
+    <string name="perm_call_needed">Немає дозволу на дзвінок — увімкни його в налаштуваннях застосунку.</string>
+</resources>

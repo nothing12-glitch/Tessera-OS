@@ -464,6 +464,33 @@ input[type="color"] { width: 44px; height: 34px; border: 1px solid var(--outline
 .ntab.sel { color: var(--ui-on) }
 .ntab.sel .pill { background: var(--ui-sec-cont) }
 
+/* телефон — DialpadScreen з apps/dialer: рядок набору 88 dp (номер праворуч,
+   ⌫ у primary), підказка контакту на secondaryContainer з радіусом 24 dp,
+   клавіші 92×66 без тла (цифра headlineMedium, літери labelSmall з
+   розрядкою 1.5), кнопка дзвінка 72 dp у primary і NavigationBar з двох
+   вкладок. Усі розміри приведені до масштабу макета (~0.7 від dp). */
+.dialer { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 0 10px }
+.dial-num { height: 60px; display: flex; align-items: center; justify-content: center; position: relative }
+.dial-num .v { font-size: 19px; font-weight: 400; letter-spacing: .4px; color: var(--ui-on);
+  max-width: 200px; overflow: hidden; white-space: nowrap; text-align: end }
+.dial-num .bk { position: absolute; right: 0; width: 17px; height: 17px; color: var(--ui-accent) }
+.dial-sug { display: flex; align-items: center; gap: 8px; margin: 0 0 5px; padding: 8px 14px;
+  border-radius: 17px; background: var(--ui-sec-cont); color: var(--ui-on-sec-cont) }
+.dial-sug .who { font-size: 12px; font-weight: 500 }
+.dial-sug .sub { font-size: 9.5px; opacity: .8 }
+.dial-sug svg { width: 14px; height: 14px; margin-left: auto; flex: none }
+.dial-pad { display: grid; grid-template-columns: repeat(3, 1fr); justify-items: center; margin-top: auto }
+/* у застосунку клавішу й кнопку дзвінка притискає до низу Spacer(weight = 1f),
+   тому вільне місце лишається між підказкою і клавіатурою, а не під кнопкою */
+.dialer .navbar { margin-top: 0 }
+.dkey { width: 63px; height: 45px; border-radius: 50%; display: grid; place-items: center;
+  align-content: center; gap: 1px }
+.dkey .d { font-size: 19px; font-weight: 400; line-height: 1; color: var(--ui-on) }
+.dkey .l { font-size: 7.5px; letter-spacing: 1px; color: var(--ui-on-variant); height: 8px }
+.dial-call { align-self: center; margin: 4px 0 6px; width: 49px; height: 49px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--ui-accent); color: var(--ui-on-accent) }
+.dial-call svg { width: 21px; height: 21px }
+
 /* footer */
 footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant); color: var(--on-surface-variant); font-size: .92rem }
 .foot { display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap; align-items: center }
@@ -627,6 +654,7 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
               <button data-screen="calculator" aria-pressed="false">Калькулятор</button>
               <button data-screen="files" aria-pressed="false">Файли</button>
               <button data-screen="clock" aria-pressed="false">Годинник</button>
+              <button data-screen="dialer" aria-pressed="false">Телефон</button>
             </div>
           </div>
         </div>
@@ -649,9 +677,14 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
             Макет не стверджує, що образ уже зібраний: він показує цільову поведінку палітри й
             геометрії. Сітка 5&nbsp;×&nbsp;6 з доком із 5 іконок — це вже файл у репо; рядок
             «дата + погода» й шухляда тепер у власному лаунчері в <code>apps/launcher</code>.
-            Екрани «Калькулятор» і «Файли» знімають з <code>apps/calculator</code> та
-            <code>apps/files</code>: тон клавіш, позначки типів і порядок сортування взяті з коду.
-            Усі три застосунки збирає CI, але на екрані пристрою їх ще не бачили.
+            Екрани «Калькулятор», «Файли», «Годинник» і «Телефон» знімають з
+            <code>apps/calculator</code>, <code>apps/files</code>,
+            <code>apps/clock</code> та <code>apps/dialer</code>: тон клавіш,
+            позначки типів, порядок сортування, рядки будильників і літери під
+            цифрами набору взяті з коду. Усі чотири збирає CI, але на екрані
+            пристрою їх ще не бачили. У «Телефона» не перевірено наживо й
+            головне: чи система віддасть йому роль набірного застосунку й чи
+            підніме наше вікно на вхідному виклику.
           </p>
         </div>
       </div>
@@ -1271,7 +1304,37 @@ function clockMarkup() {
       <div class="navbar">${tabs}</div>
     </div>`;
 }
-const MARKUP = { lock: lockMarkup, launcher: launcherMarkup, drawer: drawerMarkup, qs: qsMarkup, settings: settingsMarkup, calculator: calculatorMarkup, files: filesMarkup, clock: clockMarkup };
+/* клавіші — з DialpadKeys.DIGITS і lettersFor: 4×3, літери за ISO/IEC 9995-8
+   (у 7 і 9 по чотири, у 1 і 0 — немає), під 0 показуємо «+», бо саме воно
+   виходить із довгим натисканням. Рядок номера дає PhoneNumber.display,
+   підказка — PhoneLookup, а іконки — наші вектори з res/drawable. */
+const DIAL_KEYS = [
+  ['1', ''], ['2', 'ABC'], ['3', 'DEF'],
+  ['4', 'GHI'], ['5', 'JKL'], ['6', 'MNO'],
+  ['7', 'PQRS'], ['8', 'TUV'], ['9', 'WXYZ'],
+  ['*', ''], ['0', '+'], ['#', '']
+];
+const ICO_CALL = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6,3.6 C6.6,2.7 7.4,2.2 8.2,2.6 L10.4,4 C11.1,4.4 11.2,5.3 10.8,6 L9.6,8 C9.3,8.5 9.4,9.1 9.8,9.6 C11.2,11.4 13.2,13.4 15,14.8 C15.5,15.2 16.1,15.1 16.6,14.8 L18.4,13.4 C19,12.9 19.9,13.1 20.3,13.8 L21.4,15.8 C21.8,16.5 21.3,17.4 20.5,17.5 C18.7,17.8 16.6,17.4 14.2,16.2 C9.8,14 5.6,9.6 4.2,5.2 C3.8,4 4.4,2.7 5.6,3 C6.2,3.1 6.6,3.2 6.6,3.6 Z"/></svg>';
+function dialerMarkup() {
+  const keys = DIAL_KEYS.map(([d, l]) =>
+    `<div class="dkey"><span class="d">${d}</span><span class="l">${l}</span></div>`).join('');
+  const tabs = ['Набір', 'Журнал'].map((label, i) =>
+    `<div class="ntab${i === 0 ? ' sel' : ''}"><span class="pill"></span>${label}</div>`).join('');
+  return `<div class="dialer">
+      <div class="dial-num"><span class="v">067 123 45 67</span>
+        <svg class="bk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M9.5,5 H19 A2,2 0 0,1 21,7 V17 A2,2 0 0,1 19,19 H9.5 L3.5,12 Z"/>
+          <path d="M13,9.5 L17.5,14.5 M17.5,9.5 L13,14.5"/></svg>
+      </div>
+      <div class="dial-sug"><div><div class="who">Тетяна</div>
+        <div class="sub">мобільний · 067 123 45 67</div></div>${ICO_CALL}</div>
+      <div class="dial-pad">${keys}</div>
+      <div class="dial-call">${ICO_CALL}</div>
+      <div class="navbar">${tabs}</div>
+    </div>`;
+}
+const MARKUP = { lock: lockMarkup, launcher: launcherMarkup, drawer: drawerMarkup, qs: qsMarkup, settings: settingsMarkup, calculator: calculatorMarkup, files: filesMarkup, clock: clockMarkup, dialer: dialerMarkup };
 
 function render() {
   document.getElementById('screenBody').innerHTML = MARKUP[state.screen]();
