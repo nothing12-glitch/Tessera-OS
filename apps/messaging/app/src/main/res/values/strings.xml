@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Повідомлення</string>
+
+    <string name="cd_back">Назад</string>
+    <string name="cd_delete">Стерти розмову</string>
+    <string name="cd_send">Надіслати</string>
+
+    <string name="search_threads">Пошук у розмовах</string>
+    <string name="new_thread">Нова розмова</string>
+    <string name="new_thread_hint">Номер або імʼя контакту з телефонної книги.</string>
+    <string name="continue_button">Продовжити</string>
+    <string name="cancel">Скасувати</string>
+    <string name="delete">Стерти</string>
+
+    <string name="no_threads">Розмов немає</string>
+    <string name="no_threads_hint">Тут зʼявляться SMS, які ти надсилатимеш і прийматимеш.</string>
+    <string name="no_results">Нічого не знайдено</string>
+    <string name="no_results_hint">Спробуй частину номера чи літери імені контакту.</string>
+
+    <string name="today">Сьогодні</string>
+    <string name="yesterday">Учора</string>
+
+    <string name="status_pending">Надсилається…</string>
+    <string name="status_failed">Не надіслано</string>
+    <string name="status_delivered">Доставлено</string>
+
+    <string name="composer_hint">Повідомлення</string>
+    <string name="parts_count">%1$d · %2$d/%3$d</string>
+    <string name="send_failed">Модем відхилив надсилання. Перевір номер і звʼязок.</string>
+    <string name="no_sms_permission">Немає дозволу на надсилання SMS — увімкни його в налаштуваннях застосунку.</string>
+
+    <string name="role_title">Стати застосунком повідомлень</string>
+    <string name="role_body">Щоб приймати SMS і показувати вхідні в розмовах, «Повідомлення» мають бути основним застосунком SMS у системі. Наразі цю роль тримає інший застосунок.</string>
+    <string name="role_action">Дозволити</string>
+    <string name="role_unavailable">Система не дає запросити роль основного застосунку SMS на цьому пристрої.</string>
+    <string name="role_missing_hint">Повідомлення читаються з памʼяті модема, але нові не зʼявляться, доки «Повідомлення» не стануть основним застосунком SMS.</string>
+
+    <string name="thread_deleted">Розмову стерто</string>
+    <string name="delete_thread_title">Стерти розмову?</string>
+    <string name="delete_thread_body">Усі повідомлення з %1$s буде видалено з цього пристрою. Жодної копії на сервері не лишається — SMS зберігаються лише тут.</string>
+</resources>

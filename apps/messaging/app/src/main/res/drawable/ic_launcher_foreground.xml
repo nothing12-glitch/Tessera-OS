@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Власний знак повідомлень: бульбашка з хвостом і три крапки. Жодних чужих іконок.
+     Контур — штрихом, щоб monochrome-шар адаптивного значка не перетворився на пляму. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:pathData="M40,32 H68 A10,10 0 0 1 78,42 V54 A10,10 0 0 1 68,64 H50 L42,74 L40,64 A10,10 0 0 1 30,54 V42 A10,10 0 0 1 40,32 Z"
+        android:strokeColor="@color/messaging_glyph"
+        android:strokeWidth="5"
+        android:strokeLineJoin="round" />
+    <path
+        android:fillColor="@color/messaging_glyph"
+        android:pathData="M38,48 a4,4 0 1 0 8,0 a4,4 0 1 0 -8,0 Z" />
+    <path
+        android:fillColor="@color/messaging_glyph"
+        android:pathData="M50,48 a4,4 0 1 0 8,0 a4,4 0 1 0 -8,0 Z" />
+    <path
+        android:fillColor="@color/messaging_glyph"
+        android:pathData="M62,48 a4,4 0 1 0 8,0 a4,4 0 1 0 -8,0 Z" />
+</vector>

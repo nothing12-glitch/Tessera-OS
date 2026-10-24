@@ -1,0 +1,20 @@
+// «Повідомлення» TesseraOS у зібраному образі.
+//
+// Той самий шлях, що для лаунчера й «Телефона»: Gradle збирає APK поза деревом,
+// build/scripts/prepare-app.sh кладе його в apps/messaging/prebuilt/, Soong
+// імпортує. У git apk не лежить — політика репо забороняє бінарники.
+//
+// Стоковий `mms`-клієнт packages/apps/Messaging прибрано фільтром у
+// build/tessera.mk, тому `overrides` тут не потрібні. `MmsService` лишається в
+// образі: поки ми не зайняли роль ROLE_SMS, саме він довантажує MMS, а без
+// нього пристрій залишився б взагалі без вхідних повідомлень.
+//
+// Чи take-role спрацює на живому образі — не перевірено (немає апаратного
+// прискорення для емулятора). Вихід із shell:
+//   adb shell cmd role add-role-packages-as-sms os.tessera.messaging
+android_app_import {
+    name: "TesseraMessaging",
+    apk: "prebuilt/TesseraMessaging.apk",
+    presigned: true,
+    system_ext_specific: true,
+}

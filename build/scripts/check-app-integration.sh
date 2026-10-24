@@ -120,6 +120,36 @@ else
   ok "реєстр: 5 стовпчиків у кожному рядку"
 fi
 
+# 10. Windows-інсталятор несе список застосунків у собі: у розпакованому
+#     пакунку реєстру репо немає, тому перелік доводиться дублювати. Дубль без
+#     перевірки — це «застосунок зʼявився в образі, а на VM його ніхто не ставить».
+PS1="$ROOT/build/scripts/install-on-vm.ps1"
+if [[ -f "$PS1" ]]; then
+  drift=""
+  while IFS='|' read -r dir module _pkg _artifact _extra; do
+    [[ -z "$dir" || "$dir" =~ ^[[:space:]]*# ]] && continue
+    grep -q "dir = \"$dir\"; *module = \"$module\"" "$PS1" || drift+=" $dir"
+  done < "$REGISTRY"
+  if [[ -n "$drift" ]]; then
+    fail "install-on-vm.ps1 не має рядків для:$drift — онови перелік разом з apps.list"
+  else
+    ok "install-on-vm.ps1 перелічить усі застосунки з реєстру"
+  fi
+else
+  fail "немає $PS1 — нечим ставити пакунок на Windows"
+fi
+
+# 11. Windows PowerShell 5.1 читає .ps1 без BOM як ANSI: кирилиця збиває
+#     лапки всередині рядків і скрипт не розбирається взагалі. BOM — єдине,
+#     що рятує, а редактори зрізають його мовчки.
+if [[ -f "$PS1" ]]; then
+  if [[ "$(head -c 3 "$PS1" | od -An -tx1 | tr -d ' \n')" == "efbbbf" ]]; then
+    ok "install-on-vm.ps1 починається з UTF-8 BOM (PowerShell 5.1 розбере кирилицю)"
+  else
+    fail "install-on-vm.ps1 не має UTF-8 BOM — Windows PowerShell 5.1 зіпсує український текст і зламає парсер"
+  fi
+fi
+
 if [[ "$missing" != 0 ]]; then
   echo "[app-integration] Провалено. Див. apps/<застосунок>/Android.bp, build/scripts/apps.list і README застосунків." >&2
   exit 1

@@ -14,3 +14,4 @@ clock|TesseraClock|os.tessera.clock|tessera-clock-debug|-
 dialer|TesseraDialer|os.tessera.dialer|tessera-dialer-debug|-
 files|TesseraFiles|os.tessera.files|tessera-files-debug|-
 launcher|TesseraLauncher|os.tessera.launcher|tessera-launcher-debug|HOME
+messaging|TesseraMessaging|os.tessera.messaging|tessera-messaging-debug|-

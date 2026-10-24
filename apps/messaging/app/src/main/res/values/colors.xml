@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Той самий рецепт значка, що в інших застосунках: темний фон
+         101418 + акцентний гліф 8CD2FF. Різноманіття дає Monet у самому
+         інтерфейсі, а не різна підкладка іконок. -->
+    <color name="messaging_background">#101418</color>
+    <color name="messaging_glyph">#8CD2FF</color>
+</resources>
