@@ -29,7 +29,13 @@ if [ -d "$WT" ]; then
   git -C "$ROOT" worktree remove --force "$WT" 2>/dev/null || rm -rf "$WT"
 fi
 
-if git -C "$ROOT" rev-parse --verify --quiet "$BRANCH" >/dev/null; then
+# Основа — origin/gh-pages, а не локальна гілка: пуш із detached-robot
+# («HEAD:gh-pages») локального рефу не рухає, тому другий деплой поспіль
+# діставав перший коміт і віддалення відхиляло його як non-fast-forward.
+if git -C "$ROOT" rev-parse --verify --quiet "refs/remotes/origin/$BRANCH" >/dev/null; then
+  git -C "$ROOT" worktree add --quiet --detach "$WT" "origin/$BRANCH" || {
+    echo "[publish-site] не вдалося підмонтувати origin/$BRANCH"; exit 1; }
+elif git -C "$ROOT" rev-parse --verify --quiet "$BRANCH" >/dev/null; then
   git -C "$ROOT" worktree add --quiet --detach "$WT" "$BRANCH" || {
     echo "[publish-site] не вдалося підмонтувати $BRANCH"; exit 1; }
 else
