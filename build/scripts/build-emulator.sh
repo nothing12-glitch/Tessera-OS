@@ -11,7 +11,12 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 export USE_CCACHE=1
 export CCACHE_DIR="${CCACHE_DIR:-$HOME/.ccache}"
 export CCACHE_COMPRESS=1
-export CCACHE_SIZE="${CCACHE_SIZE:-80G}"
+# Кеш корисний, але він їсть те саме місце, що й out/. Орієнтир: чверть вільного
+# місця на диску, стеля 80G. На ноутбуці з 300 ГБ виходить ~75G, на машині з
+# 60 ГБ — 15G, і збірка не вмирає посередині через «No space left on device».
+FREE_GB=$(df -BG --output=avail . 2>/dev/null | tail -1 | tr -dc '0-9')
+DEFAULT_CCACHE="${FREE_GB:+$(( FREE_GB / 4 ))G}"
+export CCACHE_SIZE="${CCACHE_SIZE:-${DEFAULT_CCACHE:-80G}}"
 export WITH_DEXPREOPT=true
 # Відтворюваність: однакова дата в усіх файлах образу. Значення бере дату
 # останнього коміку нашого шару; CI перезаписує її значенням із запуску.
