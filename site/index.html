@@ -942,22 +942,20 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
         <span>Повний шлях: синхронізація бази, підключення шару TesseraOS, збірка для x86_64</span>
         <button class="copy" id="copyBuild">Скопіювати</button>
       </div>
-<pre id="buildSnippet"><code># 1. Середовище (Debian 12 / Ubuntu 22.04+)
+<pre id="buildSnippet"><code># 1. Середовище (Ubuntu 22.04/24.04, Debian 12; 400+ ГБ, 16–32 ГБ RAM)
 build/scripts/bootstrap.sh
 
-# 2. Джерела бази + наш шар
-repo init -u https://github.com/LineageOS/manifest -b lineage-22.2
-repo sync -c -j"$(nproc)"
-mkdir -p vendor/tessera
-git clone https://github.com/nothing12-glitch/Tessera-OS vendor/tessera/os
+# 2. Дерево: маніфест бази LineageOS 22.2 + наш шар через .repo/local_manifests
+build/scripts/new-tree.sh lineage-22.2
 
-# 3. Розв'язати linkfile з маніфесту, потім — ланч і збірка
-source build/envsetup.sh
-lunch tessera_x86_64-userdebug
-m -j"$(nproc)"
+# 3. Статична перевірка посилань збірки (секунди замість години втраченої збірки)
+build/scripts/check-build-refs.sh --tree .
 
-# 4. Запуск у віртуальній машині
-build/scripts/run-avd.sh</code></pre>
+# 4. Збірка: наші APK → lunch → m
+build/scripts/build-emulator.sh tessera_x86_64-userdebug
+
+# 5. Запуск у віртуальній машині
+build/scripts/run-avd.sh --image out/target/product/emu64x</code></pre>
       <p class="hint" style="margin-top:14px">
         Деталі й типові помилки: <code>docs/BUILD.md</code> та <code>docs/EMULATOR.md</code> у репозиторії.
       </p>

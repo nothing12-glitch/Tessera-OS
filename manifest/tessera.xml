@@ -1,68 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Маніфест TesseraOS. Дозволяє ініціювати все дерево однією командою:
+  Додатковий маніфест TesseraOS.
 
-    repo init -u https://github.com/nothing12-glitch/tessera-os \
-              -b main -m manifest/tessera.xml
-    repo sync -c -j"$(nproc)"
+  Це НЕ повний маніфест і не повинен ним бути: повне дерево на 1 000+ проєктів
+  належить базі. Ставимо наш шар ПОВЕРХ маніфеста LineageOS 22.2 — так само
+  роблять усі деривативи. Механізм — `.repo/local_manifests/`: repo зчитує
+  файли з цієї теки разом із upstream `default.xml`, тому форкати чужий
+  маніфест не треба.
 
-  База — LineageOS 22.2 (Android 15). Наш шар підключається через linkfile,
-  тож конфіг продукту опиняється у шляху пошуку AOSP без ручного symlink.
+  Перевірені координати бази (2026-10-24, клонуванням дерева):
+    маніфест: https://github.com/LineageOS/android.git
+    гілка:    lineage-22.2  (default.xml, remote `github` з fetch=".." → github.com)
+    наш шар   → vendor/tessera/os, linkfile → device/tessera/x86_64/
+
+  Повна послідовність — build/scripts/new-tree.sh; пояснення — docs/BUILD.md.
 -->
 <manifest>
-  <remote name="lineage" fetch="https://github.com/LineageOS/" />
-  <remote name="tessera"   fetch="https://github.com/" />
+  <remote name="tessera" fetch="https://github.com/" />
 
-  <default remote="lineage" revision="lineage-22.2"
-           sync-c="true" sync-j="4" sync-tags="false" />
+  <!-- Конфіг продукту і оголошення lunch-таргетів. AOSP шукає продукти в усіх
+       device/**/AndroidProducts.mk (build/make/core/product_config.mk:150-152),
+       тому обидва файли мають опинитися в каталозі платформи; linkfile робить
+       це сам при `repo sync`.
 
-  <!-- ==== База: Android 15 / LineageOS 22.2 ====
-       УВАГА: це скорочений набір проєктів, а не повний маніфест. Збирати
-       образ цим маніфестом можна лише як демонстрацією шару; для справжньої
-       збірки візьми повний маніфест бази (див. docs/BUILD.md, розділ
-       «Чому не повний маніфест») і додай у нього проєкт vendor/tessera/os
-       з цими ж чотирма linkfile. -->
-  <project name="android_build"                   path="build/make" />
-  <project name="android_frameworks_base"         path="frameworks/base" />
-  <project name="android_frameworks_av"           path="frameworks/av" />
-  <project name="android_frameworks_native"       path="frameworks/native" />
-  <project name="android_system_sepolicy"         path="system/sepolicy" />
-  <project name="android_art"                     path="art" />
-  <project name="android_bionic"                  path="bionic" />
-
-  <!-- Платформа x86_64 для віртуальних машин.
-       Ядро для VM бере prebuilt з device/generic/x86_64; власний
-       kernel/common потрібен, тільки якщо збираємо ядро самі. -->
-  <project name="android_device_generic_x86"      path="device/generic/x86" />
-  <project name="android_device_generic_x86_64"   path="device/generic/x86_64" />
-  <project name="android_kernel_common"           path="kernel/common"
-           revision="lineage-22.2_kernel-5.15" optional="true" />
-  <project name="android_hardware_google_gps"     path="hardware/google/gps"
-           optional="true" />
-
-  <!-- ==== Шар TesseraOS ==== -->
+       Властивості бренду (ro.tessera.*) тримаємо в конфізі продукту, а не в
+       сусідньому system.prop: AOSP зливає system.prop лише з каталогу, який
+       Soong визначає для платформи, тож файл поза тим каталогом мовчки
+       лишився б у дереві, не потрапивши в образ. -->
   <project name="nothing12-glitch/tessera-os" remote="tessera" revision="main"
            path="vendor/tessera/os">
-    <!-- Конфіг продукту + оголошення lunch-таргета. Обидва потрапляють в
-         один каталог платформи: AOSP шукає продукти через
-         device/**/AndroidProducts.mk, тому писати у build/make (чужий git
-         проект) не треба. -->
     <linkfile src="build/tessera.mk"
               dest="device/tessera/x86_64/tessera_x86_64.mk" />
     <linkfile src="build/board/AndroidProducts.mk"
               dest="device/tessera/x86_64/AndroidProducts.mk" />
-    <!-- Конфіг платформи x86_64 VM -->
-    <linkfile src="build/board/BoardConfig.mk"
-              dest="device/tessera/x86_64/BoardConfig.mk" />
-    <linkfile src="config/branding/tessera.prop"
-              dest="vendor/tessera/etc/tessera.prop" />
   </project>
-
-  <!-- microG: вільна заміна власницьких Google-сервісів -->
-  <project name="nothing12-glitch/tessera-microg-prebuilt" remote="tessera"
-           revision="main" path="vendor/microg" optional="true" />
-
-  <!-- Власні застосунки TesseraOS (Milestone M2) -->
-  <project name="nothing12-glitch/tessera-apps" remote="tessera" revision="main"
-           path="packages/apps/Tessera" optional="true" />
 </manifest>

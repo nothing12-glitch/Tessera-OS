@@ -53,13 +53,12 @@ TesseraOS на цьому етапі його не обирає, бо корис
 
 | Шлях | Призначення |
 |---|---|
-| `manifest/tessera.xml` | `repo`-маніфест: база + цей репозиторій |
-| `build/tessera.mk` | Android.mk конфіг продукту `tessera_x86_64` |
-| `build/board/BoardConfig.mk` | параметри платформи x86_64 VM |
-| `build/scripts/` | bootstrap, збірка, пакування GApps, запуск AVD, підготовка APK наших застосунків (`prepare-app.sh` за реєстром `apps.list`), перевірки інтеграції |
+| `manifest/tessera.xml` | додаток до маніфеста бази: один проєкт + `linkfile` (кладуть `.repo/local_manifests/`) |
+| `build/tessera.mk` | конфіг продукту `tessera_x86_64` (Make); успадковує платформу емулятора бази |
+| `build/board/AndroidProducts.mk` | оголошення lunch-таргетів; разом з `.mk` вище лінкується в `device/tessera/x86_64/`. Власного `BoardConfig.mk` немає спеціально: платформу дає `device/generic/goldfish/board/emu64x` |
+| `build/scripts/` | bootstrap, `new-tree.sh` (дерево бази + наш шар), збірка, пакування GApps, запуск AVD, підготовка APK наших застосунків (`prepare-app.sh` за реєстром `apps.list`), перевірки інтеграції й посилань збірки |
 | `overlay/themes/` | RRO-пакети MD3 |
 | `overlay-packages/` | build-time підміни файлів застосунків (сітка лаунчера 5×6) — не RRO, бо `res/xml` з атрибутами чужого namespace не лінкується оверлеєм |
-| `config/branding/` | `tessera.prop`: name, version, шпалери, шрифти |
 | `config/gapps/` | профілі встановлення GApps/microG |
 | `apps/launcher/` | власний лаунчер (Kotlin + Compose MD3): сітка 5×6, док 5, шухляда з пошуком, рядок «дата + погода». В образі — модуль `TesseraLauncher` |
 | `apps/calculator/` | власний калькулятор: `BigDecimal`-арифметика, тональні клавіші MD3, науковий запис за межами `1E-10 … 1E21`. Модуль `TesseraCalculator` |

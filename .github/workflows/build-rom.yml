@@ -36,18 +36,28 @@ jobs:
         with:
           path: tessera-os
 
-      - name: Синхронізація джерел (repo init/sync)
+      - name: Синхронізація джерел ( маніфест бази + наш шар )
         run: |
+          set -euo pipefail
           export PATH="$HOME/bin:$PATH"
           mkdir -p "$GITHUB_WORKSPACE/rom"
           cd "$GITHUB_WORKSPACE/rom"
           if [[ -d .repo ]]; then
             repo sync -c -j"$(nproc)" --fail-fast
           else
-            repo init -u "$GITHUB_WORKSPACE/tessera-os/manifest/tessera.xml" -b "${{ inputs.branch || 'lineage-22.2' }}"
-            repo sync -c -j"$(nproc)" --fail-fast
+            # База — справжній маніфест LineageOS; наш шар додається через
+            # .repo/local_manifests/ (саме це робить new-tree.sh). Ініціювати
+            # збірку власним manifest/tessera.xml не можна: це додаток на один
+            # проєкт, а не дерево на 1000+ проєктів.
+            "$GITHUB_WORKSPACE/tessera-os/build/scripts/new-tree.sh" \
+              "${{ inputs.branch || 'lineage-22.2' }}"
           fi
-          ln -sfn "$GITHUB_WORKSPACE/tessera-os" vendor/tessera/os
+
+      - name: Статична перевірка посилань збірки
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/rom"
+          "$GITHUB_WORKSPACE/tessera-os/build/scripts/check-build-refs.sh" --tree .
 
       - name: Збірка
         run: |
@@ -60,9 +70,8 @@ jobs:
         with:
           name: tessera-x86_64-images
           path: |
-            rom/out/target/product/*/system.img
-            rom/out/target/product/*/vendor.img
-            rom/out/target/product/*/userdata.img
-            rom/out/target/product/*/*.txt
+            rom/out/target/product/emu64x/*.img
+            rom/out/target/product/emu64x/kernel-ranchu
+            rom/out/target/product/emu64x/*.txt
           retention-days: 14
           if-no-files-found: error

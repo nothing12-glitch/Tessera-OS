@@ -80,29 +80,30 @@ adb shell cmd overlay list | grep tessera
 це єдиний спосіб отримати образ TesseraOS без виділеної машини.
 
 ```bash
-# усередині Ubuntu 24.04 з 250+ ГБ диска і 16+ ГБ RAM
+# усередині Ubuntu 24.04 з 400+ ГБ диска і 16+ ГБ RAM
 build/scripts/bootstrap.sh
-repo init -u https://github.com/LineageOS/manifest -b lineage-22.2
-repo sync -c -j"$(nproc)" --force-sync --no-clone-bundle
-mkdir -p vendor/tessera && git clone https://github.com/nothing12-glitch/Tessera-OS vendor/tessera/os
+build/scripts/new-tree.sh lineage-22.2      # база + наш шар через local_manifests
+build/scripts/check-build-refs.sh --tree .  # секунди замість години втраченої збірки
 vendor/tessera/os/build/scripts/build-emulator.sh tessera_x86_64-userdebug
 ```
 
 Скрипт спершу готує наші APK (`prepare-app.sh` читає реєстр
 `build/scripts/apps.list`), потім робить `lunch` і `m`. Образи лягають в
-`out/target/product/tessera_x86_64/` разом з `tessera-images-sha256.txt`.
+`out/target/product/emu64x/` — каталог названий за `PRODUCT_DEVICE`, тобто за
+платформою емулятора, а не за назвою нашого продукту.
 
 Запуск отриманого образу — `run-avd.sh` (Android Emulator, найнадійніший шлях,
 бо образ і зібрано під `androidboot.hardware=ranchu`):
 
 ```bash
-build/scripts/run-avd.sh --api 35 --image out/target/product/tessera_x86_64
+build/scripts/run-avd.sh --api 35 --image out/target/product/emu64x
 ```
 
 ### Чому не ISO для VirtualBox чи VMware
 
-`full_x86_64` у нашій конфігу дає партиційні образи (`system.img`,
-`vendor.img`, `userdata.img`, `boot.img`), а не завантажувальний ISO з
+Конфіг платформи, який ми успадковуємо (базовий `device/generic/goldfish/board/
+emu64x`), дає партиційні образи (`system.img`,
+`vendor.img`, `userdata.img`, `super.img` і `kernel-ranchu`), а не завантажувальний ISO з
 інсталятором. Щоб образ завантажувався з віртуального CD/DVD, потрібен інший
 шар: установник і bootloader у стилі Android-x86. Цього в TesseraOS ще немає, і
 робити його «на око» без живого білду — означає писати скрипт, який ніхто не

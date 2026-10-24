@@ -29,22 +29,24 @@ Material Design 3, поверх стабільної бази LineageOS 22.x (An
 ## Швидкий старт
 
 Системна вимога для збірки ROM — **Linux**. На Windows і macOS збірка
-неможлива (AOSP build system не працює нативно); використовуй Docker/WSL2
-або окремий білд-бокс із 32 ГБ RAM і 400 ГБ вільного місця.
+неможлива (AOSP build system не працює нативно); використовуй WSL2/Docker
+або окремий білд-бокс — реалістично 400+ ГБ місця і 16–32 ГБ RAM
+(числа з документації LineageOS, див. [docs/BUILD.md](docs/BUILD.md)).
 
 ```bash
-# 1. Підготувати середовище (Linux, Debian 12 / Ubuntu 22.04+)
+# 1. Підготувати середовище (Ubuntu 22.04/24.04, Debian 12)
 build/scripts/bootstrap.sh
 
-# 2. Синхронізувати джерела бази + цей репозиторій
-repo init -u https://github.com/LineageOS/manifest -b lineage-22.2
-repo sync -c -j"$(nproc)"
-mkdir -p vendor/tessera && git clone https://github.com/<you>/tessera-os vendor/tessera/os
+# 2. Синхронізувати джерела: база LineageOS 22.2 + наш шар через local_manifests
+build/scripts/new-tree.sh lineage-22.2
 
-# 3. Зібрати образ для емулятора
+# 3. Статична перевірка, що всі наші посилання на базу існують
+build/scripts/check-build-refs.sh --tree .
+
+# 4. Зібрати образ для емулятора (in out/target/product/emu64x)
 build/scripts/build-emulator.sh
 
-# 4. Запустити
+# 5. Запустити
 build/scripts/run-avd.sh
 ```
 

@@ -1,152 +1,246 @@
 # Збірка TesseraOS
 
+Тут описано, як отримати **справжній образ** (`.img`), а не список файлів у
+репозиторії. Усе в цьому документі перевірено проти живого дерева бази
+`lineage-22.2` (клонуванням і HTTP-кодами, 2026-10-24); те, що ще не перевірено
+на зібраному образі, позначено окремо в кінці.
+
+## Чесний статус на сьогодні
+
+| Речі | Стан |
+|---|---|
+| Дерево бази | справжнє: маніфест `LineageOS/android`, гілка `lineage-22.2` (клонували `default.xml`, 1 000+ проєктів) |
+| Наш конфіг продукту | успадковує `device/generic/goldfish/64bitonly/product/sdk_phone64_x86_64.mk` — файл існує, шлях перевірено |
+| Застосунки й оверлеї | 7 APK + 3 RRO збираються (Gradle + CI), реєстр перевіляє `check-app-integration.sh` |
+| Посилання збірки | перевіряє `check-build-refs.sh` — тепер це крок CI (`policy.yml`), і він ловив три мертві шляхи в попередній версії конфігу |
+| **Готовий образ** | **щодня не зібраний**. Жодного `.img` ми ще не мали на руках: збірка потребує Linux-хоста з 400+ ГБ, а ця машина — Windows без WSL |
+
+Саме останній рядок — причина, чому проєкт виглядав як «концепт». Все інше
+вже підлаштоване під те, щоб перша ж збірка на Linux дошла до образу і
+проіснувала там.
+
 ## Вимоги до білд-боксу
+
+Числа — з документації LineageOS для гілок 21+ (не наші оцінки):
 
 | Ресурс | Мінімум | Рекомендовано |
 |---|---|---|
-| ОС | Linux (Debian 12, Ubuntu 22.04/24.04) | Ubuntu 24.04 LTS |
-| RAM | 16 ГБ | 32–64 ГБ |
-| Вільне місце | 250 ГБ (SSD) | 400+ ГБ, NVMe |
+| ОС | Linux з APT (Ubuntu 22.04/24.04, Debian 12) | Ubuntu 24.04 LTS |
+| Вільне місце | 400 ГБ (SSD/NVMe) | 600+ ГБ |
+| RAM | 16 ГБ + 16 ГБ swap | 32–64 ГБ |
 | CPU | 8 ядер | 16+ |
-| Java | JDK 21 (для AOSP 15) | OpenJDK 21 |
-| Windows/macOS | так, лише через WSL2 або Docker; `repo sync` у WSL1 не працює | Docker `lineageos4microg/docker-build-env` |
+| JDK | 17 (дерево тримає свій у `prebuilts/`) | — |
+| Windows/macOS | лише через WSL2 або Docker; у WSL1 `repo sync` не працює | — |
 
-Збірка **не** іде нативно на Windows чи macOS. Якщо бачиш помилку
-`case-insensitive filesystem` або `chmod` — це саме про це.
+Збірка **не** іде нативно на Windows чи macOS: потрібна чутлива до регістру
+файлова система і Linux-хости. Якщо бачиш `case-insensitive filesystem` або
+помилку `chmod` — це саме про це.
 
-## Покроково
+## Твій ноутбук: ASUS TUF Gaming A16 (FA607NU)
 
-### 1. Інструменти
+Залізо придатне: Ryzen 7 7735HS (8 ядер / 16 потоків), NVMe, x86_64, AMD-V.
+Два вузьких місця — 16 ГБ оперативної і вільне місце на диску.
 
-```bash
-sudo apt update && sudo apt install -y git curl gnupg ccache zip unzip \
-  repo fontconfig python3
+### Шлях A. Dual-boot Ubuntu 24.04 (рекомендую)
+
+Перший прохід на 8 ядрах з 16 ГБ RAM — орієнтовно 5–9 годин (далі, з ccache,
+інкрементальні зміни — хвилини). Це найнадійніший варіант: рідна файлова
+система, рідний KVM, повна швидкість NVMe.
+
+1. Перевір у UEFI (F2 при завантаженні): `AMD-V / SVM Control` — увімкнено,
+   `Secure Boot` — вимкнено (для сторонніх модулів ядра).
+2. Звільни 600 ГБ. Окремий диск — ідеально; розділ на тому самому NVMe —
+   теж можна (GParted з LIVE-флешки, стисни NTFS).
+3. Flash Ubuntu 24.04 на флешку (Rufus / Fedora Media Writer), завантаження F8 →
+   USB, установка «Щось інше» / «Install alongside».
+4. Після встановлення — 8–16 ГБ swap (файл або розділ): для 16 ГБ RAM це не
+   розкіш, а захист від `Killed` під час Soong.
+
+   ```bash
+   sudo fallocate -l 16G /swapfile && sudo chmod 600 /swapfile
+   sudo mkswap /swapfile && sudo swapon /swapfile
+   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+   ```
+
+5. Дальше — кроки 1–4 нижче.
+
+### Шлях B. WSL2 на Windows
+
+Працює, але з застереженнями: на цій машині WSL не встановлено, і його
+встановлення потребує прав адміністратора та перезавантаження. Окремо —
+диск: VHDX зростає, тож для 400+ ГБ потрібне вільне місце на тому ж томі.
+
+```powershell
+# з адміністраторською сесією
+wsl --install -d Ubuntu-24.04      # потребує перезавантаження
 ```
 
-або одразу:
+Потім у `/etc/wsl.conf` (всередині Ubuntu):
 
-```bash
-build/scripts/bootstrap.sh
+```ini
+[automount]
+options = "metadata,umask=22,fmask=11"
+[interop]
+appendWindowsPath = false
 ```
 
-### 2. Джерела
+`appendWindowsPath = false` — важливо: інакше `PATH` з Windows підсовує чужі
+`java`/`git` у Linux-оболонку. І в `C:\Users\<you>\.wslconfig`:
 
-```bash
-mkdir -p ~/tessera && cd ~/tessera
-repo init -u https://github.com/LineageOS/manifest -b lineage-22.2
-repo sync -c -j"$(nproc)" --force-sync --no-clone-bundle
+```ini
+[wsl2]
+memory=12GB
+processors=14
+swap=16GB
 ```
 
-Кладемо наш репозиторій у `vendor/tessera/os` (шлях очікує `build/tessera.mk`):
+Решта — кроки 1–4 нижче, у межах ext4-домівки (`~/tessera`), не `/mnt/c`.
+
+## Покроково (спільне для обох шляхів)
+
+### 1. Пакунки
 
 ```bash
-mkdir -p vendor/tessera
-git clone https://github.com/<you>/tessera-os vendor/tessera/os
+sudo apt update && sudo apt install -y git curl
+git clone https://github.com/nothing12-glitch/Tessera-OS ~/tessera-os
+bash ~/tessera-os/build/scripts/bootstrap.sh
 ```
 
-### 3. Конфіг продукту
+Скрипт ставить офіційний перелік LineageOS (bc, bison, build-essential,
+ccache, erofs-utils, git-lfs, kmod, lib32z1-dev, lz4, lzop, schedtool,
+squashfs-tools, xxd, zlib1g-dev …), перевіряє місце на диску, KVM і кладе
+`repo` у `~/bin`.
 
-`lunch` бачить таргент лише тоді, коли він оголошений в
-`device/**/AndroidProducts.mk`. Маніфест `manifest/tessera.xml` робить це
-автоматично через `<linkfile>`: при `repo sync` наші файли з'являються в
-каталозі платформи:
-
-| Джерело (у нашому репо) | Призначення в дереві |
-|---|---|
-| `build/tessera.mk` | `device/tessera/x86_64/tessera_x86_64.mk` |
-| `build/board/AndroidProducts.mk` | `device/tessera/x86_64/AndroidProducts.mk` |
-| `build/board/BoardConfig.mk` | `device/tessera/x86_64/BoardConfig.mk` |
-| `config/branding/tessera.prop` | `vendor/tessera/etc/tessera.prop` |
-
-Якщо ти клонуєш репозиторій вручну (без `repo sync` для нашого шару), зроби
-ті самі три посилання сам:
+### 2. Дерево: база + наш шар
 
 ```bash
-mkdir -p device/tessera/x86_64
-T="$PWD/vendor/tessera/os"
-ln -sfn "$T/build/tessera.mk"            device/tessera/x86_64/tessera_x86_64.mk
-ln -sfn "$T/build/board/AndroidProducts.mk" device/tessera/x86_64/AndroidProducts.mk
-ln -sfn "$T/build/board/BoardConfig.mk"   device/tessera/x86_64/BoardConfig.mk
+~/tessera-os/build/scripts/new-tree.sh lineage-22.2
 ```
 
-**Чому не повний маніфест.** `manifest/tessera.xml` перелічує лише кілька
-проєктів бази — цього достатньо, щоб показати шар і зібрати оверлеї, але не
-для повної збірки ROM: справжній образ потребує сотень проєктів і власне
-`default.xml` від LineageOS. Надійний шлях: форкнути
-[LineageOS/manifest](https://github.com/LineageOS/manifest), додати у його
-`default.xml` проєкт `vendor/tessera/os` з чотирма `<linkfile>` з таблиці вище
-— і робити `repo init -u` на власний форк. Саме тому команда на кроці 2 вказує
-на маніфест LineageOS, а не на наш.
+Скрипт робить три речі; дві з них важливо бачити текстом:
+
+```bash
+repo init -u https://github.com/LineageOS/android.git -b lineage-22.2 --git-lfs --no-clone-bundle
+# + .repo/local_manifests/tessera.xml  →  vendor/tessera/os (наш репо)
+repo sync -c -j"$(nproc)" --fail-fast
+```
+
+**Наш маніфест — додаток, а не замінник.** Ініціювати збірку власним
+`manifest/tessera.xml` не можна: перелічити вручну 1 000+ проєктів бази — це
+шлях до збірки, яка падає на 300-му файлі. Рідний механізм repo для
+деривативів — `.repo/local_manifests/`, ним і користуємось; форкати чужий
+маніфест не треба.
+
+`repo sync` — це сотні ГБ і кілька годин. Обірвався? Просто запусти скрипт
+ще раз, він продовжує.
+
+### 3. Статична перевірка перед довгою збіркою
+
+```bash
+cd ~/tessera            # каталог дерева, не репозиторію
+~/tessera-os/build/scripts/check-build-refs.sh --tree .
+```
+
+Перевіряє, що кожне `inherit-product` нашого конфіга йде до файла, який
+справді є в дереві, що кожен `PRODUCT_PACKAGES`-модуль оголошений (нашим
+Android.bp або деревом бази), і що `linkfile` маніфеста створили
+`device/tessera/x86_64/*.mk`. Коштує секунди, економить годину.
 
 ### 4. Збірка
 
 ```bash
-source build/envsetup.sh
-lunch tessera_x86_64-userdebug
-m -j"$(nproc)" 2>&1 | tee /tmp/tessera-build.log
+~/tessera-os/build/scripts/build-emulator.sh tessera_x86_64-userdebug
 ```
 
-Або все одразу з кешем і логами:
+Всередині: підготовка наших APK (`prepare-app.sh` — без них Soong падає на
+`apk not found`), `lunch`, `m -j` з обмеженням за пам'яттю, логи в
+`/tmp/tessera-build-*.log`. Готові образи — у
+`out/target/product/emu64x/` (каталог названий за `PRODUCT_DEVICE`, а не за
+назвою продукту; `kernel-ranchu` там само).
+
+Шукаєш, які таргети бачить дерево? `lunch` без аргументу друкує меню;
+у документації LineageOS для інших гілок фігурує stock-назва кшталт
+`sdk_phone_x86_64` — вона залежить від гілки, тому орієнтуйся на меню, а не
+на документ.
+
+### 5. Запуск
 
 ```bash
-build/scripts/build-emulator.sh
+~/tessera-os/build/scripts/run-avd.sh --image out/target/product/emu64x --api 35
 ```
 
-Перед `m` у дереві мають лежати APK наших застосунків: кожен модуль
-(`TesseraLauncher`, `TesseraCalculator`, `TesseraClock`, `TesseraDialer`,
-`TesseraFiles`) — це `android_app_import`, а бінарники в git заборонені
-політикою. Список
-застосунків тримає `build/scripts/apps.list`; `build-emulator.sh` викликає
-підготовку сам. Вручну це
+Скрипт кладе наші образи + `kernel-ranchu` у
+`$SDK/system-images/android-35/tessera/x86_64/`, створює AVD і запускає
+`emulator -writable-system -gpu host`. Першим ділом перевір прискорення:
+`egrep -c '(vmx|svm)' /proc/cpuinfo` > 0.
 
-```bash
-build/scripts/prepare-app.sh                        # усі з реєстру, Gradle-ом
-build/scripts/prepare-app.sh calculator             # один застосунок
-build/scripts/prepare-app.sh files prebuilt /шлях/app-debug.apk
-build/scripts/prepare-app.sh all artifact <id запуску build-apps>
+Якщо є доступ до `m emu_img_zip` — спробуй його перед `run-avd.sh`: це
+упаковка образу у формат, який емулятор очікує, без нашого ручного
+копіювання.
+
+## Експеримент другого проходу: продукт-шар `vendor/lineage`
+
+Образ збирається з дерева LineageOS (їхні `build/make`, `frameworks/base`,
+`soong`, патчі), але **без** їхнього конфігу продукту — і це свідомо. Причина
+перевірена файлом: `vendor/lineage/config/common.mk:119` викликає
+`enforce-product-packages-exist-internal` зі списком модулів, яких в образу
+емультора немає (`rild`, recovery-скрипти, `Calendar`), тож таке успадкування
+зупиняє збірку ще до першого `.img`. Линії самі збирають емулятор stock-таргетом.
+
+Коли перший образ у тебе в руках і збирається чисто — спробуй додати в
+`tessera.mk` (після успадкування бази):
+
+```makefile
+$(call inherit-product, vendor/lineage/config/common.mk)
 ```
 
-(режим `artifact` потребує `GITHUB_TOKEN`; обійти підготовку —
-`TESSERA_SKIP_APPS=1`, якщо власних застосунків у образі не треба; режим
-`prebuilt` має сенс лише для одного застосунку — спільного шляху до APK не
-буває).
+Очікувані помилки й що означатиме:
 
-Перша збірка на 16 ядрах — 2–6 годин. Наступні інкрементальні — хвилини
-(за умови `ccache`).
+| Помилка | Що це значить |
+|---|---|
+| `Some packages required to exist ... rild` | емуляторний таргет не має телефонного HAL; потрібен `TARGET_DISABLE_...`-прапорець або викинути рядок |
+| `No rule to make target '.../recovery.img'` | `common.mk` копіює файли в recovery, якого в емулятора немає |
+| `TrebuchetQuickStep ... not found` | шар тягне застосунки бази; перевір, чи вони в `PRODUCT_PACKAGES` емуляторного конфігу |
 
-### 5. Результат
-
-Image лежать у `out/target/product/tessera_x86_64/`:
-`system.img`, `vendor.img`, `ramdisk.img`, `super.img`, `userdata.img`.
-Для AVD потрібен `arm64/x86_64`-набір з `run-avd.sh` — див.
-[EMULATOR.md](EMULATOR.md).
+Тобто: це не «зламане», а неперевірене. Спершу — базовий образ.
 
 ## Типові помилки
 
 | Помилка | Причина | Рішення |
 |---|---|---|
-| `No rule to make target 'tessera_x86_64'` | `.mk` не в шляху пошуку | symlink із кроку 3, потім `m clean-outputs` |
-| `out of memory` / `Killed` під час `soong` | замало RAM | `-j$(nproc --all)` → `-j4`, вимкнути `USE_CCACHE=0` тимчасово |
-| `Android platform requires the host tool 'repo'` | `repo` не в `PATH` | поставити у `~/bin` і експорт |
-| `error: cannot find SDK` у own-app | немає Android SDK | `bootstrap.sh --apps` |
-| `TesseraLauncher` / `TesseraCalculator` / `TesseraClock` / `TesseraDialer` / `TesseraFiles`: apk not found | APK готується перед `m`, а не лежить у git | `build/scripts/prepare-app.sh` |
-| Застосунок зібрався, але його немає на екрані | модуля немає в `PRODUCT_PACKAGES` або застосунок випав з реєстру | `build/scripts/check-app-integration.sh` |
-| Оверлей не застосований | `isStatic="true"` + не в `PRODUCT_PACKAGES` | додай пакет до `tessera.mk`, перевіри `cmd overlay list` |
-| Система щоразу питає, який лаунчер | у образі два HOME-застосунки (сток не перекритий — див. docs/PIXEL-PARITY.md §6) | обери «Завжди» або `cmd package set-home-activity os.tessera.launcher/.LauncherActivity` |
+| `repo: command not found` | `~/bin` не в `PATH` | `echo 'export PATH=$HOME/bin:$PATH' >> ~/.bashrc` |
+| `Git LFS objects not found` | немає `git-lfs` | `sudo apt install git-lfs` і повторити `repo init` |
+| `No rule to make target 'tessera_x86_64'` | наші `.mk` не з'явилися в `device/tessera/x86_64/` | `check-build-refs.sh --tree .`, потім `m clean-outputs` |
+| `TesseraCamera: apk not found` | APK не підготовлені до `m` | `build/scripts/prepare-app.sh` (або `TESSERA_APPS_ARGS="artifact <id>"`) |
+| `Killed` / `out of memory` під Soong | замало RAM | `m -j4`, увімкнути swap, `WITH_DEXPREOPT=false` тимчасово |
+| `case-insensitive filesystem` | збірка в `/mnt/c` або на NTFS | працюй з ext4-домівки (`~/tessera`) |
+| `No space left on device` під sync | диск < 400 ГБ | звільнити місце; `repo sync` потім продовжує сам |
+| Емулятор не стартує | немає KVM / віртуалізації в UEFI | увімкнути AMD-V; `egrep -c '(vmx\|svm)' /proc/cpuinfo` |
 
 ## Відтворюваність
 
-Обов'язково для публічних релізів:
-
-- `BUILD_DATETIME` і `BUILD_DATE_UTC` задаються через `SOURCE_DATE_EPOCH` у CI;
-- підпис `releasekey` має лежати в захищеному сховищі, не в репозиторії;
-- кожен реліз збирається двічі різними білд-боксами й порівнюється
+- `SOURCE_DATE_EPOCH` експортує `build-emulator.sh` (у CI — значення запуску);
+- ключі підпису never у git: `*.pk8`, `*.pem`, `*.keystore`, `secrets/` —
+  в `.gitignore`, release-ключ лише в CI secrets;
+- публічний реліз збирають двічі на різних машинах і порівнюють
   `sha256sum` сукупності образів; розбіжність — блокер релізу.
 
 ## CI
 
 | Workflow | Де збирається | Що робить |
 |---|---|---|
-| `build-themes.yml` | GitHub-hosted ubuntu | збірка RRO-оверлеїв і викладка артефактів (швидка, безкоштовна) |
-| `build-rom.yml` | `self-hosted, linux, x86_64, rom-build` | повна збірка образу; hosted-раннери її не витягнуть (20 ГБ RAM, 6 год ліміт) |
-| `release.yml` | self-hosted + GitHub Releases | підписані образи, checksums, notes |
+| `policy.yml` | GitHub-hosted ubuntu | заборона бінарів/чужих брендів, ліцензії **і `check-build-refs.sh`** |
+| `build-apps.yml` | GitHub-hosted | наші 7 APK через Gradle |
+| `build-themes.yml` | GitHub-hosted | RRO-оверлеї |
+| `build-rom.yml` | self-hosted `linux, x86_64, rom-build` | повна збірка образу (hosted-раннери не витягнуть: 400 ГБ, 6-годинний ліміт) |
+| `release.yml` | self-hosted + GitHub Releases | образи + APK-пакунок, checksums |
+
+## Що ще не підтверджено
+
+1. Жодного зібраного нами образу ще немає — отже не підтверджено, що
+   `tessera_x86_64-userdebug` доходить до `.img` з першого ряду. Перший
+   прохід на білд-боксі й дає цю відповідь; логи просимо кладати в issue.
+2. `m emu_img_zip` для нашого продукту не перевірено — працює для stock-таргета
+   бази, для нашого — потребує підтвердження.
+3. Наші застосунки в образі (а не лише як APK) — теж питання першого запуску:
+   `adb shell pm list packages | grep os.tessera`.

@@ -48,3 +48,15 @@ jobs:
             grep -qi 'license' "$d/Android.bp" || echo "увага: $d не має рядка про ліцензію в Android.bp"
           done
           echo "ok: LICENSE = Apache-2.0"
+
+  # Конфіг збірки не повинен посилатися на файли, яких у базі немає. Без цього
+  # кроку «зелений проєкт» може роками ховати dead-посилання: образ у CI не
+  # збирається, тож єдиний, хто про це дізнається, — людина з 6-годинною
+  # збіркою на self-hosted білд-боксі.
+  build-refs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Усі посилання шару збірки існують у LineageOS 22.2
+        run: bash build/scripts/check-build-refs.sh

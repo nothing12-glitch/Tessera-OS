@@ -6,13 +6,39 @@
 #   source build/envsetup.sh && lunch tessera_x86_64-userdebug && m -j$(nproc)
 
 # --- 1. База ---------------------------------------------------------------
-# Повний конфіг AOSP для x86_64: framework, SystemUI, STOCK_AOSP застосунки.
-$(call inherit-product, build/make/target/product/full_x86_64.mk)
+# Повний конфіг емулятора x86_64: framework, SystemUI, застосунки AOSP,
+# ядро ranchu, fstab, розділи.
+#
+# Шлях і вміст перевірені деревом LineageOS 22.2 (2026-10-24):
+# device/generic/goldfish/64bitonly/product/sdk_phone64_x86_64.mk бере
+# board/emu64x/details.mk + product/phone.mk і ставить PRODUCT_DEVICE := emu64x.
+# Саме тому наш продукт не пише власного BoardConfig.mk: каталог платформи
+# визначається за іменем PRODUCT_DEVICE (device/generic/goldfish/board/emu64x),
+# і власний BoardConfig довівся б до двох конкурентних файлів.
+$(call inherit-product, device/generic/goldfish/64bitonly/product/sdk_phone64_x86_64.mk)
 
-# Линії LineageOS (OTA-інфра, Privacy Guard, Theme engine, Backup).
-# inherit-product-if-exists робить конфіг безпечним і для чисто-AOSP гілки.
-$(call inherit-product-if-exists, vendor/lineage/config/lineage_microg.mk)
-$(call inherit-product-if-exists, build/make/target/product/lineage_base.mk)
+# Линії LineageOS (OTA-інфра, Privacy Guard, Theme engine, Backup) ми тут НЕ
+# підключаємо — і це не забутовка, а свідоме обмеження першого проходу.
+# Перевірено raw-файлом vendor/lineage/config/common.mk гілки lineage-22.2:
+# він викликає enforce-product-packages-exist-internal з модулями, яких в
+# емуляторному образу просто немає (`rild`, recovery-скрипти, Calendar), тому
+# такий успадкування ламає збірку на кроці перевірки пакетів. LineageOS і сам
+# збирає емулятор stock-таргетом (wiki.lineageos.org/emulator), а свій конфіг
+# бере лише для справжніх телефонів.
+#
+# Тим не менш база в нас справді линіївна: дерево беремо з маніфеста
+# LineageOS (їхні build/make, frameworks/base, soong, vendor/lineage у
+# sync), тож патчі й збірка бази — їхні. Додати їхній продукт-шар — задача
+# другого проходу, з логом реальної помилки під рукою: див. docs/BUILD.md,
+# розділ «Експеримент: шар vendor/lineage».
+
+# Вимоги до шляхів артефактів (mainline enforcement) база пом'якшує лише для
+# власної назви продукту: sdk_phone64_x86_64.mk:24-25 перевіряє
+# `ifeq (sdk_phone64_x86_64,$(TARGET_PRODUCT))`. Для tessera_x86_64 умова не
+# спрацює, і prebuilt-APK у system_ext могли б бути відхилені саме через неї,
+# а не через справжню проблему. Тому пом'якшуємо явно — тим самим значенням,
+# яке бере база для себе.
+PRODUCT_ENFORCE_ARTIFACT_PATH_REQUIREMENTS := relaxed
 
 # --- 2. Оверлеї інтерфейсу -------------------------------------------------
 # Static RRO пакети з overlay/themes/. Збираються через Android.bp blueprint
@@ -83,14 +109,19 @@ PRODUCT_PACKAGES += \
     TesseraFiles \
     TesseraMessaging
 
-# --- 3. Сервіси, замість власницьких бінарів -------------------------------
-# microG — вільна реалізація push/location/oauth. Профіль GApps користувача
-# описано в docs/GAPPS.md; сюда власницькі бінари Google не входять.
-PRODUCT_PACKAGES += \
-    microG \
-    GmsCore \
-    FakeStore \
-    AuroraStore
+# --- 3. Google-сервіси: чому їх немає в цьому списку -----------------------
+# Обіцянка «GApps ставляться» не реалізується рядками PRODUCT_PACKAGES, і от
+# чому: у маніфесті бази (перевірено 2026-10-24 — default.xml і
+# snippets/lineage.xml) немає проєктів ні microG, ні GmsCore, ні Aurora.
+# Модулі з неіснуючою назвою — це або помилка «module not found», або мовчки
+# порожній рядок у списку. Перше гірше, друге бреше.
+#
+# Чесна модель: сервіси ставлять КОРИСТУВАЧІ, як і в LineageOS.
+#  - microG — окремим APK з F-Droid/Aurora, який завантажують самі; або
+#    local_manifests від lineage.microg.org, доданий на білд-боксі;
+#  - власницькі GApps — ZIP від його проєкту після першого запуску.
+# Покроково — docs/GAPPS.md. Наш образ не містить жодної бінарної залежності
+# від Google, тож політика репозиторію (policy.yml) тут не порушується.
 
 # Прибираємо з образу зайві модулі бази. Причина в них різна, тому й рядки
 # розділені.
@@ -128,7 +159,11 @@ PRODUCT_PACKAGES := $(filter-out Dialer,$(PRODUCT_PACKAGES))
 
 # --- 4. Ідентичність -------------------------------------------------------
 PRODUCT_NAME := tessera_x86_64
-PRODUCT_DEVICE := x86_64
+# emu64x — не помилка замість x86_64: Soong шукає BoardConfig.mk за іменем
+# каталогу, що збігається з PRODUCT_DEVICE, а єдиний такий каталог у базі —
+# device/generic/goldfish/board/emu64x. Свій BoardConfig ми тому не пишемо
+# (див. §1): другий файл з такою ж назвою каталогу конфліктував би з базовим.
+PRODUCT_DEVICE := emu64x
 PRODUCT_MANUFACTURER := TesseraOS Project
 PRODUCT_BRAND := tessera
 PRODUCT_MODEL := TesseraOS (x86_64 VM)
@@ -137,40 +172,45 @@ PRODUCT_MODEL := TesseraOS (x86_64 VM)
 TESSERA_VERSION := 15.22.2.1
 TESSERA_CODENAME := vega
 
-PRODUCT_PROPERTY_OVERRIDES += \
+# Ідентичність образу. Комерційні властивості (brand/manufacturer) мають
+# відповідати Apache-2.0 §4 і не імітувати чужі торгові марки.
+#
+# PRODUCT_PROPERTY_OVERRIDES у 22.2 ще працює, але позначений як застарілий
+# (build/make/core/product.mk:89-93 — «in favor of PRODUCT_SYSTEM_PROPERTIES»),
+# тому беремо сучасну назву.
+PRODUCT_SYSTEM_PROPERTIES += \
     ro.tessera.version=$(TESSERA_VERSION) \
     ro.tessera.codename=$(TESSERA_CODENAME) \
     ro.tessera.base=LineageOS-22.2 \
     ro.tessera.theme=material3 \
+    ro.tessera.theme.seed=\#3350C8 \
+    ro.tessera.support.url=https://github.com/nothing12-glitch/Tessera-OS/issues \
     persist.tessera.dynamic_color=1 \
-    ro.product.first_api_level=35
+    persist.tessera.telemetry=0
 
-# --- 5. Розміри розділів для VM -------------------------------------------
-# image-розміри задаються з BoardConfig; тут лише logical-партиції.
-# Звір ці значення з розділами в device/generic/x86_64/BoardConfig.mk.
-PRODUCT_SYSTEM_EXT_PROPERTIES += \
-    ro.tessera.partition.scheme=non-a-b
+# ro.product.first_api_level тут не пишемо: значення бере base-конфіг
+# емулятора (35 для Android 15), а ручний перезапис властивості, яку генерує
+# система, — клас помилок «зелений білд, але PackageManager думає, що API 33».
 
-# Dynamic partitions: у VM простіше без super.img.
-PRODUCT_USE_DYNAMIC_PARTITIONS := false
-PRODUCT_BUILD_SUPER_PARTITION := false
-
-# --- 6. Безпека і підпис ---------------------------------------------------
-# enforce тримає privapp-permissions чистими, щоб GApps-пакет, поставлений
+# --- 5. Безпека і підпис ---------------------------------------------------
+# enforce тримає privapp-permissions чистими, щоб пакет, поставлений
 # користувачем, не потребав правок у sepolicy.
-PRODUCT_PROPERTY_OVERRIDES += \
-    ro.control_privapp_permissions=enforce
+PRODUCT_SYSTEM_PROPERTIES += ro.control_privapp_permissions=enforce
 
-# userdebug-образ для тестів; для release these два рядки має прибрати CI.
+# ADB без підтвердження ключа — лише для тестового образу. У user-збірці такі
+# рядки були б відчиненими дверима, тому умову робимо прямо тут (так само
+# робить база: vendor/lineage/config/common.mk:27-42).
+ifneq ($(TARGET_BUILD_VARIANT),user)
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
     ro.adb.secure=0 \
     persist.sys.usb.config=adb
-
-# --- 7. Відтворюваність ----------------------------------------------------
-# Timestamp беремо з CI (SOURCE_DATE_EPOCH), а не з date, щоб два білд-бокси
-# давали однаковий build.prop. Див. docs/BUILD.md#відтворюваність.
-ifdef SOURCE_DATE_EPOCH
-PRODUCT_BUILD_PROP_OVERRIDES += \
-    BUILD_DATETIME=$(shell date -u -d @$(SOURCE_DATE_EPOCH) +%Y-%m-%dT%H:%M:%SZ) \
-    BUILD_DATE_UTC=$(shell date -u -d @$(SOURCE_DATE_EPOCH) +%Y-%m-%dT%H:%M:%SZ)
 endif
+
+# --- 6. Розміри образів ----------------------------------------------------
+# Тут спеціально немає рядків. Розміри й dynamic partitions задає базовий
+# board-конфіг (device/generic/goldfish/board/emu64x/BoardConfig.mk разом з
+# sdk_phone64_x86_64.mk: BOARD_EMULATOR_DYNAMIC_PARTITIONS_SIZE = 1.8 ГБ), і
+# наша ранішня спроба вимкнути super.img (`PRODUCT_USE_DYNAMIC_PARTITIONS :=
+# false`) суперечила fstab емулятора — образ зібрався б іншим, ніж той, на
+# який очікують правила run-avd.sh. Наші сім застосунків + три RRO важать
+# ~30 МБ, тож місця вистачає з базового розміру.
