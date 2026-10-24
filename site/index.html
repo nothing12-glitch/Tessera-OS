@@ -491,6 +491,42 @@ input[type="color"] { width: 44px; height: 34px; border: 1px solid var(--outline
   display: grid; place-items: center; background: var(--ui-accent); color: var(--ui-on-accent) }
 .dial-call svg { width: 21px; height: 21px }
 
+/* повідомлення — ConversationScreen з apps/messaging: бульбашки 20 dp, у
+   останньої в групі кут 4 dp («хвіст»), свої — primaryContainer, чужі —
+   surfaceContainerHigh (тут --ui-surface2), підпис часу labelSmall; поле
+   введення 28 dp і кнопка надсилання 40 dp у primaryContainer, коли є куди
+   слати. Усі розміри приведені до масштабу макета (~0.7 від dp). */
+.msg { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 0 8px }
+.msg-top { display: flex; align-items: center; gap: 8px; padding: 2px 2px 8px;
+  color: var(--ui-on) }
+.msg-top .who { font-size: 12.5px; font-weight: 500 }
+.msg-top .sub { font-size: 8.5px; color: var(--ui-on-variant) }
+.msg-top svg { width: 13px; height: 13px; flex: none; color: var(--ui-on-variant) }
+.msg-top .bk { margin-right: 1px }
+.msg-top .del { margin-left: auto }
+.msg-day { text-align: center; font-size: 8.5px; color: var(--ui-on-variant); padding: 8px 0 2px }
+.bub { max-width: 76%; margin: 2px 0; padding: 5px 8px 4px; border-radius: 14px;
+  font-size: 10.5px; line-height: 1.35 }
+.bub i { display: block; margin-top: 2px; font-style: normal; font-size: 7px;
+  opacity: .75; text-align: end }
+.bub.mine { align-self: flex-end; background: var(--ui-pri-cont);
+  color: var(--ui-on-pri-cont); border-bottom-right-radius: 3px }
+.bub.theirs { align-self: flex-start; background: var(--ui-surface2);
+  color: var(--ui-on); border-bottom-left-radius: 3px }
+.msg-thread { display: flex; flex-direction: column; flex: 1; min-height: 0 }
+.msg-in { margin-top: auto; display: flex; align-items: center; gap: 7px; padding: 7px 0 9px }
+.msg-field { flex: 1; height: 27px; padding: 0 12px; border-radius: 20px; overflow: hidden;
+  background: var(--ui-surface2); color: var(--ui-on-variant); font-size: 10px;
+  display: flex; align-items: center; gap: 8px }
+/* в застосунку поле — один рядок, тому чернетка в макеті теж одна рядкова:
+   без обрізання 99 символів роздули б «композер» до трьох рядків */
+.msg-field .draft { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis }
+.msg-field .parts { font-size: 7px; opacity: .8; flex: none }
+.msg-send { width: 28px; height: 28px; border-radius: 50%; flex: none; display: grid;
+  place-items: center; background: var(--ui-pri-cont); color: var(--ui-on-pri-cont) }
+.msg-send svg { width: 13px; height: 13px }
+
 /* footer */
 footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant); color: var(--on-surface-variant); font-size: .92rem }
 .foot { display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap; align-items: center }
@@ -655,6 +691,7 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
               <button data-screen="files" aria-pressed="false">Файли</button>
               <button data-screen="clock" aria-pressed="false">Годинник</button>
               <button data-screen="dialer" aria-pressed="false">Телефон</button>
+              <button data-screen="messaging" aria-pressed="false">Повідомлення</button>
             </div>
           </div>
         </div>
@@ -677,13 +714,18 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
             Макет не стверджує, що образ уже зібраний: він показує цільову поведінку палітри й
             геометрії. Сітка 5&nbsp;×&nbsp;6 з доком із 5 іконок — це вже файл у репо; рядок
             «дата + погода» й шухляда тепер у власному лаунчері в <code>apps/launcher</code>.
-            Екрани «Калькулятор», «Файли», «Годинник» і «Телефон» знімають з
+            Екрани «Калькулятор», «Файли», «Годинник», «Телефон» і «Повідомлення»
+            знімають з
             <code>apps/calculator</code>, <code>apps/files</code>,
-            <code>apps/clock</code> та <code>apps/dialer</code>: тон клавіш,
-            позначки типів, порядок сортування, рядки будильників і літери під
-            цифрами набору взяті з коду. Усі чотири збирає CI, але на екрані
-            пристрою їх ще не бачили. У «Телефона» не перевірено наживо й
-            головне: чи система віддасть йому роль набірного застосунку й чи
+            <code>apps/clock</code>, <code>apps/dialer</code> та
+            <code>apps/messaging</code>: тон клавіш,
+            позначки типів, порядок сортування, рядки будильників, літери під
+            цифрами набору й кошторис частин SMS узяті з коду — останній рахує
+            той самий <code>SmsParts</code>, що й застосунок. Усі п'ять збирає CI,
+            але на екрані
+            пристрою їх ще не бачили. У «Телефона» й «Повідомлень» не перевірено
+            наживо й
+            головне: чи система віддасть їм ролі набірного застосунку та SMS і чи
             підніме наше вікно на вхідному виклику.
           </p>
         </div>
@@ -934,9 +976,11 @@ build/scripts/run-avd.sh</code></pre>
             <p class="muted" style="margin:0">
               Структура дистрибутива, конфіг продукту та BoardConfig, маніфест із <code>linkfile</code>,
               три RRO-оверлеї з перевіреними іменами, захист імен у CI, документація зі збірки,
-              емулятора, GApps і тем, ліцензія Apache-2.0. Три власні застосунки —
-              <code>apps/launcher</code>, <code>apps/calculator</code>, <code>apps/files</code> —
-              з тестами, реєстром <code>build/scripts/apps.list</code> та матрицею CI.
+              емулятора, GApps і тем, ліцензія Apache-2.0. Шість власних застосунків —
+              <code>apps/launcher</code>, <code>apps/calculator</code>, <code>apps/files</code>,
+              <code>apps/clock</code>, <code>apps/dialer</code>, <code>apps/messaging</code> —
+              з тестами, реєстром <code>build/scripts/apps.list</code> та матрицею CI. «Телефон» і
+              «Повідомлення» заміщують стокові модулі, а не лежать поруч із ними.
               Власна айдентика: знак (SVG і VectorDrawable з однаковою геометрією), дві
               OFL-ліцензії шрифтів із перевіреною кирилицею, пʼять маркових кольорів і три
               шпалери — усе з контрольними сумами у <code>check-brand.sh</code>.
@@ -946,8 +990,9 @@ build/scripts/run-avd.sh</code></pre>
             <h3>Наступне</h3>
             <p class="muted" style="margin:0 0 10px">
               Перший зібраний образ, який запускається в емуляторі; звірка імен <code>settingslib_*</code>
-              зі зібраного <code>Settings.apk</code>; перевірка сітки 5 × 6 на тому образі; наступні
-              застосунки — годинник, галерея, нотатки.
+              зі зібраного <code>Settings.apk</code>; перевірка сітки 5 × 6 на тому образі; справжні
+              знімки екрана замість макетів; наступні застосунки — «Камера» з редактором, галерея,
+              нотатки.
             </p>
             <p class="muted" style="margin:0"><b>Не перевірено на пристрої.</b> Поки образ не зібрано,
             пункти про ефект оверлеїв — гіпотеза з доказом на рівні імен ресурсів, а не факт.</p>
@@ -1315,6 +1360,65 @@ const DIAL_KEYS = [
   ['*', ''], ['0', '+'], ['#', '']
 ];
 const ICO_CALL = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6,3.6 C6.6,2.7 7.4,2.2 8.2,2.6 L10.4,4 C11.1,4.4 11.2,5.3 10.8,6 L9.6,8 C9.3,8.5 9.4,9.1 9.8,9.6 C11.2,11.4 13.2,13.4 15,14.8 C15.5,15.2 16.1,15.1 16.6,14.8 L18.4,13.4 C19,12.9 19.9,13.1 20.3,13.8 L21.4,15.8 C21.8,16.5 21.3,17.4 20.5,17.5 C18.7,17.8 16.6,17.4 14.2,16.2 C9.8,14 5.6,9.6 4.2,5.2 C3.8,4 4.4,2.7 5.6,3 C6.2,3.1 6.6,3.2 6.6,3.6 Z"/></svg>';
+const ICO_SEND_SM = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21,12 L4,4 L8,12 L4,20 Z"/></svg>';
+const ICO_BACK_SM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.5,5 L8,12 L15.5,19"/></svg>';
+const ICO_DEL_SM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4,7 H20"/><path d="M6.5,7 V19 A1.5,1.5 0 0,0 8,20.5 H16 A1.5,1.5 0 0,0 17.5,19 V7"/><path d="M9.5,7 V4.5 A1,1 0 0,1 10.5,3.5 H13.5 A1,1 0 0,1 14.5,4.5 V7"/></svg>';
+/* Порт SmsParts з apps/messaging: набір GSM-7 визначений консервативно
+   (тільки друкована ASCII без дев'яти символів, яких у базі 3GPP немає),
+   тому кирилиця завжди йде в UCS-2. Без цього порту лічильник у макеті був би
+   намальованою цифрою, а не тим, що дає застосунок. */
+const SmsParts = (() => {
+  const EXTENDED = ['^', '{', '}', '[', ']', '~', '|', '\\', '€'];
+  const NOT_BASIC = ['^', '~', '|', '\\', '[', ']', '{', '}', '`'];
+  const BASIC = [];
+  for (let c = 32; c <= 126; c++) {
+    const ch = String.fromCharCode(c);
+    if (!NOT_BASIC.includes(ch)) BASIC.push(ch);
+  }
+  return {
+    budget(text) {
+      const gsm = [...text].every(ch => BASIC.includes(ch) || EXTENDED.includes(ch));
+      const single = gsm ? 160 : 70;
+      const perPart = gsm ? 153 : 67;
+      if (!text) return { alphabet: 'gsm7', units: 0, parts: 0, capacity: single };
+      const units = gsm
+        ? text.length + [...text].filter(ch => EXTENDED.includes(ch)).length
+        : text.length;
+      const parts = units <= single ? 1 : Math.ceil(units / perPart);
+      return {
+        alphabet: gsm ? 'gsm7' : 'ucs2',
+        units,
+        parts,
+        capacity: parts === 1 ? single : parts * perPart,
+      };
+    },
+  };
+})();
+/* бульбашки — Bubble у ConversationScreen: остання в групі має кут 4 dp,
+   «свої» — primaryContainer, чужі — surfaceContainerHigh. Рядки «частини» в
+   полі введення дає SmsParts: кирилиця йде в UCS-2, тому чернетка з 99
+   символів — це «2 · 99/134», а не «…/306», як було б для латинки. */
+const MSG_BUBBLES = [
+  ['theirs', 'Ти на місці? Завтра о сьомій зручно?', '07:12'],
+  ['mine', 'Так, у центрі. Можу й раніше.', '07:15'],
+  ['theirs', 'Тоді до побачення о пів на сьому.', '07:16'],
+];
+const MSG_DRAFT = 'Домовилися! Виходжу о пів на сьому — на мосту зазвичай пробки, тому краще почекати мене біля входу.';
+function messagingMarkup() {
+  const bubbles = MSG_BUBBLES.map(([side, text, time]) =>
+    `<div class="bub ${side}">${text}<i>${time}</i></div>`).join('');
+  const budget = SmsParts.budget(MSG_DRAFT);
+  return `<div class="msg">
+      <div class="msg-top">${ICO_BACK_SM}<div><div class="who">Тетяна</div>
+        <div class="sub">+380 67 123 45 67</div></div>
+        <span class="del">${ICO_DEL_SM}</span></div>
+      <div class="msg-thread"><div class="msg-day">Сьогодні</div>${bubbles}
+        <div class="msg-in"><div class="msg-field"><span class="draft">${MSG_DRAFT}</span>
+          <span class="parts">${budget.parts} · ${budget.units}/${budget.capacity}</span></div>
+          <span class="msg-send">${ICO_SEND_SM}</span></div>
+      </div>
+    </div>`;
+}
 function dialerMarkup() {
   const keys = DIAL_KEYS.map(([d, l]) =>
     `<div class="dkey"><span class="d">${d}</span><span class="l">${l}</span></div>`).join('');
@@ -1334,7 +1438,7 @@ function dialerMarkup() {
       <div class="navbar">${tabs}</div>
     </div>`;
 }
-const MARKUP = { lock: lockMarkup, launcher: launcherMarkup, drawer: drawerMarkup, qs: qsMarkup, settings: settingsMarkup, calculator: calculatorMarkup, files: filesMarkup, clock: clockMarkup, dialer: dialerMarkup };
+const MARKUP = { lock: lockMarkup, launcher: launcherMarkup, drawer: drawerMarkup, qs: qsMarkup, settings: settingsMarkup, calculator: calculatorMarkup, files: filesMarkup, clock: clockMarkup, dialer: dialerMarkup, messaging: messagingMarkup };
 
 function render() {
   document.getElementById('screenBody').innerHTML = MARKUP[state.screen]();
