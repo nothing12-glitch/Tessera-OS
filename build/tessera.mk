@@ -133,7 +133,7 @@ PRODUCT_BRAND := tessera
 PRODUCT_MODEL := TesseraOS (x86_64 VM)
 
 # Версія проєкту: <android>.<lineage>.<tessera>. Теги GitHub — v<версія>.
-TESSERA_VERSION := 15.22.2.0
+TESSERA_VERSION := 15.22.2.1
 TESSERA_CODENAME := vega
 
 PRODUCT_PROPERTY_OVERRIDES += \

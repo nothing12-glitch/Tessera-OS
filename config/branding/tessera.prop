@@ -1,6 +1,6 @@
 # Ідентичність образу. Комерційні властивості (brand/manufacturer) мають
 # відповідати Apache-2.0 §4 і не імітувати чужі торгові марки.
-ro.tessera.version=15.22.2.0
+ro.tessera.version=15.22.2.1
 ro.tessera.codename=vega
 ro.tessera.base=LineageOS-22.2
 ro.tessera.theme=material3

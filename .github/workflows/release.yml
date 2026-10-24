@@ -124,7 +124,7 @@ jobs:
           ARCHIVE="$(ls -1 dist/*.tar.xz | head -1)"
           DIR="dist/$(basename "${ARCHIVE%.tar.xz}")"
           N_APKS="$(find "$DIR/apks" -name '*.apk' | wc -l)"
-          N_OVL="$(find "$DIR/overlays" -name '*.apk' 2>/dev/null | wc -l)"
+          N_OVL="$(find "$DIR/overlays" -name '*.apk' 2>/dev/null | wc -l || true)"
           if [[ "$N_OVL" -gt 0 ]]; then
             INSIDE="$N_APKS застосунків і RRO-оверлеї теми MD3 ($N_OVL шт.)"
           else
