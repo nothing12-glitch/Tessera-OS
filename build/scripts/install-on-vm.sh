@@ -141,14 +141,25 @@ done
 # Оверлеї — static RRO з overlay/themes/: без них інтерфейс лишається стоковим,
 # і це непомітно лише до першого порівняння скріншотів.
 echo ">>> Тема"
-overlays="$(ls "$APKS"/../overlays/*.apk 2>/dev/null || true)"
+OVER_DIR="$(cd "$APKS/.." && pwd)/overlays"
+overlays="$(ls "$OVER_DIR"/*.apk 2>/dev/null || true)"
 if [[ -z "$overlays" ]]; then
   note "оверлеїв у пакунку немає — образ виглядатиме стоково (збірка: build/scripts/build-themes.sh)"
 else
   for apk in $overlays; do
     name="$(basename "$apk" .apk)"
+    # cmd overlay enable знає лише package з маніфеста: «TesseraIconShapeTheme»
+    # — це ім'я файла, а не пакет, і на ньому команда мовчки нічого не вмикала.
+    pkg="$(awk -F'|' -v n="$name" '$1==n{print $2}' "$OVER_DIR/packages.list" 2>/dev/null)"
     run $ADB install -r -t "$apk" >/dev/null 2>&1 || { warn "$name: не поставився"; continue; }
-    run $ADB shell "cmd overlay enable $name" >/dev/null 2>&1 || warn "$name: cmd overlay не зміг увімкнути"
+    if [[ -z "$pkg" ]]; then
+      warn "$name: package немає в overlays/packages.list — увімкни вручну: adb shell cmd overlay enable <package>"
+      continue
+    fi
+    run $ADB shell "cmd overlay enable --persistent $pkg" >/dev/null 2>&1 \
+      || run $ADB shell "cmd overlay enable $pkg" >/dev/null 2>&1 \
+      || warn "$pkg: cmd overlay не зміг увімкнути (приватні ресурси framework вимагають платформного ключа)"
+    note "$pkg ← $name"
   done
   note "static-оверлеї перечитуються лише після перезавантаження: adb reboot"
 fi

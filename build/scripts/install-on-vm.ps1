@@ -141,14 +141,38 @@ $overlayDir = Join-Path (Split-Path $Apks -Parent) "overlays"
 if (-not (Test-Path $overlayDir)) {
     Write-Host "  оверлеїв у пакунку немає — образ виглядатиме стоково"
 } else {
+    # packages.list дає пару «файл APK → package з маніфеста». Команда
+    # cmd overlay enable розуміє лише package, а імʼя файла (TesseraIconShapeTheme)
+    # для неї нічого не вмикає.
+    $map = @{}
+    $list = Join-Path $overlayDir "packages.list"
+    if (Test-Path $list) {
+        foreach ($line in (Get-Content $list)) {
+            $pair = $line -split '\|', 2
+            if ($pair.Length -eq 2) { $map[$pair[0]] = $pair[1] }
+        }
+    }
     foreach ($apk in (Get-ChildItem $overlayDir -Filter *.apk)) {
         $name = $apk.BaseName
-        if ($DryRun) { Write-Host "  [dry-run] overlay $name"; continue }
+        $pkg = $map[$name]
+        if ($DryRun) {
+            if ($pkg) { Write-Host "  [dry-run] adb install -r -t $name.apk; adb shell cmd overlay enable --persistent $pkg" }
+            else { Write-Host "  [dry-run] adb install -r -t $name.apk (package не в packages.list)" }
+            continue
+        }
         & $AdbPath @AdbArgs install -r -t $apk.FullName | Out-Null
         if ($LASTEXITCODE -ne 0) { Add-Warning "$name`: не поставився"; continue }
-        if (-not (Invoke-AdbShell "cmd overlay enable $name")) {
-            Add-Warning "$name`: cmd overlay не зміг увімкнути"
+        if (-not $pkg) {
+            Add-Warning "$name`: package немає в overlays/packages.list - увімкни вручну: adb shell cmd overlay enable <package>"
+            continue
         }
+        if (-not (Invoke-AdbShell "cmd overlay enable --persistent $pkg")) {
+            if (-not (Invoke-AdbShell "cmd overlay enable $pkg")) {
+                Add-Warning "$pkg`: cmd overlay не зміг увімкнути (приватні ресурси framework вимагають платформного ключа)"
+                continue
+            }
+        }
+        Write-Host "  $pkg -> $name"
     }
     Write-Host "  static-оверлеї перечитуються лише після перезавантаження: adb reboot"
 }

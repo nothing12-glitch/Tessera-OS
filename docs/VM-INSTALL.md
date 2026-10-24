@@ -25,7 +25,8 @@
    [сторінки релізів](https://github.com/nothing12-glitch/Tessera-OS/releases)
    і звір суму з `<...>.tar.xz.sha256`.
 2. Розпакуй. Всередині: `apks/`, `apps.list`, `install-on-vm.sh`,
-   `install-on-vm.ps1`, `README.txt`.
+   `install-on-vm.ps1`, `README.txt` і `overlays/` з `packages.list` — якщо
+   збірка оверлеїв удалася, пакунок має і тему.
 3. Запусти гостьову систему так, щоб хост бачив її через adb
    (для емулятора — `-ports` або стандартний `emulator-5554`; для VM із мережевим
    adb — `adb connect <IP>:5555`).
@@ -56,6 +57,12 @@
 - `adb` не бачить гостьову систему: `adb kill-server && adb start-server`, для
   мережевого adb — `adb connect <IP>:5555`.
 - «наші застосунки потребують API 33+» — образ старий, потрібен Android 13+.
+- `cmd overlay не зміг увімкнути os.tessera.theme.*` — приватні ресурси
+  framework (`config_*`, `Theme.DeviceDefault_*`) RRO приймає лише від
+  оверлеїв, підписаних платформним ключем образу. Наш тестовий ключ ним не є,
+  тому на чужій базі тема може не застосуватися: у власному образі з дерева
+  AOSP static-оверлеї лежать у `/product/overlay` і працюють без діалогів.
+  Це саме той пункт, якого ще не перевірено на живому пристрої.
 
 **Що перевірити далі**
 

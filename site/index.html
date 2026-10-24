@@ -565,13 +565,14 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
 
   <div class="hero">
     <div class="wrap">
-      <div class="chip"><span class="dot"></span> Каркас, документація й CI — образ ще не випущено</div>
+      <div class="chip"><span class="dot"></span> Шість застосунків, тема MD3 і пакунок для VM — сам образ іще не випущено</div>
       <h1>Tessera<span class="brand-os">OS</span></h1>
       <p class="lead">Вільний дистрибутив Android на базі LineageOS&nbsp;22.2 (Android&nbsp;15) із власним
       UI-шаром за Material Design&nbsp;3. Без пропрієтарних бінарників, з відкритим кодом і
       зрозумілою межею того, що взагалі можна легально зробити.</p>
       <div class="actions">
-        <a class="btn primary" href="#look">Спробувати інтерфейс</a>
+        <a class="btn primary" href="https://github.com/nothing12-glitch/Tessera-OS/releases/latest">Завантажити пакунок</a>
+        <a class="btn text" href="#look">Спробувати інтерфейс</a>
         <a class="btn text" href="https://github.com/nothing12-glitch/Tessera-OS">Код на GitHub</a>
       </div>
     </div>
@@ -917,13 +918,17 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
           побачити задуману поведінку — без збірки й без прошивання.</p>
         </div>
         <div class="card">
-          <p class="stack-num">ШЛЯХ 2 · ГОДИНА</p>
-          <h3>Оверлеї на емулятор</h3>
-          <p class="muted">Зберіть три RRO-пакети локально (потрібен лише Android SDK, повна збірка
-          не потрібна) і поставте на будь-який Android&nbsp;15-емулятор.</p>
-<pre style="margin-top:12px"><code>build/scripts/build-themes.sh
-adb install -r overlay/out/TesseraIconShapeTheme.apk
-adb shell cmd overlay enable os.tessera.theme.iconshape</code></pre>
+          <p class="stack-num">ШЛЯХ 2 · 15 ХВ</p>
+          <h3>Пакунок на віртуальну машину</h3>
+          <p class="muted">Завантаж архів із <a href="https://github.com/nothing12-glitch/Tessera-OS/releases">сторінки релізів</a>,
+          розпакуй і запусти інсталятор проти будь-якого Android&nbsp;13+ у VM чи емуляторі: він ставить
+          наші шість застосунків, призначає ролі <code>HOME</code>, <code>ROLE_DIALER</code>,
+          <code>ROLE_SMS</code> і вмикає тему MD3.</p>
+<pre style="margin-top:12px"><code># Linux / macOS / Git Bash
+./install-on-vm.sh
+
+# Windows PowerShell
+.\install-on-vm.ps1</code></pre>
         </div>
         <div class="card">
           <p class="stack-num">ШЛЯХ 3 · ВЕЧІР</p>
@@ -1058,6 +1063,7 @@ aapt2 dump resources overlay/out/TesseraIconShapeTheme.apk</code></pre>
   <div class="wrap foot">
     <span>TesseraOS · Apache-2.0 · не повʼязаний із Google чи LineageOS</span>
     <span><a href="https://github.com/nothing12-glitch/Tessera-OS">Репозиторій</a> ·
+      <a href="https://github.com/nothing12-glitch/Tessera-OS/releases">Релізи</a> ·
       <a href="https://github.com/nothing12-glitch/Tessera-OS/blob/main/docs/UI.md">UI</a> ·
       <a href="https://github.com/nothing12-glitch/Tessera-OS/blob/main/docs/BUILD.md">Збірка</a></span>
   </div>

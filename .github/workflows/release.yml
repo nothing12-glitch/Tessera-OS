@@ -82,10 +82,16 @@ jobs:
       - name: Зібрати оформлення (оверлеї MD3)
         run: |
           set -euo pipefail
-          # build-themes.sh потребує Android SDK; на раннері він є. Якщо збірка
-          # оверлеїв не вдається, пакунок виходить без теми — і скрипт, і цей
-          # рядок друкують чому, а не мовчки кладуть порожній каталог.
-          bash build/scripts/build-themes.sh || echo "увага: оверлеї не зібрались — пакунок буде без теми"
+          # build-themes.sh чітає aapt2/zipalign/apksigner з PATH, а на раннері
+          # вони лежать у $SDK/build-tools/<версія>/ й у PATH їх немає. Без
+          # цього пакунок мовчки виходив без теми.
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          BT="$(ls -1d "$SDK"/build-tools/*/ 2>/dev/null | sort -V | tail -1)"
+          [[ -n "$BT" ]] || { echo "на раннері немає build-tools — оверлеїв у пакунку не буде" >&2; }
+          if [[ -n "$BT" ]]; then
+            export AAPT2="${BT%/}/aapt2" ZIPALIGN="${BT%/}/zipalign" APKSIGNER="${BT%/}/apksigner"
+            bash build/scripts/build-themes.sh || echo "увага: оверлеї не зібрались — пакунок буде без теми"
+          fi
 
       - name: Створити пакунок
         run: |
@@ -116,7 +122,17 @@ jobs:
             DRAFT=(--draft)
           fi
           ARCHIVE="$(ls -1 dist/*.tar.xz | head -1)"
+          DIR="dist/$(basename "${ARCHIVE%.tar.xz}")"
+          N_APKS="$(find "$DIR/apks" -name '*.apk' | wc -l)"
+          N_OVL="$(find "$DIR/overlays" -name '*.apk' 2>/dev/null | wc -l)"
+          if [[ "$N_OVL" -gt 0 ]]; then
+            INSIDE="$N_APKS застосунків і RRO-оверлеї теми MD3 ($N_OVL шт.)"
+          else
+            INSIDE="$N_APKS застосунків; RRO-оверлеїв теми в цьому пакунку немає — тільки наші застосунки на стоковій палітрі"
+          fi
           NOTES="TesseraOS $TAG — установчий пакунок для VM.
+
+          У пакунку: $INSIDE.
 
           Розпакуй і запусти \`install-on-vm.sh\` (Linux/macOS/Git Bash) або
           \`install-on-vm.ps1\` (Windows) проти вже запущеної гостьової системи з

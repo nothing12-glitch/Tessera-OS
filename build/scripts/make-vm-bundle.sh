@@ -34,12 +34,17 @@ CODENAME="$(sed -n 's/^TESSERA_CODENAME := \([a-z_]*\).*/\1/p' "$MK" | head -1)"
 
 NAME="tessera-vm-$VERSION${CODENAME:+-$CODENAME}"
 OUT="$REPO/dist/$NAME"
-rm -rf "$OUT"
+# Каталога не зрізаємо через rm -rf: на Windows пустий dist/ часто тримає
+# сторонній процес (антивірус, індексатор) і «Device or resource busy» зупиняє
+# збірку. Порожимо його вміст — цього досить, старих файлів у пакунку не лишається.
+mkdir -p "$OUT"
+find "$OUT" -mindepth 1 -delete
 mkdir -p "$OUT/apks"
 
 echo ">>> Пакунок $NAME"
 
 found=0
+themes=0
 while IFS='|' read -r dir module pkg _artifact _extra; do
   [[ -z "$dir" || "$dir" =~ ^[[:space:]]*# ]] && continue
   src=""
@@ -67,12 +72,29 @@ done < "$REGISTRY"
 # стокову палітру, тому їх кладемо, лише коли build-themes.sh уже відпрацював.
 if [[ "$WITH_THEMES" == "1" ]]; then
   mkdir -p "$OUT/overlays"
+  # packages.list — щоб інсталятор увімкнув оверлей за package з маніфеста:
+  # «cmd overlay enable» не знає модулів, він знає лише імена пакетів, а
+  # ім'я файла APK (TesseraIconShapeTheme) — інше.
+  : > "$OUT/overlays/packages.list"
   for apk in "$REPO"/overlay/out/*.apk; do
     [[ -f "$apk" ]] || continue
+    name="$(basename "$apk" .apk)"
+    pkg="$(sed -n 's/^[[:space:]]*package="\([^"]*\)".*/\1/p' \
+             "$REPO/overlay/themes/$name/AndroidManifest.xml" 2>/dev/null | head -1)"
     cp "$apk" "$OUT/overlays/"
-    echo "  overlays/$(basename "$apk")"
+    themes=$((themes + 1))
+    if [[ -n "$pkg" ]]; then
+      printf '%s|%s\n' "$name" "$pkg" >> "$OUT/overlays/packages.list"
+      echo "  overlays/$name.apk ← $pkg"
+    else
+      echo "  overlays/$name.apk (package не прочитано — інсталятор лишить його вимкненим)"
+    fi
   done
-  ls "$OUT/overlays"/*.apk >/dev/null 2>&1 || { rmdir "$OUT/overlays"; echo "  увага: overlay/out порожній — спочатку build/scripts/build-themes.sh"; }
+  if ! ls "$OUT/overlays"/*.apk >/dev/null 2>&1; then
+    rm -f "$OUT/overlays/packages.list"
+    rmdir "$OUT/overlays" 2>/dev/null
+    echo "  увага: overlay/out порожній — спочатку build/scripts/build-themes.sh"
+  fi
 fi
 
 # --- скрипти та інструкція ---------------------------------------------
@@ -86,7 +108,7 @@ chmod +x "$OUT/install-on-vm.sh"
 cat > "$OUT/README.txt" <<EOF
 TesseraOS $VERSION — установчий пакунок для віртуальної машини
 
-Що це. Наші застосунки, тема та ролі поверх наявного образу Android 13+.
+Що це. $found наших застосунків, ролі HOME/ROLE_DIALER/ROLE_SMS$([[ $themes -gt 0 ]] && echo " і тема MD3 ($themes RRO-оверлеї)") поверх наявного образу Android 13+.
 Це не самостійний ROM: повний образ (.img) збирається на Linux-білдбоксі
 скриптом build/scripts/build-emulator.sh і важить десятки гігабайт.
 
@@ -117,5 +139,7 @@ tar -C "$REPO/dist" -cJf "$ARCHIVE" "$NAME"
 
 echo
 echo "готово: ${ARCHIVE#"$REPO"/}"
-echo "  $found застосунків, тема: $([[ "$WITH_THEMES" == "1" ]] && echo так || echo ні)"
+# Кількість оверлеїв — фактична, а не «ми просили --themes»: саме тут ховалася
+# збірка без теми, коли build-themes.sh падав ще до цього рядка.
+echo "  застосунків: $found, RRO-оверлеїв теми: $themes"
 echo "У git таке не лежить: dist/ закриває .gitignore, а policy.yml стежить за бінарниками."
