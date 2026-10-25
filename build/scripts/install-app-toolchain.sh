@@ -40,22 +40,20 @@ mkdir -p "$CACHE_DIR"
 # рядків на одну завантажку, і такий лог не читається.
 # -C - лише коли файл уже початий: для відсутнього curl і так качає з 0, а
 # для завершеного сервер відповідає 416, і це було б падіння на рівному місці.
-# Тому друга спроба вже «з нуля» — якщо раптом довантажувати нічого (або кеш
-# обірвався на битому шматку).
 curl_get() { # $1 — ім'я в кеші, $2 — URL; друкує шлях до файлу
   local dest="$CACHE_DIR/$1" rc=0
   if [[ -s "$dest" ]]; then
-    curl -fL --retry 5 --retry-connrefused --waitretry 15 --no-progress-meter \
+    curl -fL --retry 5 --retry-connrefused --retry-delay 15 --no-progress-meter \
          -C - -o "$dest" "$2" || rc=$?
     # 33 = «діапазон неможливий»: файл уже цілий. Це не поломка, а завершене
     # раніше качання, тож лишаємо його як є. Усе інше — справжня помилка,
     # і тоді пробуємо з нуля (наприклад, кеш обірвався на битому шматку).
     if (( rc != 0 && rc != 33 )); then
-      curl -fL --retry 5 --retry-connrefused --waitretry 15 --no-progress-meter \
+      curl -fL --retry 5 --retry-connrefused --retry-delay 15 --no-progress-meter \
            -o "$dest" "$2" || return 1
     fi
   else
-    curl -fL --retry 5 --retry-connrefused --waitretry 15 --no-progress-meter \
+    curl -fL --retry 5 --retry-connrefused --retry-delay 15 --no-progress-meter \
          -o "$dest" "$2" || return 1
   fi
   echo "$dest"
