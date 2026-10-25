@@ -169,6 +169,38 @@ done < <(sed -nE 's/.*src="([^"]+)".*/\1/p' "$ROOT/manifest/tessera.xml")
 upstream_has "device/generic/goldfish/board/emu64x/BoardConfig.mk" >/dev/null &&
   ok "board: device/generic/goldfish/board/emu64x/BoardConfig.mk (базовий)"
 
+# 6. Шляхи всередині РЕПО, які цитують документи й сайт. Той самий клас помилки,
+#    що й мертві посилання на файли бази, але всередині нашого дерева: у docs/EMULATOR.md
+#    роки стояло «tools/emulator-smoke.sh перевіряє», хоча ані tools/, ані самого
+#    скрипту в репо ніколи не було. Читач іде за посиланням і знаходить порожнечу.
+OUR_DOCS=$(find "$ROOT/docs" -name '*.md'; ls "$ROOT/README.md" "$ROOT/site/index.html" 2>/dev/null)
+# Беремо цілий шляхоподібний токен, а потім відсіюємо за першою ланкою.
+# Короткий префікс у самому взірці ловив би «config/common.mk» із
+# «vendor/lineage/config/common.mk» — це файл бази, а не наш мертвий шлях.
+OUR_REFS=$(printf '%s\n' "$OUR_DOCS" | xargs -r grep -ohE \
+  '[a-z][a-z0-9._-]*(/[A-Za-z0-9._-]+)*\.(sh|ps1|md|json|xml|html|js|mk|bp|py|txt)' \
+  2>/dev/null |
+  grep -E '^(tools|docs|config|build|manifest|overlay|overlay-packages|brand|apps|site)/' |
+  grep -vE '^build/(make|soong)/' | sort -u)
+if [[ -z "$OUR_REFS" ]]; then
+  skip "посилань на наші файли в документах немає"
+fi
+while IFS= read -r ref; do
+  [[ -z "$ref" ]] && continue
+  if [[ -e "$ROOT/$ref" ]]; then ok "документ посилається на: $ref"; continue; fi
+  # docs/GAPPS.md пише шлях від свого каталогу — «GAPPS.md», а не «docs/GAPPS.md»
+  if [[ "$ref" != */* && -e "$ROOT/docs/$ref" ]]; then
+    ok "документ посилається на: docs/$ref"
+  elif grep -rqF --exclude=check-build-refs.sh -- "$(basename "$ref")" "$ROOT/build/scripts" 2>/dev/null; then
+    # Файл створює наш скрипт під час запуску, тому в git його справді немає
+    # (саме так: config/gapps/profile.json пише package-gapps.sh). Себе з пошуку
+    # виключаємо: цей коментар теж згадує назву, і рядок «генерує» брехав би.
+    ok "документ посилається на: $ref — генерує $(grep -rlF --exclude=check-build-refs.sh -- "$(basename "$ref")" "$ROOT/build/scripts" | head -1 | sed "s|$ROOT/||")"
+  else
+    fail "документ посилається на $ref — такий шлях у репо відсутній"
+  fi
+done <<< "$OUR_REFS"
+
 echo
 if [[ "$missing" == "0" ]]; then
   echo "[build-refs] усі посилання шару збірки ведуть на справжні файли."

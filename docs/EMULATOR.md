@@ -81,7 +81,7 @@ x86_64-гостьова система вимагає апаратного пр�
 | Функція | Статус |
 |---|---|
 | UI, оверлеї MD3, динамічна палітра | так |
-| microG, push через фактичний MQTT | так |
+| microG, push через фактичний MQTT | ні — у образі сервісів немає; ставлять самі, [GAPPS.md](GAPPS.md) |
 | Застосунки з F-Droid / Aurora | так |
 | Апаратне прискорення графіки | так, `-gpu host` |
 | Наші `apps/launcher`, `apps/calculator`, `apps/files`, `apps/clock`, `apps/dialer` | збираються CI; на екрані ще не перевірені |
@@ -108,15 +108,24 @@ adb shell cmd overlay disable os.tessera.theme.framework
 
 ## Тестування
 
-`tools/emulator-smoke.sh` на запущеному образі перевіряє:
+Окремого smoke-скрипту в репо немає — раніше цей розділ посилався на
+`tools/`-файл, якого ніколи не існувало. Прогін роблять руками такими
+командами — саме їх було застосовано 2026-10-25 на живому емуляторі:
 
-1. `sys.boot_completed == 1`;
-2. обидва Tessera-оверлеї в `cmd overlay list` активні;
-3. базові екрани доступні: launcher, Settings → Display, About (версія
-   `ro.tessera.version`);
+1. `adb shell getprop sys.boot_completed` → `1`;
+2. `adb shell cmd overlay list | grep tessera` — наші оверлеї тем позначені
+   активними;
+3. базові екрани доступні: launcher, Settings → Display, About
+   (`adb shell getprop ro.tessera.version`);
 4. колір `?attr/colorSurface` у світлій і темній темі відрізняється від
    стокового (порівняння пікселя в точці 10,10 скріншота);
-5. `pm list packages` містить microG-компоненти.
+5. майстер першого запуску: `adb shell settings get global device_provisioned`
+   і `secure ui_night_mode` змінюються після проходження, а
+   `cmd package query-activities -a MAIN -c LAUNCHER --components | grep -c tessera`
+   дає `0` — в образі немає іконки замість OOBE.
+
+Google-сервісів у образі немає, тому перевірка «`pm list packages` містить
+microG» була б завідомо хибною: ставимо його самі (див. [GAPPS.md](GAPPS.md)).
 
 ## Обмеження, які варто знати заздалегідь
 

@@ -126,13 +126,10 @@ adb shell uiautomator dump /sdcard/ui.xml         # знімок структу�
 
 ## Як додати свою палітру
 
-```bash
-cd overlay/themes/TesseraFrameworkTheme
-python3 tools/derive_palette.py --seed "#3B5BDB" --out res/values/local_palette.xml
-```
-
-Скрипт (у наступному milestone) робить tonal palette за MD3: тони 0–100 для
-кожної ролі, і пише обидва варіанти — `values/` і `values-night/`.
+Автогенератора палітри в репо немає: скрипт, який брав би seed-колір і писав
+tonal palette (тони 0–100 для кожної ролі, обидва варіанти — `values/` і
+`values-night/`) — це наступний milestone, і каталогу `tools/` з ним теж ще
+немає.
 
 Поки що правіть значення вручну, дотримуючись правил контрасту:
 колір `on*` на своїй поверхні ≥ 4.5:1, іконки ≥ 3:1.

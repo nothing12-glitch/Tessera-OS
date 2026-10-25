@@ -24,7 +24,7 @@ STAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 case "$VENDOR" in
   microg)
     URL="https://microg.org/download.html"
-    NOTE="Вільна реалізація push/location/oauth. Входить в образ за замовчуванням."
+    NOTE="Вільна реалізація push/location/oauth. У образ її НЕ вкладаємо: ставиш сам (APK або local_manifests)."
     ;;
   mtg)
     URL="https://github.com/MindTheGApps/releases/raw/$API-$ARCH-$VARIANT.zip"
@@ -62,7 +62,7 @@ echo
 echo "Далі (виконує користувач, не CI):"
 if [[ "$VENDOR" == "microg" ]]; then
   echo "  Відкрий $URL і завантаж APK для потрібної архітектури."
-  echo "  microG уже в образі, тож цей крок — лише оновлення компонентів."
+  echo "  microG у нашому образі немає — це і є той крок, що додає сервіси."
 else
   echo "  curl -fL -o /tmp/gapps.zip '$URL'"
   echo "  sha256sum /tmp/gapps.zip   # звір з офіційним оголошенням вендора"
