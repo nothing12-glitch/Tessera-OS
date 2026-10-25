@@ -92,8 +92,7 @@ class CameraRig(private val activity: ComponentActivity) {
         if (!provider.hasCamera(selector)) return false
 
         val preview = Preview.Builder().build().apply {
-            // У CameraX 1.3 сетер не має пари-гетера, тому властивістю не призначимо.
-            setSurfaceProvider(view.surfaceProvider)
+            surfaceProvider = view.surfaceProvider
         }
         val capture = ImageCapture.Builder()
             // Mінімальна затримка: у кишені швидше сфотографувати, ніж отримати
