@@ -163,6 +163,21 @@ for ps in "$ROOT"/build/scripts/*.ps1; do
   fi
 done
 
+# 12. Bash-скрипти: той самий клас поломки, що й із .ps1, але з іншого боку.
+#     Windows-крайка рядка (\r) ламає Here-doc і shebang у WSL, а нерозібраний
+#     скрипт ми помічаємо лише після годин очікування в терміналі.
+for sh in "$ROOT"/build/scripts/*.sh; do
+  [[ -f "$sh" ]] || continue
+  name="$(basename "$sh")"
+  if grep -q $'\r' "$sh"; then
+    fail "$sh: є Windows-крайки рядків (\\r) — у WSL/bash це інша помилка на кожному рядку"
+  elif ! err="$(bash -n "$sh" 2>&1)"; then
+    fail "$name не розбирається bash -n: $err"
+  else
+    ok "$name: без \\r, синтаксис bash цілий"
+  fi
+done
+
 if [[ "$missing" != 0 ]]; then
   echo "[app-integration] Провалено. Див. apps/<застосунок>/Android.bp, build/scripts/apps.list і README застосунків." >&2
   exit 1
