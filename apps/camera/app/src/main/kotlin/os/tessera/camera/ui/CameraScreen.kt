@@ -34,6 +34,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -211,11 +213,21 @@ private fun Shutter(
     onClick: () -> Unit,
 ) {
     val ring = if (enabled) Color.White else Color.White.copy(alpha = 0.35f)
+    // Кнопка намальована кружечком без всякого тексту, тож для TalkBack (і для
+    // зовнішніх тестів, що читають дамп екрана) імені вона не має взагалі.
+    val label = stringResource(
+        when {
+            recording -> R.string.stop_recording
+            video -> R.string.start_recording
+            else -> R.string.shutter
+        },
+    )
     Box(
         modifier = Modifier
             .size(74.dp)
             .clip(CircleShape)
             .border(width = 3.dp, color = ring, shape = CircleShape)
+            .semantics { contentDescription = label }
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
