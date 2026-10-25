@@ -64,45 +64,76 @@ if (Test-Path $cfgPath) {
     "наявний .wslconfig збережено: $backup"
 }
 
+# autoMemoryReclaim — саме в [experimental]: у [wsl2] WSL 3.0.3 такого ключа не
+# знає й пише попередження на кожне звертання до wsl.exe. Вимкнене воно тому, що
+# інакше WSL відбирає вільну пам'ять посеред збірки і уповільнює її.
 @"
 [wsl2]
 memory=${MemoryGB}GB
 processors=${Processors}
 swap=${SwapGB}GB
 nestedVirtualization=true
-autoMemoryReclaim=disabled
 localhostForwarding=true
 
 [experimental]
 sparseVhd=true
+autoMemoryReclaim=disabled
 "@ | Set-Content -Path $cfgPath -Encoding ascii
 
 "написано ${cfgPath}:"
 Get-Content $cfgPath | ForEach-Object { "  $_" }
 
-$installed = (wsl.exe --list --quiet 2>&1 | Out-String)
-if ($installed -notmatch [regex]::Escape($Distro)) {
-    Write-Error "дистрибутив '$Distro' не знайдено. Спершу: wsl --install --web-download -d $Distro, потім перезавантаж Windows."
+# Реєстрацію дистрибутива читаємо з реєстру, а не з виводу `wsl --list`: wsl.exe
+# говорить UTF-16, і PowerShell 5.1 повертає з нього «касилю», який уже ні на що
+# не схожий. Ключ Lxss — першоджерело, і кодування тут не заважає.
+$names = Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' -ErrorAction SilentlyContinue |
+    ForEach-Object { (Get-ItemProperty $_.PSPath).DistributionName }
+if ($names -notcontains $Distro) {
+    Write-Error @"
+дистрибутив '$Distro' не зареєстрований. Спершу — офлайн-установка
+    powershell -File build\scripts\install-wsl-offline.ps1 -Msi <wsl.msi> -Rootfs <rootfs.tar.gz>
+(звичайний 'wsl --install' на цьому хості не качає нічого: CDN Microsoft
+відхиляє TLS-з'єднання). Деталі: docs/BUILD.md, «Чому не wsl --install».
+Наявні дистрибутиви: $(if ($names) { $names -join ', ' } else { 'немає' })
+"@
 }
+
+# Шлях до репозиторію мовою WSL: C:\... перекладаємо у /mnt/c/... самі. Через
+# `wslpath` було б те саме, що з `wsl --list`: wsl.exe пише UTF-16, і PowerShell
+# 5.1 повертає з його виводу текст із зайвими нулями. Обчислюємо тут, до
+# перемикача нижче, щоб Write-Error ще зупиняв скрипт.
+$repoRoot = Split-Path $PSScriptRoot -Parent | Split-Path -Parent
+if ($repoRoot -notmatch '^[A-Za-z]:\\') {
+    Write-Error "несподіваний шлях репозиторію '$repoRoot' — мав бути абсолютний шлях диска Windows."
+}
+$repoWsl = '/mnt/' + $repoRoot.Substring(0, 1).ToLower() + '/' + $repoRoot.Substring(3).Replace('\', '/')
+$provisionSh = "$repoWsl/build/scripts/wsl-provision.sh"
+"репозиторій у WSL: $repoWsl"
+
+# Нижче — суто зовнішні виклики. wsl.exe пише службове (і будь-яке
+# попередження) у stderr, а PowerShell 5.1 при $ErrorActionPreference='Stop'
+# рахує це фатальною помилкою й обриває скрипт посеред провіжиніння. Тому тут
+# судимо лише за кодом виходу й виходимо самі.
+$ErrorActionPreference = 'Continue'
 
 wsl.exe --shutdown
 "WSL вимкнено — нові ліміти застосуються при наступному запуску."
 
-# Шлях до нашого репозиторію мовою WSL: /mnt/c/... Це потрібно, бо сам
-# провіжинінг живе в Ubuntu і запускається під root.
-$repoRoot = Split-Path $PSScriptRoot -Parent | Split-Path -Parent
-$repoWsl = (wsl.exe --distribution $Distro --user root -- wslpath -u "$repoRoot" 2>&1 | Out-String).Trim()
-if (-not $repoWsl) {
-    Write-Error "wslpath не повернув шлях до $repoRoot — перевір, що диск C: змонтовано (wsl --mount)."
+wsl.exe --distribution $Distro --user root -- test -f $provisionSh
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "середині WSL немає $provisionSh — перевір, чи диск C: змонтовано (/mnt/c) і чи репозиторій на місці."
+    exit 1
 }
-"репозиторій у WSL: $repoWsl"
 
-wsl.exe --distribution $Distro --user root -- "bash" "$repoWsl/build/scripts/wsl-provision.sh"
-if ($LASTEXITCODE -ne 0) { Write-Error "wsl-provision.sh завершився з кодом $LASTEXITCODE — див. вище." }
+wsl.exe --distribution $Distro --user root -- bash $provisionSh
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "wsl-provision.sh завершився з кодом $LASTEXITCODE — див. вище."
+    exit 1
+}
 
 wsl.exe --shutdown
 ""
-"Готово. Далі (від користувача 'tessera'):"
+"Готово. Далі (від користувача 'tessera', в ext4-теці, не на /mnt/c):"
 "  wsl -d $Distro -u tessera"
-"  cd $repoWsl"
-"  bash build/scripts/new-tree.sh lineage-22.2"
+"  cd ~/tessera-os"
+"  REPO_DEPTH=1 bash build/scripts/new-tree.sh lineage-22.2"

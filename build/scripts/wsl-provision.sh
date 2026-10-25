@@ -73,16 +73,25 @@ fi
 
 echo
 echo "=== 5. PATH і repo для $BUILD_USER ==="
-BASHRC="/home/$BUILD_USER/.bashrc"
-if ! grep -q 'TESSERA WSL' "$BASHRC" 2>/dev/null; then
-  cat >>"$BASHRC" <<'EOF'
+# .profile, а не .bashrc: типовий .bashrc Ubuntu виходить у перших рядках, якщо
+# сесія не інтерактивна — а саме так запускаємо все з Windows
+# (`wsl -u tessera -- bash -lc ...`). Кладемо туди, де спрацює завжди.
+PROFILE="/home/$BUILD_USER/.profile"
+if ! grep -q 'TESSERA WSL' "$PROFILE" 2>/dev/null; then
+  cat >>"$PROFILE" <<'EOF'
 # TESSERA WSL — дерево збірки тримаємо в ext4, не на /mnt/c
 export PATH="$HOME/bin:$PATH"
 export TESSERA_TREE="$HOME/tessera"
 EOF
-  echo "дописано PATH і TESSERA_TREE у ~/.bashrc"
+  echo "дописано PATH і TESSERA_TREE у ~/.profile"
 else
-  echo "~/.bashrc уже налаштовано."
+  echo "~/.profile уже налаштовано."
+fi
+# у машин, провіжинених попередньою версією скрипту, ці ж рядки стояли в
+# .bashrc — прибираємо дублікат, щоб PATH не подвоювався.
+if grep -q 'TESSERA WSL' "/home/$BUILD_USER/.bashrc" 2>/dev/null; then
+  sudo -u "$BUILD_USER" sed -i '/# TESSERA WSL/,/TESSERA_TREE=/d' "/home/$BUILD_USER/.bashrc"
+  echo "дублікат з ~/.bashrc прибрано"
 fi
 if [[ ! -x "/home/$BUILD_USER/bin/repo" ]]; then
   sudo -u "$BUILD_USER" mkdir -p "/home/$BUILD_USER/bin"
