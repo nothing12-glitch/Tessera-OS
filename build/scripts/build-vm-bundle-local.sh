@@ -56,7 +56,8 @@ echo "ok: $(basename "$ARCHIVE")"
 ( cd "$ROOT/dist" && sha256sum "$(basename "$ARCHIVE")" | tee "$(basename "$ARCHIVE").verified" )
 
 echo
-echo "Далі, якщо пакунок справді хочемо показати світу:"
-echo "  1) підняти TESSERA_VERSION у build/tessera.mk і закомітити"
-echo "  2) поставити віху v<версія> і зробити git push origin <віха>"
-echo "     — release.yml тоді сам збере і оприлюднить пакунок"
+echo "Перед наступним пакунком: TESSERA_VERSION у build/tessera.mk має бути піднята,"
+echo "інакше файл назветься як уже оприлюднений реліз."
+echo "Якщо пакунок справді хочемо показати світу:"
+echo "  git tag v<версія> && git push origin v<версія>   — release.yml тоді сам"
+echo "  збере і оприлюднить пакунок; цей скрипт нікуди нічого не пушить."

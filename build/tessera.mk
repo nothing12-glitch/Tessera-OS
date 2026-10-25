@@ -169,7 +169,9 @@ PRODUCT_BRAND := tessera
 PRODUCT_MODEL := TesseraOS (x86_64 VM)
 
 # Версія проєкту: <android>.<lineage>.<tessera>. Теги GitHub — v<версія>.
-TESSERA_VERSION := 15.22.2.1
+# 15.22.2.2 — перший пакунок із сьомим застосунком («Камера»): реліз 15.22.2.1
+# вийшов о 17:24, камера злилася о 19:46 того ж дня, тож у чинному пакунку її немає.
+TESSERA_VERSION := 15.22.2.2
 TESSERA_CODENAME := vega
 
 # Ідентичність образу. Комерційні властивості (brand/manufacturer) мають
