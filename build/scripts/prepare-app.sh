@@ -138,15 +138,29 @@ for row in "${SELECTED[@]}"; do
     manifest="$("$AAPT2" dump xmltree --file AndroidManifest.xml "$built")"
     [[ "$badge" == *"package: name='$pkg'"* ]] ||
       die "$built: APK не наш — інший package (очікували $pkg)"
-    [[ "$manifest" == *'"android.intent.category.LAUNCHER"'* ]] ||
-      die "$built: у APK немає LAUNCHER-фільтра — застосунок не з'явиться на екрані"
-    if [[ "$extra" != "-" ]]; then
-      # Додаткова категорія потрібна не для «іконки»: без неї система не
-      # вважає застосунок, напр., домашнім екраном.
+    # Які категорії вимагати — залежно від ролі рядка.
+    #
+    # Звичайний застосунок без LAUNCHER не існує: його ніхто не відкриє.
+    # Майстер першого запуску — навпаки: LAUNCHER у ньому є помилкою, бо іконка
+    # «Ласкаво просимо» в шухляді суперечить самій ідеї OOBE (екран, який
+    # бачать один раз). Тому для SETUP_WIZARD перевіряємо відсутність.
+    if [[ "$extra" == "SETUP_WIZARD" ]]; then
+      [[ "$manifest" != *'"android.intent.category.LAUNCHER"'* ]] ||
+        die "$built: майстер першого запуску має LAUNCHER-фільтр — в образі знову застосунок з іконкою"
       [[ "$manifest" == *"\"android.intent.category.$extra\""* ]] ||
-        die "$built: у APK немає категорії $extra"
+        die "$built: у APK немає категорії $extra — система не вважатиме його майстром"
+      echo "ok: aapt2 підтвердив $pkg (майстер: +$extra, без LAUNCHER)"
+    else
+      [[ "$manifest" == *'"android.intent.category.LAUNCHER"'* ]] ||
+        die "$built: у APK немає LAUNCHER-фільтра — застосунок не з'явиться на екрані"
+      if [[ "$extra" != "-" ]]; then
+        # Додаткова категорія потрібна не для «іконки»: без неї система не
+        # вважає застосунок, напр., домашнім екраном.
+        [[ "$manifest" == *"\"android.intent.category.$extra\""* ]] ||
+          die "$built: у APK немає категорії $extra"
+      fi
+      echo "ok: aapt2 підтвердив $pkg (+LAUNCHER$([[ "$extra" != "-" ]] && echo ", +$extra"))"
     fi
-    echo "ok: aapt2 підтвердив $pkg (+LAUNCHER$([[ "$extra" != "-" ]] && echo ", +$extra"))"
   else
     echo "увага: немає aapt2 — перевірка лише складових APK" >&2
   fi

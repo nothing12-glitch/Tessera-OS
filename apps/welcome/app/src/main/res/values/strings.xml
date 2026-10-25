@@ -12,8 +12,8 @@
     <string name="welcome_theme_auto">Авто</string>
     <string name="welcome_theme_light">Світла</string>
     <string name="welcome_theme_dark">Темна</string>
-    <string name="welcome_theme_preview_note">Ця сторінка перефарбовується одразу, щоб ви бачили вибір. На всю систему його застосовує Дисплей у Налаштуваннях — посилання нижче.</string>
-    <string name="welcome_theme_open_display">Відкрити Дисплей у Налаштуваннях</string>
+    <string name="welcome_theme_applied">Застосовано до всієї системи — це той самий перемикач, що й у Налаштуваннях → Дисплей.</string>
+    <string name="welcome_theme_not_applied">Систему не переключено: дозвіл WRITE_SECURE_SETTINGS не видано. Цей екран усе одно пройде, але тему доведеться поставити вручну.</string>
     <string name="welcome_theme_failed">Не можу переключити тему для всієї системи — зроби це в Налаштуваннях → Дисплей.</string>
 
     <string name="welcome_account_title">Обліковий запис Google</string>
@@ -26,6 +26,7 @@
     <string name="welcome_finish_title">Готово</string>
     <string name="welcome_finish_body">Тема — %1$s. Домашній екран, телефон, повідомлення й решту програм дає система. Дальше телефон працює сам.</string>
     <string name="welcome_done_button">Почати</string>
+    <string name="welcome_provision_failed">Не вдалося позначити налаштування завершеним: дозвіл WRITE_SECURE_SETTINGS не видано. Телефон лишиться на цьому екрані й після наступного запуску.</string>
 
     <string name="welcome_next">Далі</string>
     <string name="welcome_back">Назад</string>

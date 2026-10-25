@@ -60,7 +60,11 @@ $Permissions = @(
     @{ pkg = "os.tessera.dialer";    perm = "android.permission.READ_CALL_LOG" },
     @{ pkg = "os.tessera.dialer";    perm = "android.permission.READ_CONTACTS" },
     @{ pkg = "os.tessera.messaging"; perm = "android.permission.READ_SMS" },
-    @{ pkg = "os.tessera.messaging"; perm = "android.permission.READ_CONTACTS" }
+    @{ pkg = "os.tessera.messaging"; perm = "android.permission.READ_CONTACTS" },
+    # Виняток: WRITE_SECURE_SETTINGS рівня signature|privileged, adb видає його
+    # як відлагоджувальний дозвіл. У справжньому образі той самий дозвіл дає
+    # сукупність «priv-app + privapp-permissions-*.xml» (apps/welcome).
+    @{ pkg = "os.tessera.welcome";   perm = "android.permission.WRITE_SECURE_SETTINGS" }
 )
 
 function Resolve-Adb {

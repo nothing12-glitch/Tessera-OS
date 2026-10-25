@@ -1,6 +1,5 @@
 package os.tessera.welcome
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,12 +12,11 @@ import os.tessera.welcome.ui.TesseraWelcomeTheme
 import os.tessera.welcome.ui.WelcomeScreen
 
 /**
- * Єдине вікно вітальні.
+ * Єдине вікно майстра першого запуску.
  *
- * Виклик `finish()` у [onCreate] — не декорація: якщо система стартує нас
- * повторно після проходження, показувати старі кроки ще раз немає сенсу.
- * Запуск із іконки в лаунчері навмисно цю перевірку пропускає: користувач сам
- * вибрав подивитися ще раз.
+ * Виклик `finish()` у [onCreate] — не декорація: система кликає нас на кожен
+ * старт, поки образ не налаштовано. Як тільки `device_provisioned` піднято,
+ * показувати кроки ще раз немає сенсу, і ми звільняємо екран для лаунчера.
  */
 class WelcomeActivity : ComponentActivity() {
 
@@ -28,8 +26,7 @@ class WelcomeActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        val fromLauncher = intent?.categories?.contains(Intent.CATEGORY_LAUNCHER) == true
-        if (viewModel.skipWhenAlreadyPassed(fromLauncher)) {
+        if (viewModel.skipWhenAlreadyPassed()) {
             finish()
             return
         }
@@ -44,7 +41,6 @@ class WelcomeActivity : ComponentActivity() {
                     onBack = viewModel::onBack,
                     onSkipAccount = viewModel::onSkipAccount,
                     onOpenAccount = viewModel::onOpenAccount,
-                    onOpenDisplaySettings = viewModel::onOpenDisplaySettings,
                 )
                 LaunchedEffect(state.finished) {
                     if (state.finished) finish()

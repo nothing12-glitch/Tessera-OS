@@ -1,36 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Без цього дозволу екран не зміг би перемкнути день/ніч для всієї
-         системи: UiModeManager.setNightMode його вимагає (normal-дозвіл,
-         видається при встановленні). -->
-    <uses-permission android:name="android.permission.CHANGE_CONFIGURATION" />
+    <!--
+      Системний майстер першого запуску, а не звичайний застосунок.
+
+      Цей дозвіл і є різниця між «екран, який хтось відкрив» і «екран, який
+      система відкриває сама»: `device_provisioned` і `ui_night_mode` живуть у
+      Settings.Global / Settings.Secure, а вони `signature|privileged`. Тому
+      модуль лежить у system_ext/priv-app і має запис у
+      privapp-permissions-tessera-welcome.xml (див. Android.bp).
+    -->
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
 
     <application
         android:allowBackup="false"
-        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TesseraWelcome">
 
+        <!--
+          ЖОДНОГО фільтра з CATEGORY_LAUNCHER. Це принципово: у майстра
+          першого запуску не має бути іконки в шухляді, бо після налаштування
+          він не існує для користувача. Єдиний вхід — категорія SETUP_WIZARD.
+
+          priority=1000 — спроба перебрати чергу у майстра бази. Хто саме
+          тримає цю категорію в LineageOS 22.2 і чи перемагає тут число,
+          перевіряється на зібраному образі; див. README.md.
+        -->
         <activity
             android:name=".WelcomeActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|uiMode|density|fontScale"
+            android:excludeFromRecents="true"
             android:exported="true"
-            android:label="@string/app_name">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-
-            <!-- Майданчик для перевірки: `adb shell am start -a android.intent.action.MAIN
-                 -c android.intent.category.SETUP_WIZARD`. ІМʼЯ КАТЕГОРІЇ ЩЕ НЕ ЗВІРЕНЕ
-                 з frameworks/base lineage-22.2 — проєкт ще не доїхав до дерева бази
-                 (sync іде). Тому цей фільтр є виключно гачком для тесту й НІЧОГО не
-                 обіцяє: автоматичний старт замість майстра бази — окремий крок із
-                 власною перевіркою. Див. README.md. -->
-            <intent-filter android:priority="1">
+            android:label="@string/app_name"
+            android:launchMode="singleTask">
+            <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.SETUP_WIZARD" />
             </intent-filter>

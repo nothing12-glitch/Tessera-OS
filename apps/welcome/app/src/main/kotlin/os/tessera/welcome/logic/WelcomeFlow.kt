@@ -87,11 +87,11 @@ object WelcomeFlow {
     fun stepNumber(state: WelcomeState) = state.step.ordinal + 1
 
     /**
-     * Показувати чи вітальню знову. Після завершення — ні, аж доки проєкт не
-     * змінить ONBOARDING_VERSION (тоді нові кроки побачать усі).
+     * Показувати чи вітальню. Один-єдиний критерій — системний прапорець
+     * `device_provisioned`, а не власний запис «пройдено»: перший запуск,
+     * якого не довели до кінця, має повернутися, а пройдений — ні.
      */
-    fun shouldShow(finished: Boolean, acknowledgedVersion: Int, currentVersion: Int) =
-        !finished || acknowledgedVersion != currentVersion
+    fun shouldShow(deviceProvisioned: Boolean) = !deviceProvisioned
 }
 
 /**

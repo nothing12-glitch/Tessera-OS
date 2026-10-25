@@ -1,17 +1,33 @@
-// Вітальний екран TesseraOS у зібраному образі.
+// Майстер першого запуску TesseraOS у зібраному образі.
 //
 // Той самий механізм, що й для решти наших модулів: Gradle збирає APK поза
 // деревом, build/scripts/prepare-app.sh кладе його в apps/welcome/prebuilt/,
 // Soong імпортує через android_app_import. У git apk не лежить — policy.yml
 // забороняє бінарники в дереві.
 //
-// `privileged` тут навмисно немає: застосунок не потребує системних дозволів,
-// щоб показати свої екрани. Те, що потребує (запис device_provisioned і
-// автоматичний старт замість майстра бази), — окремий крок; див. README.md,
-// пункт «Чого це НЕ робить».
+// `privileged: true` — і є та відмінність, через яку це системний OOBE, а не
+// застосунок: модуль їде в system_ext/priv-app, а не в system_ext/app. Тільки
+// так `WRITE_SECURE_SETTINGS` (`signature|privileged`) видається, а значить
+// тільки так вітальня може записати `device_provisioned` і перемикач теми для
+// всієї системи.
+//
+// Окремо нагадати собі: `privileged` ≠ підпис платформним ключем. Привілей
+// дає partition + запис у дозвільному списку нижче; ключ платформи тут ні при
+// чому й він нам не потрібен.
 android_app_import {
     name: "TesseraWelcome",
     apk: "prebuilt/TesseraWelcome.apk",
     presigned: true,
+    privileged: true,
+    system_ext_specific: true,
+}
+
+// Дозвільний список. Образ тримає ro.control_privapp_permissions=enforce
+// (build/tessera.mk §5), тому без цього файла boot-процес падає ще до
+// лаунчера — це не «краще б мати», а обовʼязкова частина встановлення.
+prebuilt_etc {
+    name: "privapp-permissions-tessera-welcome",
+    src: "permissions/privapp-permissions-tessera-welcome.xml",
+    sub_dir: "permissions",
     system_ext_specific: true,
 }

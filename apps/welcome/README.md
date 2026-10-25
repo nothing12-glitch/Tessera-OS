@@ -1,113 +1,122 @@
-# Tessera Welcome
+# Tessera Welcome — майстер першого запуску
 
-Екран першого запуску: повноекранне «Вітаємо у Tessera OS!» із чотирма кроками —
-привітання, тема, обліковий запис, готово. Kotlin + Compose Material 3, динамічна
-палітра (Monet) з fallback.
+Це **не застосунок**. Іконки в шухляді в нього немає й бути не може: він
+єдиний екран, який система показує один раз — поки пристрій не налаштовано.
+Чотири кроки: привітання, тема, обліковий запис, готово. Kotlin + Compose
+Material 3, динамічна палітра (Monet) з fallback.
 
-Це **перший** з двох власних застосунків, які повернулися в образ після рішення
-«прибрати наші застосунки зовсім» (2026-10-25). Причина, з якої він винятковий:
-він нічого не робить замість системи, а лише пояснює користувачеві, що система
-вже зробила. Домашній екран, телефон, повідомлення, камера, годинник,
-калькулятор і «Файли» й далі дає база — див. `build/tessera.mk` §2b. Другий
-виняток — `apps/halo`, світловий край на сповіщення.
+Різниця з «звичайним застосунком» — не в дизайні, а в трьох рядках коду, які
+без прав рівня системи написати неможливо:
 
-У git немає жодного бінарника: ні `gradle-wrapper.jar`, ні APK. Знак на іконці —
-та сама геометрія, що й у `brand/android/tessera_mark.xml`.
+| що робить | чим це виправдане |
+|---|---|
+| пише `Settings.Global.device_provisioned` і `Settings.Secure.user_setup_complete` | `WRITE_SECURE_SETTINGS` (`signature\|privileged`) |
+| перемикає тему всього телефону, а не свого вікна | той самий дозвіл той самий рядок `ui_night_mode`, що й перемикач у Налаштуваннях |
+| з'являється саме на першому запуску і більше ніколи | фільтр `CATEGORY_SETUP_WIZARD` + `finish()`, коли система вже налаштована |
+
+Тому модуль лежить у `system_ext/priv-app`, а не в `system_ext/app`, і має
+дозвільний запис `privapp-permissions-tessera-welcome.xml`. Без нього образ із
+`ro.control_privapp_permissions=enforce` (`build/tessera.mk` §5) не
+завантажився б взагалі.
+
+Це **перший** з двох власних застосунків, які повернулися в образ після
+рішення «прибрати наші застосунки зовсім» (2026-10-25). Він винятковий тому,
+що нічого не робить замість системи: домашній екран, телефон, повідомлення,
+камера, годинник, калькулятор і «Файли» й далі дає база — див.
+`build/tessera.mk` §2b. Другий виняток — `apps/halo`, світловий край.
+
+У git немає жодного бінарника: ні `gradle-wrapper.jar`, ні APK. Знак на
+логотипі — та сама геометрія, що й у `brand/android/tessera_mark.xml`.
 
 ## Архітектура
 
-* `logic/WelcomeFlow.kt` — чистий Kotlin без `android.*`-імпорту: перелік кроків,
-  «Далі»/«Назад», пропуск облікового запису, прогрес, мапіч «вибір теми → чи
-  темна», маршрут кроку з акаунтом. Усе це перевіряється юніт-тестом на JVM
-  (`app/src/test/`) — саме тому порядок кроків живе тут, а не в UI.
-* `WelcomeViewModel` — єдине місце, де торкаються Android: пошук пакунка
-  `com.google.android.gms`, два `startActivity`, запис уподобань.
-* `data/WelcomePrefs` — `SharedPreferences` власного файла: тема й «яку версію
-  вітальні вже пройдено».
+* `logic/WelcomeFlow.kt` — чистий Kotlin без `android.*`-імпорту: перелік
+  кроків, «Далі»/«Назад», пропуск облікового запису, прогрес, мапіч «вибір
+  теми → нічний режим», маршрут кроку з акаунтом і `shouldShow`, який залежить
+  лише від одного булевого — чи система вже налаштована. Усе це перевіряється
+  юніт-тестом на JVM (`app/src/test/`) — саме тому порядок кроків живе тут, а
+  не в UI.
+* `data/SystemFlags.kt` — єдине місце, де торкаються системних прапорців:
+  `isProvisioned()`, `nightMode()`, `setNightMode()`, `markProvisionedSafely()`.
+  Останнє повертає `false` замість того, щоб зробити вигляд, що вийшло.
+* `WelcomeViewModel` — пошук пакунка `com.google.android.gms`, два
+  `startActivity`, виклики `SystemFlags`.
 * `ui/` — `TesseraWelcomeTheme` (Monet + edge-to-edge) і `WelcomeScreen`
   (один `AnimatedContent` на всі переходи).
 
+Власних `SharedPreferences` у модуля більше немає. Поки вітальня була
+застосунком, «пройдено» доводилось ховати у власному файлі — і це була підміна,
+а не реалізація: система про той файл не знала.
+
 ## Що перевірено наживо
 
-Два прогони 2026-10-25 на емуляторі Android 15 (AVD `TesseraVM`, 1080×2400,
-темна тема). Знімки — у робочому каталозі `.scratch/shots/`, вони не в git.
+Прогін 2026-10-25 на емуляторі (AVD `TesseraVM`, 1080×2400, Android 17,
+`google_apis_playstore`). Знімки — у робочому каталозі `.scratch/shots/`, вони
+не в git.
 
 | перевірка | результат | знімок |
 |---|---|---|
-| усі чотири кроки рендеряться | так: Привітання → Тема → Обліковий запис → Готово | `63-welcome-live-wizard-dark.png`, `65-…-theme-picked-dark.png`, `66-…-account-dark.png`, `67-…-finish-dark.png` |
-| запуск інтентом майстра (`MAIN` + `SETUP_WIZARD` + явний компонент) | `ActivityTaskManager: Displayed os.tessera.welcome/.WelcomeActivity: +4s659ms`, повноекранно | `63-welcome-live-wizard-dark.png` |
-| вибір «Темна» перефарбовує вікно одразу | так, і доходить до кроку «Готово» з «Тема — Темна» | `65-…-theme-picked-dark.png`, `67-…-finish-dark.png` |
-| «Почати» закриває активність і зберігає вибір | фокус повертається до лаунчера; `shared_prefs/tessera_welcome.xml`: `theme=DARK`, `acknowledged_version=1` | `68-welcome-live-after-done-dark.png` |
-| повторний запуск тим самим інтентом після проходження | активність стартує й одразу `finish()` — фокус лишається на лаунчері | — |
-| крок з обліковим записом на пристрої з `com.google.android.gms` | маршрут `SETTINGS` показав живий екран; «провайдера немає» — дефолт, накритий юніт-тестом | `66-…-account-dark.png` |
-| пакунок образу зібраний і не порожній | `tessera-vm-15.22.2.3-vega.tar.xz` (11 МБ, sha256 `6be9560c…`): 2 APK + 3 RRO-оверлеї + інсталятори | — |
+| у APK немає жодного `LAUNCHER`-фільтра | `cmd package query-activities -a MAIN -c LAUNCHER --components \| grep -c tessera` → `0` | — |
+| `WRITE_SECURE_SETTINGS` справді видано | `dumpsys package os.tessera.welcome` → `install permissions: … WRITE_SECURE_SETTINGS: granted=true` | — |
+| тап по чіпі «Світла»/«Темна» рухає системний перемикач | `Settings.Secure.ui_night_mode`: `2 → 1 → 2`, і значення пише застосунок, не adb | `82-oobe-2b-light-proof.png`, `83-oobe-2c-dark.png` |
+| «Почати» завершує налаштування системи | `device_provisioned = 1`, `user_setup_complete = 1`, фокус — `NexusLauncherActivity` | `86-oobe-done-launcher.png` |
+| після проходження майстер не повертається | той самий `am start` → фокус лишається на лаунчері (активність одразу `finish()`) | — |
+| «не налаштовано» знову кличе майстра | `settings put global device_provisioned 0` + старт → кроки знову, з першого | `80-oobe-1-greeting.png` |
+| усі чотири кроки рендеряться в темній темі | так, із «Крок N із 4» і «Тема — Темна» на останньому | `80-…`, `81-…`, `84-oobe-3-account.png`, `85-oobe-4-finish.png` |
+| `resolve-activity` для `MAIN` + `SETUP_WIZARD` | повертає `os.tessera.welcome/.WelcomeActivity` | — |
 
-### Головне, що знайшов прогін інтентом без компонента
+### Що цей прогін НЕ довів — і це головне
 
-`am start -a android.intent.action.MAIN -c android.intent.category.SETUP_WIZARD`
-**без** `cmp=` дає `Error: Activity not started, unable to resolve Intent` — і
-навіть явне додавання `CATEGORY_DEFAULT` другим категорією не допомагає. При
-цьому `cmd package resolve-activity` з тим самим інтентом спокійно повертає
-саме `os.tessera.welcome/.WelcomeActivity`.
+Три речі, які виглядають доведеними, а насправді ні:
 
-Різниця не суперечність, а механіка: `startActivity` бачить лише фільтри з
-`CATEGORY_DEFAULT`, а наш фільтр `SETUP_WIZARD` (`dumpsys package` показує в
-ньому тільки `MAIN` + `SETUP_WIZARD`) його не містить. Тобто:
+**1. Дозвіл тут видано через adb, а не через `priv-app`.** Ми поставили APK
+командою `adb install -g`. `-g` видає дозвіл як виняток для відлагодження; у
+справжньому образі той самий `granted=true` має дати сукупність «модуль у
+`system_ext/priv-app` + рядок у `privapp-permissions-*.xml`». Саме цю
+сукупність описує `Android.bp`, але на живому образі її ще не бачили: поточний
+AVD — образ `user`/`release-keys`, де `adb root` заборонений
+(`adbd cannot run as root in production builds`), тож у `/system_ext` не
+записатися. Перевірка — на `google_apis` (userdebug) образі, який качається
+зараз, і остаточна — на власному образі LineageOS.
 
-- резолвер інтента нас **знаходить** — отже ім'я категорії справді існує й
-  маніфест написаний правильно;
-- але жодна система, яка просто «посилає інтент», нас **не запустить**.
-  Справжній майстер налаштування викликає застосунок за явним іменем
-  компонента, а не сподівається на імплемітний резолвінг.
-
-Це і є пряме підтвердження пункту «не запускається сам» нижче — тепер уже не
-за описом, а за текстом помилки з пристрою.
-
-## Чого цей застосунок НЕ робить
-
-Список навмисно довгий: помилка «застосунок є в образі, а обіцянки з нього
-виправдані» — той самий клас, від якого захищає `check-app-integration.sh`.
-
-**Не запускається сам замість майстра бази.** Для цього потрібен системний
-гачок: категорія `SETUP_WIZARD` або `HOME` з вищим `priority`, ніж у майстра
-бази. У маніфесті обидва фільтри заявлені, але **ім'я категорії ще не звірене**
-з `frameworks/base` і з тим, хто тримає `HOME` у LineageOS 22.2, — дерево бази
-спершу треба завантажити повністю (`repo sync` триває). Додавання
-`CATEGORY_DEFAULT` у фільтр теж не допомогло б самостійно: воно лише відкрило б
-імплемітний запуск, а чергу на старті все одно дістає той, хто вищий за
-`priority` — тобто майстер бази. Наразі стартувати можна
-двома перевіреними шляхами:
-
-```bash
-# зі звичайного лаунчера (іконка «Ласкаво просимо»)
-# або з adb — обидва фільтри:
-adb shell am start -a android.intent.action.MAIN \
-  -c android.intent.category.LAUNCHER os.tessera.welcome/.WelcomeActivity
-adb shell am start -a android.intent.action.MAIN \
-  -c android.intent.category.SETUP_WIZARD os.tessera.welcome/.WelcomeActivity
-```
-
-Як звірити, коли `frameworks/base` буде в дереві:
+**2. Ми викликали майстра самі.** Увесь прохід ішов із явним `cmp=`. Те, що
+система кличе нас **сама** на справжньому першому запусці, не перевірено ніде:
+на цьому образі `cmd package query-activities -a MAIN -c SETUP_WIZARD`
+повертає `No activities found` — категорію не тримає жоден застосунок, тож
+немає з чим порівнювати. У LineageOS свій майстер і там питань більше:
 
 ```bash
 grep -rn "SETUP_WIZARD" frameworks/base/core/java/android/content/Intent.java
+grep -rn "config_deviceProvisioningActivity" frameworks/base/core/res/res/values/config.xml
 grep -rn "category.HOME" frameworks/base/core/res/AndroidManifest.xml
-grep -rn "priority" packages/apps/LineageSetupWizard/AndroidManifest.xml  # ім'я модуля теж перевірити
 ```
 
-**Не перемикає системну тему.** `UiModeManager.setNightMode()` вимагає дозвіл
-рівня системи, а `presigned`-застосунок (не підписаний ключем платформи) його не
-має. Тому вибір теми тут керує лише цим вікном — це чесне «попередження», яке
-користувач бачить на екрані, — а далі застосунок відкриває
-Налаштування → Дисплей, де перемикач справді системний. Рядок
-`welcome_theme_preview_note` каже про це прямісінько, а не ховається за
-кнопкою, яка «не спрацювала».
+Третій рядок — не формальність: якщо база заводить майстра не категорією, а
+рядком у `config_deviceProvisioningActivity`, то `priority` у нашому маніфесті
+не вирішує нічого, і треба буде саме `overrides` у `Android.bp`.
 
-**Не пише `device_provisioned`.** `Settings.Global.DEVICE_PROVISIONED` —
-`WRITE_SECURE_SETTINGS` (`signature|privileged`); без підпису платформним
-ключем і без `priv-app` це не наш рівень прав. Поки що «пройдено» зберігається у
-власних `SharedPreferences`, і саме тому `WelcomeFlow.shouldShow` працює з
-нашою версією вітальні, а не з прапорцем системи.
+**3. `priority="1000"` — заява, а не результат.** Число стоїть у маніфесті й
+не перевірене жодним порівнянням, бо другого кандидата на категорію на
+тестовому образі немає.
+
+## Чого цей модуль НЕ робить
+
+Список навмисно довгий: помилка «модуль є в образі, а обіцянки з нього
+виправдані» — той самий клас, від якого захищає `check-app-integration.sh`.
+
+**Не перекриває майстра бази.** Поки `overrides` у `Android.bp` немає, у образі
+лишаються два кандидати на перший запуск. Рішення ухвалюється після того, як
+`repo sync` принесе `frameworks/base` і буде звірено, яким саме механізмом
+LineageOS 22.2 заводить свій мастер — категорією чи конфіг-рядком.
+
+**Не показує ані слова, якщо система вже налаштована.** Це не «закривається
+помилково»: `skipWhenAlreadyPassed()` читає `device_provisioned`, і поки він
+рівний 1, модуль не має права перекривати екран.
+
+**Не пише прапорці мовчки.** Якщо дозволу раптом немає, на екрані з'являється
+`welcome_theme_not_applied` / `welcome_provision_failed` — прямий текст про
+те, що саме не вийшло. Ховати це за кнопкою, яка «ніби спрацювала», — той
+самий клас брехні, від якого захищає цей README.
 
 **Не обіцяє Google-сервісів.** У образі їх немає: `build/tessera.mk` §3
 свідомо тримає `PRODUCT_PACKAGES` без GApps і без microG, а
@@ -116,6 +125,11 @@ grep -rn "priority" packages/apps/LineageSetupWizard/AndroidManifest.xml  # ім
 показуємо кнопку «Додати акаунт», якщо немає — кажемо, що додавати нікуди, і
 пропонуємо пропустити.
 
+**Не робить того, чого не може OOBE взагалі.** Мову системи, SIM, Wi-Fi й
+відновлення з резервної копії на цих кроках немає: перше потребує
+системного API, який недоступний застосунку навіть із `WRITE_SECURE_SETTINGS`,
+решта — дозволів рівня оператора/мережі. Тому кроків чотири, а не дванадцять.
+
 ## Збірка й установка
 
 ```bash
@@ -123,15 +137,29 @@ grep -rn "priority" packages/apps/LineageSetupWizard/AndroidManifest.xml  # ім
 cd apps/welcome
 gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest
 # APK → app/build/outputs/apk/debug/app-debug.apk
-
-# на емулятор пісочниці (AVD TesseraVM, див. docs/EMULATOR.md)
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell cmd uimode night yes          # темна тема: публічні знімки лише так
 ```
+
+На пісочничному образі `user` (так само, як перевіряли 2026-10-25):
+
+```bash
+adb install -r -g app/build/outputs/apk/debug/app-debug.apk   # -g — щоб дозвіл видано було як виняток
+adb shell settings put global device_provisioned 0            # «телефон щойно з коробки»
+adb shell settings put secure user_setup_complete 0
+adb shell am start -a android.intent.action.MAIN \
+  -c android.intent.category.SETUP_WIZARD os.tessera.welcome/.WelcomeActivity
+# темна тема для публічних знімків:
+adb shell cmd uimode night yes
+```
+
+Майте на увазі: після `Почати` прапорці піднімуться справді, і наступний
+запуск уже нічого не покаже — саме це ми й перевіряли.
 
 У образ застосунок іде двома рядками, які перевіряються статично:
 `build/scripts/apps.list` (`welcome|TesseraWelcome|os.tessera.welcome|…`) і
 `PRODUCT_PACKAGES += TesseraWelcome` у `build/tessera.mk`. `Android.bp` —
-`android_app_import` з `presigned: true` і `system_ext_specific: true`;
-`privileged` там немає свідомо: без платформного ключа це лише ілюзія прав
-(див. два пункти вище).
+`android_app_import` з `presigned: true`, `privileged: true` і
+`system_ext_specific: true`, плюс `prebuilt_etc` із дозвільним списком.
+
+Окремо, щоб не плутали: `privileged` ≠ підпис платформним ключем. Привілей
+дає partition і рядок у дозвільному списку; ключ платформи тут ні при чому, і
+він нам не потрібен — тому модулю `presigned` і вистачає.

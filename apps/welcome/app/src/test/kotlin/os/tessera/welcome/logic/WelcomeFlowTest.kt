@@ -118,9 +118,8 @@ class WelcomeFlowTest {
     }
 
     @Test
-    fun `show again only when not finished or the version moved`() {
-        assertTrue(WelcomeFlow.shouldShow(finished = false, acknowledgedVersion = 0, currentVersion = 1))
-        assertFalse(WelcomeFlow.shouldShow(finished = true, acknowledgedVersion = 1, currentVersion = 1))
-        assertTrue(WelcomeFlow.shouldShow(finished = true, acknowledgedVersion = 1, currentVersion = 2))
+    fun `the wizard shows exactly while the system is unprovisioned`() {
+        assertTrue(WelcomeFlow.shouldShow(deviceProvisioned = false))
+        assertFalse(WelcomeFlow.shouldShow(deviceProvisioned = true))
     }
 }

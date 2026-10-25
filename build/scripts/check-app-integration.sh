@@ -59,6 +59,24 @@ while IFS='|' read -r dir module pkg artifact extra; do
     fail "$tag $module не в PRODUCT_PACKAGES — образ його не отримає"
   fi
 
+  # 2b. Роль «майстер першого запуску» перевіряємо статично, а не лише через
+  #     aapt2: поза деревом бази aapt2 не знаходиться (prepare-app.sh §108) і
+  #     whole вимога «без іконки» тихо зникає з CI. Тут вона чути завжди.
+  MANIFEST="$ROOT/apps/$dir/app/src/main/AndroidManifest.xml"
+  if [[ "$extra" == "SETUP_WIZARD" ]]; then
+    if [[ ! -f "$MANIFEST" ]]; then
+      fail "$tag немає $MANIFEST — роль майстра не чим перевірити"
+    else
+      grep -q '"android.intent.category.SETUP_WIZARD"' "$MANIFEST" ||
+        fail "$tag рядка реєстру з extra=SETUP_WIZARD, а в маніфесті такої категорії немає"
+      grep -q '"android.intent.category.LAUNCHER"' "$MANIFEST" &&
+        fail "$tag у маніфесті є LAUNCHER — в образі знову застосунок з іконкою замість OOBE"
+      grep -q 'android.permission.WRITE_SECURE_SETTINGS' "$MANIFEST" ||
+        fail "$tag майстер без WRITE_SECURE_SETTINGS не може написати device_provisioned — залишиться декорацією"
+      ok "$tag роль майстра: SETUP_WIZARD є, LAUNCHER немає, дозвіл на прапорці заявлений"
+    fi
+  fi
+
   # 3. presigned і certificate виключають одне одного (build/soong/java/app_import.go)
   PRESIGNED=$(grep -cE '^\s*presigned:\s*true' "$BP")
   CERT=$(grep -cE '^\s*certificate:' "$BP")
@@ -68,6 +86,26 @@ while IFS='|' read -r dir module pkg artifact extra; do
     fail "$tag presigned і certificate одночасно — Soong відмовить"
   else
     ok "$tag підпис визначений однозначно (presigned=$PRESIGNED, certificate=$CERT)"
+  fi
+
+  # 3b. Привілей без дозвільного списку — це образ, що не завантажується.
+  #     Модуль у priv-app просить дозвіл signature|privileged, а образ тримає
+  #     ro.control_privapp_permissions=enforce: PackageManager кидає збій на
+  #     кожен старт. Тому перевіряємо і файл, і те, що він доїде в образ.
+  if grep -qE '^\s*privileged:\s*true' "$BP"; then
+    ALLOW_DIR="$ROOT/apps/$dir/permissions"
+    ALLOW=$(find "$ALLOW_DIR" -name 'privapp-permissions-*.xml' 2>/dev/null | head -1)
+    if [[ -z "$ALLOW" ]]; then
+      fail "$tag privileged: true, але в apps/$dir/permissions/ немає privapp-permissions-*.xml — boot впаде під enforce"
+    elif ! grep -q "package=\"$pkg\"" "$ALLOW"; then
+      fail "$tag дозвільний файл $(basename "$ALLOW") не згадує пакет $pkg"
+    elif printf '%s\n' "$ASSIGN_ALL" | grep -qw "$(basename "$ALLOW" .xml)"; then
+      ok "$tag priv-app + дозвільний список $(basename "$ALLOW") оголошений у PRODUCT_PACKAGES"
+    else
+      fail "$tag $(basename "$ALLOW") є в дереві, але не в PRODUCT_PACKAGES — образ його не отримає й boot впаде"
+    fi
+  else
+    ok "$tag не привілейований — дозвільний список не потрібен"
   fi
 
   # 4. Шлях до apk з Android.bp ігнорується git: сам файл готується скриптом

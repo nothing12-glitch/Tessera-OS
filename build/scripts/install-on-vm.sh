@@ -129,6 +129,12 @@ done
 # Дозволи, яких роль не видає на всіх збірках. `pm grant` на неоголошеному
 # дозволі повертає помилку, тому кожен рядок друкуємо окремо — мовчки
 # пропущений CALL_PHONE коштує більше, ніж одне «увага» в кінці.
+#
+# Рядок вітальні — виняток із цього правила, і його треба розуміти правильно:
+# WRITE_SECURE_SETTINGS рівня `signature|privileged`, і `pm grant` видає його
+# лише як відлагоджувальний виняток з adb. У справжньому образі той самий
+# дозвіл дає сукупність «priv-app + privapp-permissions-*.xml» (apps/welcome),
+# тож цей рядок чинить пісочницю схожою на образ, а не зображає образ.
 echo ">>> Дозволи"
 for row in \
     "os.tessera.camera|android.permission.CAMERA" \
@@ -137,7 +143,8 @@ for row in \
     "os.tessera.dialer|android.permission.READ_CALL_LOG" \
     "os.tessera.dialer|android.permission.READ_CONTACTS" \
     "os.tessera.messaging|android.permission.READ_SMS" \
-    "os.tessera.messaging|android.permission.READ_CONTACTS"; do
+    "os.tessera.messaging|android.permission.READ_CONTACTS" \
+    "os.tessera.welcome|android.permission.WRITE_SECURE_SETTINGS"; do
   IFS='|' read -r pkg perm <<< "$row"
   [[ " ${INSTALLED[*]} " == *" $pkg "* ]] || continue
   run $ADB shell "pm grant $pkg $perm" >/dev/null 2>&1 || { warn "$pkg: $perm не видано"; continue; }

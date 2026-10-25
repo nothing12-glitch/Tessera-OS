@@ -26,7 +26,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -61,7 +60,6 @@ fun WelcomeScreen(
     onBack: () -> Unit,
     onSkipAccount: () -> Unit,
     onOpenAccount: () -> Unit,
-    onOpenDisplaySettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -97,11 +95,7 @@ fun WelcomeScreen(
                 ) { step ->
                     when (step) {
                         WelcomeStep.GREETING -> Greeting(state = state)
-                        WelcomeStep.THEME -> ThemeStep(
-                            state = state,
-                            onTheme = onTheme,
-                            onOpenDisplaySettings = onOpenDisplaySettings,
-                        )
+                        WelcomeStep.THEME -> ThemeStep(state = state, onTheme = onTheme)
 
                         WelcomeStep.ACCOUNT -> AccountStep(state = state, onOpenAccount = onOpenAccount)
                         WelcomeStep.FINISH -> FinishStep(state = state)
@@ -196,7 +190,6 @@ private fun Greeting(state: WelcomeUiState) {
 private fun ThemeStep(
     state: WelcomeUiState,
     onTheme: (ThemeChoice) -> Unit,
-    onOpenDisplaySettings: () -> Unit,
 ) {
     Column {
         StepTitle(
@@ -223,14 +216,13 @@ private fun ThemeStep(
         }
         Spacer(Modifier.height(16.dp))
         Text(
-            text = stringResource(R.string.welcome_theme_preview_note),
+            text = stringResource(
+                if (state.themeApplied) R.string.welcome_theme_applied
+                else R.string.welcome_theme_not_applied
+            ),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.height(8.dp))
-        OutlinedButton(onClick = onOpenDisplaySettings) {
-            Text(stringResource(R.string.welcome_theme_open_display))
-        }
     }
 }
 

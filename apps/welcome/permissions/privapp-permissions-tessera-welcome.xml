@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Дозвільний список привілейованих дозволів для майстра першого запуску.
+
+  Образ увімкнув `ro.control_privapp_permissions=enforce` (build/tessera.mk §5),
+  тож без цього файла система взагалі не підніметься: PackageManager побачить
+  дозвіл рівня `signature|privileged` у пакунка з priv-app і без запису тут —
+  і видаматиме збій на кожен запуск.
+
+  Один запис — один дозвіл, і той самий, що й у маніфесті. Ніяких
+  `default-enabled`-списків «на всяк випадок».
+-->
+<permissions>
+    <privapp-permissions package="os.tessera.welcome">
+        <permission name="android.permission.WRITE_SECURE_SETTINGS" />
+    </privapp-permissions>
+</permissions>
