@@ -120,10 +120,13 @@ echo "=== 3. змінні середовища ==="
 # а збірки з Windows запускаються саме так (`wsl -u tessera -- bash -lc`).
 PROFILE="$HOME/.profile"
 if ! grep -q 'TESSERA TOOLCHAIN' "$PROFILE" 2>/dev/null; then
+  # Шлях підставляємо буквально, а не як \$SDK_DIR: у ~/.profile такої змінної
+  # немає, і будь-який скрипт із `set -u`, що його джерелить, помирає на
+  # «unbound variable» ще до першої команди збірки.
   cat >>"$PROFILE" <<EOF
 # TESSERA TOOLCHAIN — Android SDK і Gradle для збірки наших APK
 export ANDROID_HOME="$SDK_DIR"
-export PATH="\$HOME/gradle-dist/gradle-$GRADLE_VERSION/bin:\$SDK_DIR/platform-tools:\$PATH"
+export PATH="\$HOME/gradle-dist/gradle-$GRADLE_VERSION/bin:$SDK_DIR/platform-tools:\$PATH"
 EOF
   echo "дописано ANDROID_HOME і PATH у ~/.profile"
 else
