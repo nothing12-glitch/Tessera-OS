@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.view.Surface
 import androidx.activity.ComponentActivity
 import androidx.camera.core.Camera
@@ -106,11 +107,23 @@ class CameraRig(private val activity: ComponentActivity) {
         val video = VideoCapture.withOutput(recorder).apply { targetRotation = rotation }
 
         provider.unbindAll()
-        val bound = runCatching { provider.bindToLifecycle(activity, selector, preview, capture, video) }
-            .getOrNull() ?: return false
+        var boundCamera = runCatching { provider.bindToLifecycle(activity, selector, preview, capture, video) }
+        val withVideo = boundCamera.isSuccess
+        if (!withVideo) {
+            // Камери, які не тримають фото й відео водночас (камера емулятора,
+            // частина бюджетних сенсорів), — це не «камери немає»: привʼязуємо
+            // без відео, а запис чесно відмовляє окремим повідомленням.
+            Log.w(TAG, "фото+відео не привʼязались, пробуємо лише фото", boundCamera.exceptionOrNull())
+            provider.unbindAll()
+            boundCamera = runCatching { provider.bindToLifecycle(activity, selector, preview, capture) }
+        }
+        val bound = boundCamera.getOrElse {
+            Log.w(TAG, "навіть фото+превʼю не привʼязались", it)
+            return false
+        }
 
         imageCapture = capture
-        videoCapture = video
+        videoCapture = if (withVideo) video else null
         camera = bound
         setFlash(flash)
         return true
@@ -238,4 +251,8 @@ class CameraRig(private val activity: ComponentActivity) {
     /** Поворот екрана для `targetRotation`; без дисплея — як є. */
     fun displayRotation(view: PreviewView): Int =
         view.display?.rotation ?: Surface.ROTATION_0
+
+    private companion object {
+        const val TAG = "TesseraCamera"
+    }
 }
