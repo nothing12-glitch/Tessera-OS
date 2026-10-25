@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ласкаво просимо</string>
+
+    <string name="welcome_brand">TesseraOS</string>
+    <string name="welcome_greeting_title">Вітаємо у Tessera OS!</string>
+    <string name="welcome_greeting_body">Це LineageOS 22.2 з нашою темою Material Design 3. Дім, телефон, повідомлення й решту програм дає система — ми міняємо лише те, як усе це виглядає.</string>
+    <string name="welcome_greeting_version">Збірка образу — %1$s</string>
+
+    <string name="welcome_theme_title">Обери тему</string>
+    <string name="welcome_theme_body">Темна чи світла — бажання на весь телефон, а не на одне вікно. «Авто» йде за розкладом.</string>
+    <string name="welcome_theme_auto">Авто</string>
+    <string name="welcome_theme_light">Світла</string>
+    <string name="welcome_theme_dark">Темна</string>
+    <string name="welcome_theme_preview_note">Ця сторінка перефарбовується одразу, щоб ви бачили вибір. На всю систему його застосовує Дисплей у Налаштуваннях — посилання нижче.</string>
+    <string name="welcome_theme_open_display">Відкрити Дисплей у Налаштуваннях</string>
+    <string name="welcome_theme_failed">Не можу переключити тему для всієї системи — зроби це в Налаштуваннях → Дисплей.</string>
+
+    <string name="welcome_account_title">Обліковий запис Google</string>
+    <string name="welcome_account_body">Сервіси Google в цьому образі не вбудовані за замовчуванням: образ відкритий і не містить власницьких бібліотек. Якщо на пристрої є постачальник GmsCore-API (наприклад microG, встановлений окремо), додай акаунт просто зараз — або пізніше в Налаштуваннях.</string>
+    <string name="welcome_account_none">На цьому пристрої немає жодного постачальника GmsCore-API, тож і додавати акаунт нікуди. Крок можна пропустити.</string>
+    <string name="welcome_account_open">Додати акаунт</string>
+    <string name="welcome_account_skip">Пропустити</string>
+    <string name="welcome_account_failed">Екран додавання акаунта не відкривається — зроби це пізніше в Налаштуваннях.</string>
+
+    <string name="welcome_finish_title">Готово</string>
+    <string name="welcome_finish_body">Тема — %1$s. Домашній екран, телефон, повідомлення й решту програм дає система. Дальше телефон працює сам.</string>
+    <string name="welcome_done_button">Почати</string>
+
+    <string name="welcome_next">Далі</string>
+    <string name="welcome_back">Назад</string>
+    <string name="welcome_step">Крок %1$d із %2$d</string>
+    <string name="welcome_progress">Прогрес першого запуску</string>
+
+    <string name="welcome_brand_desc">Знак TesseraOS</string>
+</resources>

@@ -1,0 +1,17 @@
+// Вітальний екран TesseraOS у зібраному образі.
+//
+// Той самий механізм, що й для решти наших модулів: Gradle збирає APK поза
+// деревом, build/scripts/prepare-app.sh кладе його в apps/welcome/prebuilt/,
+// Soong імпортує через android_app_import. У git apk не лежить — policy.yml
+// забороняє бінарники в дереві.
+//
+// `privileged` тут навмисно немає: застосунок не потребує системних дозволів,
+// щоб показати свої екрани. Те, що потребує (запис device_provisioned і
+// автоматичний старт замість майстра бази), — окремий крок; див. README.md,
+// пункт «Чого це НЕ робить».
+android_app_import {
+    name: "TesseraWelcome",
+    apk: "prebuilt/TesseraWelcome.apk",
+    presigned: true,
+    system_ext_specific: true,
+}

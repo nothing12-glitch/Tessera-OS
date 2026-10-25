@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Без цього дозволу екран не зміг би перемкнути день/ніч для всієї
+         системи: UiModeManager.setNightMode його вимагає (normal-дозвіл,
+         видається при встановленні). -->
+    <uses-permission android:name="android.permission.CHANGE_CONFIGURATION" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.TesseraWelcome">
+
+        <activity
+            android:name=".WelcomeActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|uiMode|density|fontScale"
+            android:exported="true"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Майданчик для перевірки: `adb shell am start -a android.intent.action.MAIN
+                 -c android.intent.category.SETUP_WIZARD`. ІМʼЯ КАТЕГОРІЇ ЩЕ НЕ ЗВІРЕНЕ
+                 з frameworks/base lineage-22.2 — проєкт ще не доїхав до дерева бази
+                 (sync іде). Тому цей фільтр є виключно гачком для тесту й НІЧОГО не
+                 обіцяє: автоматичний старт замість майстра бази — окремий крок із
+                 власною перевіркою. Див. README.md. -->
+            <intent-filter android:priority="1">
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.SETUP_WIZARD" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
