@@ -115,27 +115,22 @@ jobs:
             :app:testDebugUnitTest :app:assembleDebug
 
       - name: Перевірити маніфест зібраного APK
-        working-directory: apps/${{ matrix.app }}
         run: |
           set -euo pipefail
-          APK="app/build/outputs/apk/debug/app-debug.apk"
+          APK="apps/${{ matrix.app }}/app/build/outputs/apk/debug/app-debug.apk"
           [[ -f "$APK" ]] || { echo "немає $APK" >&2; exit 1; }
           BT="$(ls -1d "${{ steps.sdk.outputs.sdk }}"/build-tools/*/ | sort -V | tail -1)"
+          # Які категорії має оголошувати APK — вирішує не цей step, а спільний
+          # скрипт (його ж кличе prepare-app.sh). Подвоєння вже ламало CI: коли
+          # вітальня стала майстром першого запуску, тут лишилася вимога LAUNCHER
+          # для всіх APK, і job впав саме на ній.
+          AAPT2="$BT/aapt2" bash build/scripts/check-apk-manifest.sh \
+            "$APK" "${{ matrix.pkg }}" "${{ matrix.category }}"
+          # Вивід у змінну, а не в конвеєр до grep -q: той, знайшовши збіг,
+          # закриває stdin і вбиває aapt2 SIGPIPE — при pipefail step падає з 141
+          # там, де перевірка щойно змоглася.
           BADGE="$("$BT/aapt2" dump badging "$APK")"
-          # badging не показує категорії фільтрів — їх читаємо з відтвореного
-          # бінарного маніфеста
-          MANIFEST="$("$BT/aapt2" dump xmltree --file AndroidManifest.xml "$APK")"
-          echo "$BADGE" | grep -q "package: name='${{ matrix.pkg }}'" || {
-            echo "APK не має нашого package ${{ matrix.pkg }}" >&2; exit 1; }
-          echo "$MANIFEST" | grep -q '"android.intent.category.LAUNCHER"' || {
-            echo "застосунок не оголошує LAUNCHER — іконки не буде на екрані" >&2; exit 1; }
-          if [[ "${{ matrix.category }}" != "-" ]]; then
-            # Без цієї категорії застосунок не виконує свою системну роль
-            # (для лаунчера — «Додом» веде не туди).
-            echo "$MANIFEST" | grep -q "\"android.intent.category.${{ matrix.category }}\"" || {
-              echo "у APK немає категорії ${{ matrix.category }}" >&2; exit 1; }
-          fi
-          echo "$BADGE" | grep -q "minSdkVersion:'33'" || {
+          [[ "$BADGE" == *"minSdkVersion:'33'"* ]] || {
             echo "неочікуваний minSdk" >&2; exit 1; }
           echo "ok: ${{ matrix.pkg }}, minSdk 33"
 
