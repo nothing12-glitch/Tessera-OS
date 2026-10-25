@@ -1,0 +1,16 @@
+// Світловий край TesseraOS у зібраному образі.
+//
+// Той самий механізм, що в решти наших модулів: Gradle збирає APK поза
+// деревом, build/scripts/prepare-app.sh кладе його в apps/halo/prebuilt/,
+// Soong імпортує через android_app_import. У git apk не лежить — policy.yml
+// забороняє бінарники в дереві.
+//
+// `privileged` тут навмисно немає. Край живе на звичайних дозволах, які видає
+// користувач (показ поверх + доступ до сповіщень); системних привілеїв він не
+// просить і не потребує. Див. apps/halo/README.md.
+android_app_import {
+    name: "TesseraHalo",
+    apk: "prebuilt/TesseraHalo.apk",
+    presigned: true,
+    system_ext_specific: true,
+}

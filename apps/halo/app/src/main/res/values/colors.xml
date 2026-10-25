@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="halo_background">#101418</color>
+    <color name="halo_glyph">#8FB0FF</color>
+    <color name="halo_spark">#E8B23A</color>
+</resources>

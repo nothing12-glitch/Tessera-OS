@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Світловий край</string>
+
+    <string name="halo_title">Tessera Halo</string>
+    <string name="halo_subtitle">Світло по краю екрана замість LED-індикатора. Працює на будь-якому склі.</string>
+
+    <string name="halo_section_permissions">Дозволи</string>
+    <string name="halo_grant_overlay_title">Показ поверх інших вікон</string>
+    <string name="halo_grant_overlay_body">Без цього дозволу система не дозволить малювати світло по краю.</string>
+    <string name="halo_grant_listener_title">Доступ до сповіщень</string>
+    <string name="halo_grant_listener_body">Читаємо лише те, що й так прилетіло в панель: застосунок, пріоритет, категорію, колір. Текст повідомлень не зʼявляється і нікуди не надсилається.</string>
+    <string name="halo_grant_open">Відкрити дозвіл</string>
+    <string name="halo_granted">Видано</string>
+    <string name="halo_not_granted">Не видано</string>
+
+    <string name="halo_section_look">Вигляд</string>
+    <string name="halo_switch_title">Halo увімкнено</string>
+    <string name="halo_switch_body">Поки вимкнено, край не світиться й вікно над екраном не створюється.</string>
+    <string name="halo_pattern_title">Візерунок</string>
+    <string name="halo_pattern_wave">Хвиля</string>
+    <string name="halo_pattern_pulse">Пульс</string>
+    <string name="halo_pattern_solid">Суцільно</string>
+    <string name="halo_color_title">Колір світла</string>
+    <string name="halo_color_monet">Акцент Monet</string>
+    <string name="halo_color_notification">Колір сповіщення</string>
+    <string name="halo_color_monet_hint">Той самий акцент, що й у теми TesseraOS: край змінює колір разом зі шпалерами.</string>
+    <string name="halo_color_notification_hint">Беремо колір сповіщення або його іконки. Іконку чужого застосунку система може не віддати (видимість пакетів з Android 11) — тоді повертаємось до акцента Monet.</string>
+    <string name="halo_duration_title">Тривалість світла</string>
+    <string name="halo_duration_value">%1$s с</string>
+    <string name="halo_intensity_title">Яскравість смуги</string>
+    <string name="halo_intensity_value">%1$d відсотків</string>
+
+    <string name="halo_section_when">Коли світити</string>
+    <string name="halo_only_loud_title">Лише помітні сповіщення</string>
+    <string name="halo_only_loud_body">Пріоритет нижчий за звичайний — не світиться. Канал чужого застосунку нам не видно, тому судимо за пріоритетом самого сповіщення.</string>
+    <string name="halo_zen_body">Під «Не турбувати» край мовчить, крім дзвінків і будильників — ті самі правила, що й у системи. Постійні сповіщення служб (навігатор, завантаження) не свічться взагалі.</string>
+
+    <string name="halo_section_test">Перевірка</string>
+    <string name="halo_test_button">Показати тестове сповіщення</string>
+    <string name="halo_test_title">Tessera Halo</string>
+    <string name="halo_test_body">Це наше власне сповіщення: край саме так і засвітиться.</string>
+    <string name="halo_channel_name">Перевірка краю</string>
+    <string name="halo_channel_body">Тестові сповіщення, щоб побачити світло, не чекаючи на справжнє.</string>
+    <string name="halo_ask_post">Дозволити сповіщення</string>
+    <string name="halo_notice_overlay">Дай дозвіл на показ поверх — і повернись сюди: край оживе.</string>
+    <string name="halo_notice_no_listener_screen">На цьому збірці немає екрана доступу до сповіщень — увімкни слухача вручну в Налаштуваннях.</string>
+    <string name="halo_notice_post_denied">Сповіщення застосунку заборонені: без них немає чому світитись.</string>
+    <string name="halo_notice_need_listener">Спочатку ввімкни доступ до сповіщень — інакше тест не має кому прийти.</string>
+    <string name="halo_notice_need_overlay">Без дозволу на показ поверх тест не засвітить край.</string>
+
+    <string name="halo_limits_title">Чого цей край не робить</string>
+    <string name="halo_limit_screen_off">Не світиться, коли екран вимкнено: система показує таке вікно лише на ввімкненому дисплеї. AOD — окрема апаратна функція.</string>
+    <string name="halo_limit_not_led">Не замінює діод: це світло на склі, а не на задній панелі.</string>
+    <string name="halo_limit_no_text">Не читає текст сповіщень і не зберігає їх.</string>
+    <string name="halo_limit_listener">Не працює, доки вимкнено доступ до сповіщень: слухач — єдине джерело подій.</string>
+    <string name="halo_limit_no_service">Не тримає фонового сервісу: вікно живе рівно стільки, скільки тривалість світла, і зникає.</string>
+    <string name="halo_origin_body">Ідея прийшла з новин про Pixel Glow у Android 17: телефон має світитися на сповіщення. Там це роблять діоди під задньою панеллю; в нас — смуга по краю, бо вона не вимагає заліза.</string>
+</resources>
