@@ -52,9 +52,16 @@ else
 fi
 
 echo ">>> ліцензії + platforms;android-35 + build-tools;35.0.0 + platform-tools"
-yes | "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+# Так звано «прийняти ліцензії» ламає скрипт, якщо про це забути: sdkmanager
+# закриває stdin після останньої згоди, `yes` на запис у трубу, яку ніхто не
+# читає, отримує SIGPIPE (код 141), а pipeline з `set -o pipefail` робить це
+# фатальним — і весь інсталятор помирає на порожньому місці. Тому || true.
+yes | "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+# Другий виклик ліцензій уже не запитує (згоду видно в ~/.android/licenses),
+# тому ним судимо за кодом виходу звичайного виклику.
 "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" \
-  "platforms;android-35" "build-tools;35.0.0" "platform-tools" >/dev/null
+  "platforms;android-35" "build-tools;35.0.0" "platform-tools" >/dev/null ||
+  die "sdkmanager не поставив пакунки SDK — див. вище (часто це обірване з'єднання з dl.google.com; повтори скрипт)"
 [[ -d "$SDK_DIR/platforms/android-35" ]] || die "platforms/android-35 не з'явився"
 
 echo
