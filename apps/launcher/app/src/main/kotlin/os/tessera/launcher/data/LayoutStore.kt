@@ -17,6 +17,29 @@ class LayoutStore(context: Context) {
 
     fun dock(): List<String> = read(KEY_DOCK)
 
+    /**
+     * Розклад для першого запуску: док із зателефонувати/написати/зняти, решта —
+     * на головному екрані. Без цього новий користувач бачив порожню сітку й
+     * пустий док, поки сам нічого не прикріпив.
+     *
+     * [KEY_SEEDED] — окремий прапорець, а не «списки порожні»: користувач має
+     * право прибрати всі іконки, і тоді розклад не повинен повертатися.
+     */
+    fun seedFirstLayout(apps: List<LauncherApp>, homeCapacity: Int, dockSlots: Int) {
+        if (prefs.getBoolean(KEY_SEEDED, false)) return
+        val byPackage = apps.associateBy { it.component.packageName }
+        val dock = DOCK_PACKAGES.mapNotNull { byPackage[it]?.id }.take(dockSlots)
+        val rest = apps.map { it.id }.filterNot { it in dock }
+        write(KEY_DOCK, dock)
+        // Наші застосунки попереду: без цього першу сторінку повністю
+        // заповнюють назвні додатки системи, відсортовані за підписом.
+        val ours = rest.filter { it.startsWith(OWN_PREFIX) }
+        write(KEY_HOME, (ours + rest.filterNot { it in ours }).take(homeCapacity))
+        // прапорець — останнім: якщо процес обірветься посередині, наступного
+        // запуску розклад допишеться, а не зникне назавжди
+        prefs.edit().putBoolean(KEY_SEEDED, true).apply()
+    }
+
     fun pinToHome(id: String, capacity: Int) = add(KEY_HOME, id, capacity)
 
     fun unpinFromHome(id: String) = remove(KEY_HOME, id)
@@ -51,6 +74,19 @@ class LayoutStore(context: Context) {
         const val PREFS = "tessera_launcher_layout"
         const val KEY_HOME = "home_pins"
         const val KEY_DOCK = "dock"
+        const val KEY_SEEDED = "seeded"
         const val SEPARATOR = ","
+
+        /** Наші застосунки пізнаються за префіксом id — вони попереду на сітці. */
+        const val OWN_PREFIX = "os.tessera."
+
+        /** Діал-панель, SMS, фото, файли й годинник — те, що на Pixel у доку. */
+        val DOCK_PACKAGES = listOf(
+            "os.tessera.dialer",
+            "os.tessera.messaging",
+            "os.tessera.camera",
+            "os.tessera.files",
+            "os.tessera.clock",
+        )
     }
 }

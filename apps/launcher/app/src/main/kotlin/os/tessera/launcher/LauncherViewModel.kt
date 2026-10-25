@@ -60,6 +60,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         val app = getApplication<Application>()
         viewModelScope.launch(Dispatchers.Default) {
             val apps = repository.load(app)
+            store.seedFirstLayout(apps, grid.homeCapacity, grid.dockSlots)
             _state.value = LauncherState(
                 apps = apps,
                 homePins = store.homePins(),
