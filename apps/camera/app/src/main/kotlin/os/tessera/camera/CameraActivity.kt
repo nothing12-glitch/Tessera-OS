@@ -95,7 +95,11 @@ class CameraActivity : ComponentActivity() {
             }
         }
 
-        if (granted(Manifest.permission.CAMERA)) prepareCamera() else askForCamera()
+        // Прапцем керує лише колбек запиту дозволу, а він не спрацьовує, коли
+        // дозвіл уже виданий: без цього «Камера вимкнена» висіла б на кожному
+        // запуску після першого.
+        permissionMissing = !granted(Manifest.permission.CAMERA)
+        if (!permissionMissing) prepareCamera() else askForCamera()
     }
 
     /** Поворот у нас у `configChanges`, тож перепривʼязуємо самі: інакше затвор знає старий кут. */
