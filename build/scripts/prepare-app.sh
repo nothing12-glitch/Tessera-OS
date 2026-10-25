@@ -37,7 +37,16 @@ while IFS='|' read -r dir module pkg artifact extra; do
   [[ -n "$extra" ]] || extra="-"
   APPS+=("$dir|$module|$pkg|$artifact|$extra")
 done < "$REGISTRY"
-[[ "${#APPS[@]}" -gt 0 ]] || die "реєстр $REGISTRY порожній"
+# Порожній реєстр — легальний стан продукту (2026-10-25): власних застосунків у
+# образі немає, тож і готувати APK для Soong нема чого. Раніше тут була
+# помилка, і вона б ламала build-emulator.sh на першому ж рядку.
+if [[ "${#APPS[@]}" == 0 ]]; then
+  if [[ "$WHICH" == "all" ]]; then
+    echo "prepare-app: у реєстрі $REGISTRY немає жодного застосунку — образ без власних APK, готувати нічого"
+    exit 0
+  fi
+  die "у реєстрі $REGISTRY немає застосунку «$WHICH» — він знятий з продукту (розкоментуй рядок і додай модуль у build/tessera.mk)"
+fi
 
 pick() { # рядок реєстру з даним каталогом, або нічого
   local row

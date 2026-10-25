@@ -24,10 +24,13 @@ export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git -C "$REPO_DIR" log -1 --for
 
 TARGET="${1:-tessera_x86_64-userdebug}"
 
-# Наші застосунки (реєстр — build/scripts/apps.list) входять у образ як
+# Застосунки з реєстру build/scripts/apps.list входять у образ як
 # android_app_import, тому APK мають існувати ще до аналізу Soong: інакше
 # помилка «module TesseraFiles: apk not found» з'явиться посеред години збірки.
-# Пропустити — TESSERA_SKIP_APPS=1; інший режим — TESSERA_APPS_ARGS, напр.
+# Від 2026-10-25 реєстр закритий (власних застосунків у продукті немає), тому
+# prepare-app.sh на порожньому реєстрі просто друкує рядок і виходить з нулем —
+# збірка образу від того не залежить.
+# Пропустити підготовку — TESSERA_SKIP_APPS=1; інший режим — TESSERA_APPS_ARGS, напр.
 # "prebuilt /шлях" для одного застосунку або "artifact <id>" для всіх.
 if [[ "${TESSERA_SKIP_APPS:-0}" != "1" ]]; then
   # shellcheck disable=SC2086  # TESSERA_APPS_ARGS — це режим + аргумент

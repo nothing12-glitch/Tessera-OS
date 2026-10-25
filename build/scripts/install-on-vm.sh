@@ -102,7 +102,12 @@ while IFS='|' read -r dir module pkg _artifact _extra; do
   fi
 done < "$REGISTRY"
 
-[[ "${#INSTALLED[@]}" -gt 0 ]] || { echo "нічого не встановлено" >&2; exit 1; }
+# Порожній реєстр — це не поломка, а стан продукту (2026-10-25: власних
+# застосунків більше немає, лишається тема). Раніше цей рядок завершував
+# установлення помилкою, і пакунок із самою темою не стався б взагалі.
+if [[ "${#INSTALLED[@]}" == 0 ]]; then
+  note "у реєстрі власних застосунків немає — далі встановлюємо лише тему"
+fi
 
 # --- 3. ролі --------------------------------------------------------------
 # Без цих трьох застосунки були б просто іконками: HOME без призначення не
@@ -147,6 +152,8 @@ OVER_DIR="$(cd "$APKS/.." && pwd)/overlays"
 overlays="$(ls "$OVER_DIR"/*.apk 2>/dev/null || true)"
 if [[ -z "$overlays" ]]; then
   note "оверлеїв у пакунку немає — образ виглядатиме стоково (збірка: build/scripts/build-themes.sh)"
+  [[ "${#INSTALLED[@]}" == 0 ]] && \
+    warn "ні застосунків, ні теми: пакунок порожній. Перестворіть його: build/scripts/make-vm-bundle.sh --themes"
 else
   for apk in $overlays; do
     name="$(basename "$apk" .apk)"
@@ -177,4 +184,3 @@ echo "Швидка перевірка з VM:"
 echo "  adb shell dumpsys package role_manager | grep -A2 ROLE_"
 echo "  adb shell settings get secure default_home"
 echo "  adb shell cmd overlay list | grep tessera"
-echo "  adb shell monkey -p os.tessera.messaging -c android.intent.category.LAUNCHER 1"

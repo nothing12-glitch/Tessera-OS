@@ -9,10 +9,30 @@
 # Останній стовпчик — категорія фільтра, без якої застосунок не виконує свою
 # роль у системі (для лаунчера це HOME; без неї «Додом» нікуди не веде).
 # Прочерк означає «вистачає звичайного LAUNCHER».
-calculator|TesseraCalculator|os.tessera.calculator|tessera-calculator-debug|-
-camera|TesseraCamera|os.tessera.camera|tessera-camera-debug|-
-clock|TesseraClock|os.tessera.clock|tessera-clock-debug|-
-dialer|TesseraDialer|os.tessera.dialer|tessera-dialer-debug|-
-files|TesseraFiles|os.tessera.files|tessera-files-debug|-
-launcher|TesseraLauncher|os.tessera.launcher|tessera-launcher-debug|HOME
-messaging|TesseraMessaging|os.tessera.messaging|tessera-messaging-debug|-
+#
+# ============================================================================
+# Реєстр НВІДКРИТИЙ: жодного застосунку в образ не потрапляє (2026-10-25).
+#
+# Причина — рішення користувача після перевірки наживо: «Прибрати наш лаунчер
+# зовсім» і «Прибрати всі наші» застосунки. Продукт став таким: LineageOS 22.2
+# + наша тема MD3 + документація й установчі скрипти. Домашній екран, телефон,
+# повідомлення, камера, годинник, калькулятор і «Файли» дає система.
+#
+# Рядки нижче закоментовані, а не видалені — навмисно:
+#  - код застосунків лишається в apps/ (і в історії git, і у вже опублікованому
+#    пакунку v15.22.2.2);
+#  - повернути будь-який із них = розкоментувати рядок ТУТ і додати той самий
+#    модуль до PRODUCT_PACKAGES у build/tessera.mk. Обидва кроки, інакше
+#    check-app-integration.sh впіймає розхід «у образі є, а в CI ні».
+#
+# Скрипти читають лише нерозкоментовані рядки, тому порожній реєстр для них —
+# легальний стан: build-emulator.sh, prepare-app.sh, make-vm-bundle.sh,
+# install-on-vm.sh/.ps1 і CI (build-apps.yml) у ньому працюють далі.
+# ============================================================================
+# calculator|TesseraCalculator|os.tessera.calculator|tessera-calculator-debug|-
+# camera|TesseraCamera|os.tessera.camera|tessera-camera-debug|-
+# clock|TesseraClock|os.tessera.clock|tessera-clock-debug|-
+# dialer|TesseraDialer|os.tessera.dialer|tessera-dialer-debug|-
+# files|TesseraFiles|os.tessera.files|tessera-files-debug|-
+# launcher|TesseraLauncher|os.tessera.launcher|tessera-launcher-debug|HOME
+# messaging|TesseraMessaging|os.tessera.messaging|tessera-messaging-debug|-

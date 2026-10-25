@@ -21,12 +21,22 @@ ok()   { echo "[app-integration] ok: $*"; }
 
 [[ -f "$REGISTRY" ]] || { echo "[app-integration] немає реєстру $REGISTRY"; exit 1; }
 
+# Рядки призначення PRODUCT_PACKAGES з build/tessera.mk, один раз на весь
+# прогін: зклеюємо continuation-рядки `\\`, потім відрізаємо коментарі. Без
+# цього коментар «#PRODUCT_PACKAGES += X» теж вважався б оголошенням — ми це
+# словили на негативному тесті. Потрібне і в циклі по реєстру (чи модуль у
+# образі), і в перевірці №8 (чи в образі немає того, чого в реєстрі немає).
+MK_FLAT="$(sed -e :a -e '/\\$/N; s/\\\n//; ta' "$MK" | sed 's/#.*$//')"
+ASSIGN_ALL="$(printf '%s\n' "$MK_FLAT" | grep -E '^[[:space:]]*PRODUCT_PACKAGES[[:space:]]*[+:]?=' || true)"
+
 DIRS_IN_REGISTRY=""
+ACTIVE_ROWS=0
 ONLY="${1:-}"
 
 while IFS='|' read -r dir module pkg artifact extra; do
   [[ -z "$dir" || "$dir" =~ ^[[:space:]]*# ]] && continue
   DIRS_IN_REGISTRY+=" $dir"
+  ACTIVE_ROWS=$((ACTIVE_ROWS + 1))
   [[ -n "$ONLY" && "$dir" != "$ONLY" ]] && continue
 
   GRADLE="$ROOT/apps/$dir/app/build.gradle.kts"
@@ -42,12 +52,8 @@ while IFS='|' read -r dir module pkg artifact extra; do
   # 2. Модуль має бути в PRODUCT_PACKAGES — інакше Soong його збере, але в
   #    образ він не потрапить (мовчазна неактивність).
   #
-  # Шукаємо саме в рядку призначення: спочатку зклеюємо continuation-рядки `\\`,
-  # потім відрізаємо коментарі. Без цього коментар «#PRODUCT_PACKAGES += X»
-  # теж вважався б оголошенням — ми це словили на негативному тесті.
-  MK_FLAT="$(sed -e :a -e '/\\$/N; s/\\\n//; ta' "$MK" | sed 's/#.*$//')"
-  ASSIGN="$(printf '%s\n' "$MK_FLAT" | grep -E '^[[:space:]]*PRODUCT_PACKAGES[[:space:]]*[+:]?=' || true)"
-  if printf '%s\n' "$ASSIGN" | grep -qw "$module"; then
+  # Шукаємо саме в рядку призначення — MK_FLAT/ASSIGN_ALL обчислені на початку.
+  if printf '%s\n' "$ASSIGN_ALL" | grep -qw "$module"; then
     ok "$tag $module оголошений у PRODUCT_PACKAGES (build/tessera.mk)"
   else
     fail "$tag $module не в PRODUCT_PACKAGES — образ його не отримає"
@@ -101,39 +107,61 @@ else
   ok "під apps/ у git немає apk"
 fi
 
-# 8. Кожен Android.bp у apps/ має стояти в реєстрі. Інакше новий застосунок
-#    зібʼється вручну, про нього забудуть у CI, і в образ він не потрапить.
+# 8. Зворотний бік попередньої перевірки (оновлено 2026-10-25). Раніше вимога
+#    була «кожний Android.bp у apps/ має стояти в реєстрі». Тепер реєстр
+#    навмисно порожній, а codes у apps/ лишились, тож такий тест ламав би
+#    перевірку за кожним знятим застосунком. Справжній ризик інший: модуль
+#    потрапив в образ, але CI його не збирає і інсталятор не ставить.
 for bp in "$ROOT"/apps/*/Android.bp; do
   [[ -e "$bp" ]] || continue
   d="$(basename "$(dirname "$bp")")"
-  if ! printf '%s\n' "$DIRS_IN_REGISTRY" | grep -qw "$d"; then
-    fail "apps/$d/Android.bp є, але застосунку «$d» немає в build/scripts/apps.list"
+  module_in_bp="$(sed -n 's/^[[:space:]]*name: "\([^"]*\)",.*/\1/p' "$bp" | head -1)"
+  if printf '%s\n' "$DIRS_IN_REGISTRY" | grep -qw "$d"; then
+    ok "$d: у реєстрі — його збирає CI й ставить інсталятор"
+  elif [[ -n "$module_in_bp" ]] && printf '%s\n' "$ASSIGN_ALL" | grep -qw "$module_in_bp"; then
+    fail "apps/$d: модуль $module_in_bp є в PRODUCT_PACKAGES, але рядка в apps.list немає — образ його отримає, а CI не збере"
+  else
+    ok "$d: поза реєстром і поза PRODUCT_PACKAGES — у продукт не входить (код лишається в дереві)"
   fi
 done
 
 # 9. Стовпчиків у реєстрі має бути рівно пʼять: скрипти читають за позицією,
-#    тому «ще один коментар через |» зсуне package в ім'я артефакту.
-COUNT=$(awk -F"|" '$0 !~ /^[[:space:]]*#/ && $0 !~ /^[[:space:]]*$/ { n=NF } END { print n+0 }' "$REGISTRY")
-if [[ "$COUNT" != "5" ]]; then
-  fail "$REGISTRY: рядки мають 5 стовпчиків через «|», а фактично $COUNT"
+#    тому «ще один коментар через |» зсуне package в імʼя артефакту.
+#    Порожній (повністю закоментований) реєстр — легальний стан продукту від
+#    2026-10-25, його перевіряємо лише коли є хоч один активний рядок.
+if [[ "$ACTIVE_ROWS" == 0 ]]; then
+  ok "реєстр порожній: у продукті власних застосунків немає (перевірку стовпчиків застосовуємо до активних рядків)"
 else
-  ok "реєстр: 5 стовпчиків у кожному рядку"
+  COUNT=$(awk -F"|" '$0 !~ /^[[:space:]]*#/ && $0 !~ /^[[:space:]]*$/ { n=NF } END { print n+0 }' "$REGISTRY")
+  if [[ "$COUNT" != "5" ]]; then
+    fail "$REGISTRY: рядки мають 5 стовпчиків через «|», а фактично $COUNT"
+  else
+    ok "реєстр: 5 стовпчиків у кожному рядку"
+  fi
 fi
 
-# 10. Windows-інсталятор несе список застосунків у собі: у розпакованому
-#     пакунку реєстру репо немає, тому перелік доводиться дублювати. Дубль без
-#     перевірки — це «застосунок зʼявився в образі, а на VM його ніхто не ставить».
+# 10. Windows-інсталятор більше не тримає список застосунків у собі: від
+#     2026-10-25 він читає той самий apps.list, який у пакунок кладе
+#     make-vm-bundle.sh. Перевіряємо обидва боки цього: файл поруч зі скриптом
+#     справді розводиться, і в самому .ps1 не лишилось ручного переліку.
 PS1="$ROOT/build/scripts/install-on-vm.ps1"
 if [[ -f "$PS1" ]]; then
-  drift=""
-  while IFS='|' read -r dir module _pkg _artifact _extra; do
-    [[ -z "$dir" || "$dir" =~ ^[[:space:]]*# ]] && continue
-    grep -q "dir = \"$dir\"; *module = \"$module\"" "$PS1" || drift+=" $dir"
-  done < "$REGISTRY"
-  if [[ -n "$drift" ]]; then
-    fail "install-on-vm.ps1 не має рядків для:$drift — онови перелік разом з apps.list"
+  if grep -q 'Join-Path $PSScriptRoot "apps.list"' "$PS1"; then
+    ok "install-on-vm.ps1 читає реєстр apps.list (не власний дубль списку)"
   else
-    ok "install-on-vm.ps1 перелічить усі застосунки з реєстру"
+    fail "install-on-vm.ps1 не читає apps.list — перелік застосунків знову жив окремо й розійдеться з реєстром"
+  fi
+  leftover="$(grep -oE 'dir = "[a-z]+"' "$PS1" | sort -u | tr '\n' ' ')"
+  if [[ -n "$leftover" ]]; then
+    fail "install-on-vm.ps1 має рядки реєстру всередині себе: $leftover — джерело правди одне (build/scripts/apps.list)"
+  else
+    ok "install-on-vm.ps1: жодного застосунку не зашито в сам скрипт"
+  fi
+  # Той самий індекс для bash-інсталятора: він читає реєстр, а не список у тілі.
+  if grep -q 'while IFS=.|.*read -r dir module pkg' "$ROOT/build/scripts/install-on-vm.sh"; then
+    ok "install-on-vm.sh читає реєстр apps.list"
+  else
+    fail "install-on-vm.sh не читає реєстр — перелік знову жив би окремо"
   fi
 else
   fail "немає $PS1 — нечим ставити пакунок на Windows"

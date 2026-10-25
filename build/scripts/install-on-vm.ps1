@@ -24,19 +24,29 @@ $ErrorActionPreference = "Stop"
 # на «?», тому вимикаємо це в самому скрипті, а не просимо користувача міняти chcp.
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 
-# Реєстр модулів тримаємо тут, а не в apps.list: PowerShell читає той самий
-# формат, але трійка «каталог — модуль — package» має збігатися з реєстром,
-# інакше adb поставить APK під одним іменем, а роль дасть іншому.
-$Apps = @(
-    @{ dir = "launcher";  module = "TesseraLauncher";  pkg = "os.tessera.launcher" },
-    @{ dir = "calculator"; module = "TesseraCalculator"; pkg = "os.tessera.calculator" },
-    @{ dir = "camera";     module = "TesseraCamera";    pkg = "os.tessera.camera" },
-    @{ dir = "clock";     module = "TesseraClock";     pkg = "os.tessera.clock" },
-    @{ dir = "dialer";    module = "TesseraDialer";    pkg = "os.tessera.dialer" },
-    @{ dir = "files";     module = "TesseraFiles";     pkg = "os.tessera.files" },
-    @{ dir = "messaging"; module = "TesseraMessaging"; pkg = "os.tessera.messaging" }
-)
+# Реєстр модулів читаємо з apps.list поруч зі скриптом — той самий файл, з
+# якого CI будує матрицю і який у пакунок кладе make-vm-bundle.sh. Раніше
+# перелік жив ще й тут окремим масивом; такий дубль ловив клас помилки
+# «застосунок у реєстрі є, а на Windows його ніхто не ставить». Порожній
+# (закоментований) реєстр — легальний стан продукту від 2026-10-25: тоді
+# інсталятор ставить лише тему.
+$Apps = @()
+$RegistryPath = Join-Path $PSScriptRoot "apps.list"
+if (Test-Path $RegistryPath) {
+    foreach ($line in (Get-Content $RegistryPath -Encoding UTF8)) {
+        if ($line -match "^\s*#" -or $line -notmatch "\|") { continue }
+        $fields = $line -split "\|"
+        if ($fields.Count -lt 3) { continue }
+        $Apps += @{ dir = $fields[0].Trim(); module = $fields[1].Trim(); pkg = $fields[2].Trim() }
+    }
+    Write-Host ("  реєстр: " + $RegistryPath + " — застосунків: " + $Apps.Count)
+} else {
+    Write-Warning "немає $RegistryPath поруч зі скриптом — ставимо лише тему"
+}
 
+# Ролі й дозволи навмисно залишаються списком «package → дія»: вони срацюють
+# лише для тих пакетів, які справді встановились вище, тому порожній реєстр
+# робить ці блоки мовчазними, а не помилковими.
 $Roles = @(
     @{ pkg = "os.tessera.launcher";  role = "HOME";        shell = "cmd package set-home-activity os.tessera.launcher/.LauncherActivity" },
     @{ pkg = "os.tessera.dialer";    role = "ROLE_DIALER"; shell = "cmd role add-role-packages-as-dialer os.tessera.dialer" },
@@ -93,7 +103,10 @@ $api = 0
 if (-not [int]::TryParse(($apiText -replace "\D", ""), [ref]$api)) {
     Write-Warning "не прочитали SDK гостьової системи — мінимося на свою відповідальність"
 } elseif ($api -lt 33) {
-    throw "наші застосунки потребують API 33+, у гостьовій системі — $api"
+    # Раніше це був throw. Тепер у пакунку може не бути жодного APK з minSdk 33
+    # (власних застосунків у продукті немає), тому зупинятися через застарілу
+    # гостьову систему — значення не мати: поставимо тему, а на решту попередимо.
+    Write-Warning "гостьова система на API ${api}: тема розрахована на Android 13+, нашому APK (minSdk 33) тут би не стали"
 }
 Write-Host "  API гостьової системи: $api"
 
@@ -117,7 +130,9 @@ foreach ($app in $Apps) {
         Add-Warning "$($app.pkg): adb install відмовив (підпис, ABI або вільне місце)"
     }
 }
-if ($installed.Count -eq 0) { throw "нічого не встановлено" }
+# Порожній реєстр не зупиняє установлення: далі йде тема, а саме вона в
+# продукті й лишилась.
+if ($installed.Count -eq 0) { Write-Host "  власних застосунків у реєстрі немає — далі лише тема" }
 
 Write-Host ">>> Ролі"
 foreach ($row in $Roles) {
@@ -143,6 +158,9 @@ Write-Host ">>> Тема"
 $overlayDir = Join-Path (Split-Path $Apks -Parent) "overlays"
 if (-not (Test-Path $overlayDir)) {
     Write-Host "  оверлеїв у пакунку немає — образ виглядатиме стоково"
+    if ($installed.Count -eq 0) {
+        Add-Warning "ні застосунків, ні теми: пакунок порожній. Перестворіть його make-vm-bundle.sh --themes"
+    }
 } else {
     # packages.list дає пару «файл APK → package з маніфеста». Команда
     # cmd overlay enable розуміє лише package, а імʼя файла (TesseraIconShapeTheme)

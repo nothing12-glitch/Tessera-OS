@@ -32,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       apps: ${{ steps.registry.outputs.apps }}
+      count: ${{ steps.registry.outputs.count }}
     steps:
       - uses: actions/checkout@v4
 
@@ -44,12 +45,22 @@ jobs:
             printf "{\"app\":\"%s\",\"module\":\"%s\",\"pkg\":\"%s\",\"artifact\":\"%s\",\"category\":\"%s\"}\n", $1, $2, $3, $4, $5
           }' build/scripts/apps.list | jq -s -c '.' > /tmp/apps.json
           rows=$(jq 'length' /tmp/apps.json)
-          [[ "$rows" -gt 0 ]] || { echo "у реєстрі немає жодного рядка з 5 стовпчиками" >&2; exit 1; }
+          # Порожній реєстр від 2026-10-25 — стан продукту, а не поломка:
+          # власних застосунків у образі немає, тож і матриці теж немає. Раніше
+          # тут був exit 1, і кожен push у гілки «вмирала» б саме на ньому.
           echo "apps=$(cat /tmp/apps.json)" >> "$GITHUB_OUTPUT"
-          jq -r '.[].app' /tmp/apps.json
+          echo "count=$rows" >> "$GITHUB_OUTPUT"
+          if [[ "$rows" == 0 ]]; then
+            echo "у реєстрі немає активних рядків — job apk пропускаємо (тема збирається в release.yml)"
+          else
+            jq -r '.[].app' /tmp/apps.json
+          fi
 
   apk:
     needs: discover
+    # Матриця з `include: []` — це помилка валідації GitHub, а не порожній
+    # запуск, тому job пропускаємо повністю.
+    if: needs.discover.outputs.count != '0'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
