@@ -25,14 +25,41 @@ command -v java >/dev/null 2>&1 || die "немає java (sdkmanager потреб
 command -v curl >/dev/null 2>&1 || die "немає curl"
 command -v unzip >/dev/null 2>&1 || die "немає unzip: sudo apt install unzip"
 
-# Одна тека для всіх завантажень і один trap: другий trap у тій самій оболонці
+# Одна тека для розпакування і один trap: другий trap у тій самій оболонці
 # перезаписав би перший, і перший архів лишився б сміттям назавжди.
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
+# А архіви — навпаки, у кеш, бо вони не сміття, а здобуте: 137 МБ Gradle на
+# каналі з ~0,1-1 МБ/с — це 20-40 хв, і обрив (у нас це curl 56 на 80 %) не
+# повинен коштувати початку з нуля. Кеш лишається між запусками.
+CACHE_DIR="${TESSERA_TOOLCHAIN_CACHE:-$HOME/.cache/tessera-toolchain}"
+mkdir -p "$CACHE_DIR"
+
 # --no-progress-meter: у переспрямованому виводі смуга прогресу curl — це сотні
 # рядків на одну завантажку, і такий лог не читається.
-curl_get() { curl -fL --retry 3 --no-progress-meter -o "$1" "$2"; }
+# -C - лише коли файл уже початий: для відсутнього curl і так качає з 0, а
+# для завершеного сервер відповідає 416, і це було б падіння на рівному місці.
+# Тому друга спроба вже «з нуля» — якщо раптом довантажувати нічого (або кеш
+# обірвався на битому шматку).
+curl_get() { # $1 — ім'я в кеші, $2 — URL; друкує шлях до файлу
+  local dest="$CACHE_DIR/$1" rc=0
+  if [[ -s "$dest" ]]; then
+    curl -fL --retry 5 --retry-connrefused --waitretry 15 --no-progress-meter \
+         -C - -o "$dest" "$2" || rc=$?
+    # 33 = «діапазон неможливий»: файл уже цілий. Це не поломка, а завершене
+    # раніше качання, тож лишаємо його як є. Усе інше — справжня помилка,
+    # і тоді пробуємо з нуля (наприклад, кеш обірвався на битому шматку).
+    if (( rc != 0 && rc != 33 )); then
+      curl -fL --retry 5 --retry-connrefused --waitretry 15 --no-progress-meter \
+           -o "$dest" "$2" || return 1
+    fi
+  else
+    curl -fL --retry 5 --retry-connrefused --waitretry 15 --no-progress-meter \
+         -o "$dest" "$2" || return 1
+  fi
+  echo "$dest"
+}
 
 echo "=== 1. Android SDK -> $SDK_DIR ==="
 mkdir -p "$SDK_DIR/cmdline-tools"
@@ -40,11 +67,12 @@ if [[ -x "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" ]]; then
   echo "cmdline-tools уже є — не качаємо вдруге."
 else
   echo ">>> cmdline-tools з dl.google.com"
-  curl_get "$TMP/cmdline.zip" "$CMDLINE_ZIP_URL"
-  echo "    архів: $(du -h "$TMP/cmdline.zip" | cut -f1)"
+  cmdline="$(curl_get cmdline.zip "$CMDLINE_ZIP_URL")" ||
+    die "не довантажив cmdline-tools — повтори скрипт, кеш у $CACHE_DIR"
+  echo "    архів: $(du -h "$cmdline" | cut -f1)"
   # Офіційної суми для цього архіву у зручному вигляді немає, тому перевіряємо
   # зміст: пошкоджений чи чужий zip не пройде «є bin/sdkmanager».
-  unzip -q "$TMP/cmdline.zip" -d "$TMP/cmdline"
+  unzip -q "$cmdline" -d "$TMP/cmdline"
   [[ -f "$TMP/cmdline/cmdline-tools/bin/sdkmanager" ]] ||
     die "у архіві немає bin/sdkmanager — архів не той"
   mv "$TMP/cmdline/cmdline-tools" "$SDK_DIR/cmdline-tools/latest"
@@ -70,18 +98,21 @@ if [[ -x "$HOME/gradle-dist/gradle-$GRADLE_VERSION/bin/gradle" ]]; then
   echo "Gradle $GRADLE_VERSION уже лежить у ~/gradle-dist."
 else
   # services.gradle.org віддає 307 на GitHub Releases — а це саме той канал, де
-  # в нас ~1 МБ/с, тому три спроби тут не примха, а необхідність.
+  # в нас ~1 МБ/с, тому п'ять спроб із довантаженням тут не примха, а необхідність.
   echo ">>> gradle-$GRADLE_VERSION-bin.zip"
-  curl_get "$TMP/gradle.zip" \
-    "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip"
+  gradle_zip="$(curl_get "gradle-$GRADLE_VERSION-bin.zip" \
+    "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip")" ||
+    die "не довантажив Gradle — повтори скрипт, кеш у $CACHE_DIR"
   # Сума від gradle.org — голий hex без імені файлу, тож ім'я додаємо вручну.
-  # Перевіряємо саме в "$TMP": sha256sum --check шукає файл за ім'ям з рядка
-  # відносно поточної теки, і поза нею щойно завантажений архів «не існує».
+  # Перевіряємо саме в тій теці, де лежить архів: sha256sum --check шукає файл
+  # за ім'ям з рядка відносно поточної теки, і поза нею щойно завантажений
+  # архів «не існує».
   expected="$(curl -fsSL "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip.sha256")"
-  ( cd "$TMP" && printf '%s  %s\n' "$expected" "gradle.zip" | sha256sum --check --strict ) ||
-    die "sha256 архіву Gradle не збігається з офіційною — не розпаковуємо"
+  ( cd "$CACHE_DIR" && printf '%s  %s\n' "$expected" "gradle-$GRADLE_VERSION-bin.zip" |
+        sha256sum --check --strict ) ||
+    die "sha256 архіву Gradle не збігається з офіційною — не розпаковуємо. Частіше за все це обірваний і доданий криво файл: видали $CACHE_DIR/gradle-$GRADLE_VERSION-bin.zip і повтори"
   mkdir -p "$HOME/gradle-dist"
-  unzip -q "$TMP/gradle.zip" -d "$HOME/gradle-dist"
+  unzip -q "$gradle_zip" -d "$HOME/gradle-dist"
   echo "Gradle $GRADLE_VERSION у ~/gradle-dist."
 fi
 
