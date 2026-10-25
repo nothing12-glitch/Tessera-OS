@@ -154,11 +154,18 @@ adb shell cmd uimode night yes
 Майте на увазі: після `Почати` прапорці піднімуться справді, і наступний
 запуск уже нічого не покаже — саме це ми й перевіряли.
 
-У образ застосунок іде двома рядками, які перевіряються статично:
+У образ модуль іде двома рядками, які перевіряються статично:
 `build/scripts/apps.list` (`welcome|TesseraWelcome|os.tessera.welcome|…`) і
 `PRODUCT_PACKAGES += TesseraWelcome` у `build/tessera.mk`. `Android.bp` —
 `android_app_import` з `presigned: true`, `privileged: true` і
 `system_ext_specific: true`, плюс `prebuilt_etc` із дозвільним списком.
+
+Те, що в APK є `SETUP_WIZARD` і немає `LAUNCHER`, вирішує не кожен скрипт
+окремо: правило живе в одному файлі `build/scripts/check-apk-manifest.sh`, а
+кликать його і `prepare-app.sh`, і job `apk` у `build-apps.yml`. Раніше копія
+правила жила в workflow окремо — і саме через це job «apk (welcome, …,
+SETUP_WIZARD)» впав на першому ж білді після перетворення вітальні на мастер:
+workflow у кожного APK все ще вимагав іконку (виправлено в `ad786c9`).
 
 Окремо, щоб не плутали: `privileged` ≠ підпис платформним ключем. Привілей
 дає partition і рядок у дозвільному списку; ключ платформи тут ні при чому, і
