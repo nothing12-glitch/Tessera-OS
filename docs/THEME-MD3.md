@@ -17,7 +17,7 @@ TesseraOS постачає три static-оверлеї.
 | Пакет | Ціль | Що змінює |
 |---|---|---|
 | `os.tessera.theme.framework` | `android` | fallback-палітра DeviceDefault — **лише коли динамічна палітра вимкнена** |
-| `os.tessera.theme.iconshape` | `android` | форма adaptive-іконок: `config_useRoundIcon`, `config_icon_mask` |
+| `os.tessera.theme.iconshape` | `android` | форма adaptive-іконок: `config_useRoundIcon`, `config_icon_mask` — **оптивно**, лише за `persist.tessera.icon_shape=circle` (форму обирає користувач) |
 | `os.tessera.theme.settings` | `com.android.settings` | `icon_accent` — колір акцентних іконок Налаштувань |
 
 Раніше тут було ще `os.tessera.theme.launcher3` і `os.tessera.theme.systemui`
@@ -54,14 +54,21 @@ MD3 у темній темі не інвертує світлу: поверхн�
 
 | Елемент | Радіус | Де живе |
 |---|---|---|
-| панель Quick Settings | 28 dp | уже так у базі (`qs_corner_radius`) |
+| панель Quick Settings | 28 dp | уже так у базі (`qs_corner_radius`) — відповідає MD3 extraLarge |
 | картки, діалоги | 12–16 dp | у застосунку (Material attrs) |
 | кнопки, поля | 12 dp | у застосунку |
-| іконки застосунків | коло | `config_useRoundIcon` + `config_icon_mask` у **framework** (`core/res/res/values/config.xml:4526`, `:4626`) — наш `iconshape`-оверлей |
+| шкала кутів своїх застосунків | 4 / 8 / 12 / 16 / 28 dp | токени `local_design_tokens.xml` — офіційна шкала MD3, не копія бренду |
+| іконки застосунків | **оберігає користувач** | стоковий вибір форм (ThemeCustomization бази). Коло — лише за `persist.tessera.icon_shape=circle` через `config_useRoundIcon` + `config_icon_mask` у **framework** (`core/res/res/values/config.xml:4526`, `:4626`) — наш `iconshape`-оверлей став оптивним, щоб не перемогти вибір людини |
 
-**Типографіка** — масштаб Roboto Flex: display/headline/title/body/label з
-навантаженням 400/500, міжрядковий крок за MD3. Roboto Flex — частина AOSP;
-власних шрифтових замін не робимо.
+**Типографіка** — масштаб display/headline/title/body/label з навантаженням
+400/500, міжрядковий крок за MD3. Рішення 2026-10-26: шрифт **власний** —
+Manrope (текст) і Unbounded (дисплей), SIL OFL, див.
+[brand/TYPE.md](../brand/TYPE.md). Межа: **RRO шрифт не задає** — Android не
+вантажить woff2 через overlay; системно шрифт ставлять `fonts.xml` у
+`/system/etc` + `PRODUCT_COPY_FILES`, а в застосунках — `FontFamily` з TTF.
+Жоден із трьох оверлеїв на шрифт не посилається (і не повинен). Доки власного
+`fonts.xml` в образі немає, фолбеком лишається системний Roboto Flex (частина
+AOSP). Власницьких замін (Product Sans / Google Sans) не робимо.
 
 **Підняття (elevation)** — тіні в MD3 не «сірі», а tonal: на поверхні
 використовується `surfaceContainer` замість підняття з тінню, тінь лишається
@@ -82,6 +89,17 @@ Android 12+ уже вміє генерувати палітру від шпал�
 
 Тобто: типово система динамічна, а наші значення — це fallback і каркас, а не
 жорстке обмеження.
+
+## Перемикання теми — тільки вручну
+
+Рішення 2026-10-26: світлу/темну тему обирає людина ( Налаштування → Дисплей →
+Тема). **Жодного авто-перемикання за годинником доби чи розрядом батареї ми не
+реалізуємо і не закладаємо.** Оверлеї самі по собі не перемикаються: `framework` —
+static fallback, що змінюється лише через явний `dynamic_color=0`; `values-night`
+палітра підхоплюється системою тільки тоді, коли темний режим уже ввімкнено
+користувачем. Зауваження поза межами теми: у `apps/welcome` є власний перемикач
+з варіантом «Авто» — це опція майстра першого запуску, не шар оверлеїв, і
+належить тому шару.
 
 ## Перевірка на зібраному образі
 

@@ -13,6 +13,12 @@
   відрізняються між релізами Android. Перевір свій checkout у
   frameworks/base/core/res/res/values/colors_device_defaults.xml та
   styles_device_defaults.xml, перш ніж чекати ефекту.
+
+  Перемикання теми — ТІЛЬКИ вручну (рішення 2026-10-26). Світлу чи темну тему
+  обирає людина ( Налаштування → Дисплей → Тема). Тут свідомо НЕМАЄ авто-варіанту
+  за годинником чи розрядом батареї: values-night/local_palette.xml — це нічний
+  варіант тієї самої fallback-палітри, який система підхоплює лише тоді, коли
+  темний режим УВІМКНЕНО людиною, а не вмикає його сама за часом доби.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="os.tessera.theme.framework"

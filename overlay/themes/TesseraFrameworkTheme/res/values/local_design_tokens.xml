@@ -9,13 +9,24 @@
   перевіряються лише ті імена, які претендують на підміну ресурсу бази.
 -->
 <resources>
-    <!-- Radii -->
-    <!-- Повністю заокруглена (pill) форма: радіус = половині висоти кнопки -->
-    <dimen name="shapeRadiusFull">20dp</dimen>
-    <dimen name="shapeRadiusExtraLarge">28dp</dimen>
-    <dimen name="shapeRadiusLarge">16dp</dimen>
-    <dimen name="shapeRadiusMedium">12dp</dimen>
+    <!-- Radii — офіційна шкала кутів Material Design 3 (spec: Corner radius).
+         Беремо значення зі специфікації MD3, а не «як у Spotify» чи іншого
+         бренду: клонів чужих айдентик не робимо.
+           none 0 · extraSmall 4 · small 8 · medium 12 · large 16 ·
+           extraLarge 28 · full = половині висоти (пігулка).
+         Це НАШІ токени для власних застосунків (Compose); у system-темі
+         доступні лише shape-ресурси Material-бібліотеки, не framework-dimen,
+         тому вони сюди й не потрапляють як override. -->
+    <dimen name="shapeRadiusExtraSmall">4dp</dimen>
     <dimen name="shapeRadiusSmall">8dp</dimen>
+    <dimen name="shapeRadiusMedium">12dp</dimen>
+    <dimen name="shapeRadiusLarge">16dp</dimen>
+    <dimen name="shapeRadiusExtraLarge">28dp</dimen>
+    <!-- Повністю заокруглена (pill) форма: радіус = половині висоти кнопки 40dp -->
+    <dimen name="shapeRadiusFull">20dp</dimen>
+    <!-- Резервний радіус контейнера іконки; фактичну форму adaptive-іконки
+         задає користувач (стоковий вибір форм), а коло — лише за
+         persist.tessera.icon_shape=circle у TesseraIconShapeTheme. -->
     <dimen name="appIconShapeRadius">28dp</dimen>
 
     <!-- 8-подібна сітка відступів -->

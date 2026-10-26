@@ -1,16 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Static RRO: форма adaptive-іконок.
+  Static RRO: форма adaptive-іконок — тепер ОПТИВНА, а не примусова.
 
-  Це єдиний підтверджений механізм, який реально наближає вигляд до
-  сучасного стоку без форку будь-чого: круглі іконки замість squircle.
-  Обидва ресурси існують у базі, перевірено проти LineageOS 22.2
-  (frameworks/base/core/res/res/values/config.xml:4526 і :4626).
+  Чому opt-in. Рішення користувача (2026-10-26): форму іконки обирає людина,
+  system не змушує її круглою. Стоковий Android 15 уже має вибір форм
+  ( Налаштування → Шпалери й стиль → Форма іконок: квадрат, заокруглений
+  квадрат, коло, крапля) — це механізм ThemeCustomization бази. Якби ми
+  лишили цей оверлей безумовним static, він переміг би вибір користувача й
+  завжди давав коло. Тому додано умову активації: оверлей застосовується лише
+  коли властивість persist.tessera.icon_shape явно дорівнює "circle".
+  Без неї система тримає форму за замовчуванням із бази й дає користувачеві
+  змінити її штатним перемикачем.
+
+  Імена ресурсів перевірені проти бази:
+    frameworks/base/core/res/res/values/config.xml
+      :4526  <bool name="config_useRoundIcon">false</bool>
+      :4626  <string name="config_icon_mask">"M50,0L92,0C…"</string>  (squircle)
+  Файл-джерело: https://raw.githubusercontent.com/LineageOS/android_frameworks_base/lineage-22.2
+
+  Чого тут СВІДОМО немає: власних ресурсів форм «квадрат/крапля/заокруглений
+  квадрат» (config_defaultIconShape, config_availableIconShapes, per-shape
+  config_icon_mask_*). Їхніх імен у цьому репо не підтверджено, тож не
+  вигадуємо: набір варіантів дає база, а не наш оверлей.
 
   Увага: ці ресурси приватні (@*android:...). Оверлей приватних ресурсів
-  цільового пакету — легальний і штатний механізм RRO, саме так OEM-виробники
-  задають форму іконок. Але збирати цей пакет треба всередині дерева AOSP,
-  де aapt2 бачить exported-символи framework.
+  цільового пакету — легальний і штатний механізм RRO. Але збирати цей пакет
+  треба всередині дерева AOSP, де aapt2 бачить exported-символи framework.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="os.tessera.theme.iconshape"
@@ -20,7 +35,10 @@
     <overlay
         android:targetPackage="android"
         android:priority="710"
-        android:isStatic="true" />
+        android:isStatic="true"
+        android:requiredSystemPropertyName="persist.tessera.icon_shape"
+        android:requiredSystemPropertyValue="circle" />
 
-    <application android:hasCode="false" android:label="TesseraOS (icon shape)" />
+    <application android:hasCode="false" android:label="TesseraOS (icon shape, opt-in)" />
 </manifest>
+

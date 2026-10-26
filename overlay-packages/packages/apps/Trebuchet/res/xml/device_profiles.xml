@@ -20,13 +20,30 @@
 
   Що це. Build-time підміна файла device_profiles.xml із packages/apps/Trebuchet
   (DEVICE_PACKAGE_OVERLAYS у build/tessera.mk). Тіло файла — копія бази
-  lineage-22.2 без змін, крім одного: значення canBeDefault лишилося істинним
-  лише для профілю 5_by_6 — 5 стовпців, 6 рядків, 5 іконок у доці.
+  lineage-22.2 без змін, крім одного: додано профіль 4_by_6 (4 стовпці, 6 рядків,
+  5 іконок у доці) і canBeDefault лишилося істинним лише для нього. Профіль
+  5_by_6, який був дефолтним раніше, позначений canBeDefault="false" — він
+  лишається вибірним у Налаштуваннях лаунчера.
 
   Навіщо. InvariantDeviceProfile.java:655-672: поки LauncherPrefs не містить
   GRID_NAME, лаунчер збирає профілі з canBeDefault і findBestGridSize обирає
   найбільший, що вміщується в екран. У бази таких профілів 16, тому дефолт
-  залежить від густини екрана; з одним профілем старт завжди 5x6.
+  залежить від густини екрана; з одним профілем старт завжди 4x6.
+
+  Чому саме 4_by_6 побудований на сіяті 4_by_5. У базі немає готового seed-файла
+  під 4x6, а новий res/xml у overlay-packages додати не можна (перевірка CI
+  вимагає, щоб такий самий шлях існував у базі). Тому профіль повторює 4_by_5 —
+  той самий dbFile="launcher_4_by_5.db" і defaultLayoutId="@xml/default_workspace_4x5"
+  (обидва існують у базі, бо на них уже посилається профіль 4_by_5), — а відрізняється
+  лише величиною numRows (6 замість 5) і numHotseatIcons (5 замість 4). Координати
+  сіяту під 4 стовпці в 6-рядкову сітку влазять без залишку: шостий рядок просто
+  порожній на першому запуску.
+
+  Док «4 іконки + папка». numHotseatIcons="5" дає рівно п'ять комірок дока — це
+  МІСТКОСТЬ (4 іконки + одна комірка під теку). Чи саме тека потрапить у п'яту
+  комірку на першому запуску, визначає стартовий layout бази
+  (default_workspace_4x5.xml), якого ми тут не торкаємось; за потреби — окрема
+  build-time підміна того файла, а не RRO.
 
   Чого це НЕ робить. Інші сітки лишаються вибірними в Налаштуваннях лаунчера.
   Правка не чіпає іконки, шпалери, звички та жести.
@@ -41,6 +58,9 @@
   Оновлення. При переїзді на новішу гілку бази файл треба переотримати з
   upstream і повторити правку. Інваріант «рівно один дефолтний профіль»
   перевіряє CI: build/scripts/check-overlay-names.sh.
+
+  Не перевірено на живому образі: чи findBestGridSize коректно бере 5-слотовий
+  док у 4-стовпцевій сітці й чи примусовий RRO бази не з'їдає цю підміну.
 -->
 
 <profiles xmlns:launcher="http://schemas.android.com/apk/res-auto" >
@@ -197,6 +217,45 @@
     </grid-option>
 
     <grid-option
+        launcher:name="4_by_6"
+        launcher:numRows="6"
+        launcher:numColumns="4"
+        launcher:numFolderRows="4"
+        launcher:numFolderColumns="3"
+        launcher:numHotseatIcons="5"
+        launcher:numExtendedHotseatIcons="6"
+        launcher:dbFile="launcher_4_by_5.db"
+        launcher:inlineNavButtonsEndSpacing="@dimen/taskbar_button_margin_split"
+        launcher:defaultLayoutId="@xml/default_workspace_4x5"
+        launcher:deviceCategory="phone|multi_display" >
+
+        <display-option
+            launcher:name="Tessera Default"
+            launcher:minWidthDps="255"
+            launcher:minHeightDps="400"
+            launcher:iconImageSize="65"
+            launcher:iconTextSize="13.0"
+            launcher:allAppsBorderSpace="16"
+            launcher:allAppsCellHeight="104"
+            launcher:startAlignTaskbar="true"
+            launcher:startAlignTaskbarLandscape="true"
+            launcher:canBeDefault="true" />
+
+        <display-option
+            launcher:name="Large Phone"
+            launcher:minWidthDps="406"
+            launcher:minHeightDps="694"
+            launcher:iconImageSize="56"
+            launcher:iconTextSize="12.0"
+            launcher:allAppsBorderSpace="16"
+            launcher:allAppsCellHeight="104"
+            launcher:startAlignTaskbar="true"
+            launcher:startAlignTaskbarLandscape="true"
+            launcher:canBeDefault="false" />
+
+    </grid-option>
+
+    <grid-option
         launcher:name="5_by_5"
         launcher:numRows="5"
         launcher:numColumns="5"
@@ -268,7 +327,7 @@
             launcher:allAppsCellHeight="104"
             launcher:startAlignTaskbar="true"
             launcher:startAlignTaskbarLandscape="true"
-            launcher:canBeDefault="true" />
+            launcher:canBeDefault="false" />
 
     </grid-option>
 
