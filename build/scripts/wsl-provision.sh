@@ -30,7 +30,9 @@ if id -u "$BUILD_USER" >/dev/null 2>&1; then
   echo "існує — не чіпаємо."
 else
   useradd -m -G sudo -s /bin/bash "$BUILD_USER"
-  # Пароль не ставимо: вхід іде через 'wsl -d Ubuntu -u tessera' із Windows,
+  # Пароль не ставимо: вхід іде через 'wsl -d Ubuntu-24.04 -u tessera' із
+  # Windows (саме так дистрибутив називають setup-wsl.ps1 і
+  # install-wsl-offline.ps1),
   # а sudo в Ubuntu на WSL за замовчуванням і так без пароля.
   echo "створено $BUILD_USER (група sudo)."
 fi
