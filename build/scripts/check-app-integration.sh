@@ -245,6 +245,25 @@ for sh in "$ROOT"/build/scripts/*.sh; do
   fi
 done
 
+# 13. Неекранований апостроф у `strings.xml`. Ловить цей клас вміє лише
+#     AAPT2, тобто лише повна збірка ресурсів: 2026-10-26 правка рядків Halo
+#     дала `м'яка` — і `mergeDebugResources` впав за 16 s із «Invalid unicode
+#     escape sequence in string», жоден юніт-тест ресурсів не чіпає.
+if printf 'x' | grep -qP '(?<!\\)x' 2>/dev/null; then
+  for s in "$ROOT"/apps/*/app/src/main/res/values*/strings.xml; do
+    [[ -f "$s" ]] || continue
+    rel="${s#"$ROOT"/}"
+    bad="$(grep -nP "(?<!\\\\)'" "$s" 2>/dev/null | grep '<string' || true)"
+    if [[ -n "$bad" ]]; then
+      fail "$rel: неекранований ' у <string> — AAPT2 впаде на mergeDebugResources. Правильно: \\' або апостроф-U+02BC («ʼ»), як у решті рядків. Перші рядки: $(printf '%s\n' "$bad" | head -2 | tr '\n' ' ')"
+    else
+      ok "$rel: апострофи в <string> екрановані"
+    fi
+  done
+else
+  ok "grep -P недоступний — перевірку апострофів пропущено (не пастка: AAPT2 все одно впаде на збірці)"
+fi
+
 if [[ "$missing" != 0 ]]; then
   echo "[app-integration] Провалено. Див. apps/<застосунок>/Android.bp, build/scripts/apps.list і README застосунків." >&2
   exit 1
