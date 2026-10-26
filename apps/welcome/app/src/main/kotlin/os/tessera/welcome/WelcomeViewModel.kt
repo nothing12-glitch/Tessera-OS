@@ -27,8 +27,8 @@ data class WelcomeUiState(
     val flow: WelcomeState = WelcomeState(),
     val account: AccountRoute = AccountRoute.UNAVAILABLE,
     val buildLabel: String = "",
-    /** Чи справді системний перемикач теми зрушився з місця. */
-    val themeApplied: Boolean = false,
+    /** `null` — запис ще не пробували; інакше — чи перемикач теми зрушився. */
+    val themeApplied: Boolean? = null,
     /** Ідентифікатор рядка: VM не знає текстів, текст знає UI. */
     val notice: Int? = null,
     val finished: Boolean = false,

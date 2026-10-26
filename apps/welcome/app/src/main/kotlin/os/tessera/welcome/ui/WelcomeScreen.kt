@@ -215,14 +215,17 @@ private fun ThemeStep(
             }
         }
         Spacer(Modifier.height(16.dp))
-        Text(
-            text = stringResource(
-                if (state.themeApplied) R.string.welcome_theme_applied
-                else R.string.welcome_theme_not_applied
-            ),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        val applied = state.themeApplied
+        if (applied != null) {
+            Text(
+                text = stringResource(
+                    if (applied) R.string.welcome_theme_applied
+                    else R.string.welcome_theme_not_applied
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
