@@ -95,13 +95,20 @@ DEVICE_PACKAGE_OVERLAYS += vendor/tessera/os/overlay-packages
 # «пройдено» пишеться у системні `device_provisioned` / `user_setup_complete`.
 #
 # Чого цей рядок НЕ означає — і саме тут легше всього збрехати:
-#  - він досі НЕ перекриває майстра бази: `overrides` у Android.bp немає, бо
-#    не звірено, яким механізмом LineageOS 22.2 заводить свій мастер —
-#    категорією `SETUP_WIZARD` чи рядком `config_deviceProvisioningActivity`.
-#    Дерево бази й досі завантажується (`repo sync` триває);
-#  - дозвіл `WRITE_SECURE_SETTINGS` перевірено на емуляторі, але виданий він
-#    там через `adb install -g`, а не через `priv-app` + allowlist. На образі
-#    `user` записати `/system_ext` неможливо взагалі.
+#  - він досі НЕ перекриває майстра бази. Механізм бази вже звірено з кодом на
+#    теґу `android-15.0.0_r32`: `packages/apps/Provision` оголошує `HOME +
+#    DEFAULT + SETUP_WIZARD` і сам вимикає свій компонент після запису прапорців,
+#    тож перший екран у Android 15 дістається оголошеному `HOME`, а не
+#    `SETUP_WIZARD`. Наш маніфест досі лише `MAIN + SETUP_WIZARD`. Ми не поспішаємо:
+#    `HOME` змінив би поведінку кнопки «додому» під час майстра, тому спершу живий
+#    прогін на образі з вільною роллю `ROLE_HOME`, потім рішення. Доказ —
+#    docs/FEASIBILITY.md §6;
+#  - привілей доведено наживо 2026-10-26: на `userdebug`-образі з
+#    `ro.control_privapp_permissions=enforce` обидва дозволи (`WRITE_SECURE_SETTINGS`,
+#    `MODIFY_DAY_NIGHT_MODE`) дали `granted=`true після push у `system_ext/priv-app`
+#    й ребута — без жодного `adb install`. На образі `user` записати `/system_ext`
+#    неможливо взагалі, тому це перевірка тестового образу, а не шлях встановлення
+#    для користувача.
 # Обидва пункти з текстом помилок — в apps/welcome/README.md.
 PRODUCT_PACKAGES += TesseraWelcome
 

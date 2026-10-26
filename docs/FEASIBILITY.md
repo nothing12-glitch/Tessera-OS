@@ -83,6 +83,89 @@
 
 **Що це змінює в планах.** «Живі шпалери» не скасовуємо, але подаємо як конфігурацію збірки + сторонній застосунок, а не «працює з коробки».
 
+## 6. Чим саме система заводить майстра першого запуску
+
+Питання з §«Чого досі не доведено» в `apps/welcome/README.md`: чисті завантаження з
+`device_provisioned=0` лишають фокус на лаунчері, а `ProvisionController` не дає жодного
+рядка. Досі причина не називалась. 26.10.2026 її витягнуто з точного теґу, який тримає
+маніфест бази (`revision="refs/tags/android-15.0.0_r32"`), і підтверджено двома живими
+boot-прогонами на `TesseraUD`.
+
+**Як це зроблено в базі.** `packages/apps/Provision` — не майстер із екранами, а
+безіменна активність на один `onCreate`. Її фільтр:
+
+```xml
+<intent-filter android:priority="1">
+    <action android:name="android.intent.action.MAIN" />
+    <category android:name="android.intent.category.HOME" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.SETUP_WIZARD" />
+</intent-filter>
+```
+
+— і `finishSetup()` у дві ходи: `setProvisioningState()` пише ті самі два прапорці, що й
+наш крок 10 (`Settings.Global.DEVICE_PROVISIONED = 1`, `Settings.Secure.USER_SETUP_COMPLETE = 1`),
+а `disableSelfAndFinish()` робить
+`pm.setComponentEnabledSetting(name, COMPONENT_ENABLED_STATE_DISABLED, DONT_KILL_APP)`.
+Тобто мастер **сам вимикає свій компонент**, щоби більше ніколи не вигравав `HOME`.
+У нашій базі він стоїть у `PRODUCT_PACKAGES` рядком `Provision` —
+`build/make/target/product/handheld_system_ext.mk:27`.
+
+**Що виміряно наживо** (два повні буфери журналу за один boot кожен — 21 506 і 28 085
+рядків, `logcat -d -v threadtime` одразу після `sys.boot_completed=1`):
+
+- літерала `SETUP_WIZARD` у обох буферах — **0 рядків**. За весь boot система зробила рівно два
+  старти активностей, і обидва — `CATEGORY_HOME` від uid 0:
+  `com.android.settings/.FallbackHome` (…:37.041), потім лаунчер (…:51.512).
+- `dumpsys package` → `Known Packages → Setup Wizard: none`. Образ узагалі не знає, хто
+  його OOBE.
+- `cmd package query-receivers -a android.intent.action.USER_UNLOCKED` → `No receivers
+  found`; пакета `com.android.provision` на образі немає; `ro.setupwizard.mode` не заданий.
+  Тобто `ProvisionController` ніхто не просив працювати — і це остаточно пояснює нуль
+  рядків теги, який ми раніше не вміли пояснити.
+- `resolve-activity MAIN + HOME + DEFAULT` → лаунчер з `isDefault=true`, і match-прапорці
+  `0x200` / `0x80000` / `0x80200` цього не змінюють: `HOME` тримає роль (`dumpsys role` →
+  `android.app.role.HOME`, `holders=com.google.android.apps.nexuslauncher`), а не
+  `priority`. Записів `preferred-activities` на HOME при цьому немає — тож на цьому образі
+  кандидата за пріоритетом побачити неможливо в принципі. `com.android.settings/.FallbackHome`
+  тримає `priority=-1000`: це останній дім, а не перший.
+- Рядок `E PackageManager: There should probably be exactly one setup wizard; found 2`
+  пише system_server у момент сканування пакетів (одразу після `Finished scanning system
+  apps`), а не під час запуску. Це перевірка під час реєстрації пакетів, а не спроба щось стартувати —
+  попередня інтерпретація була хибною.
+- Дослід «залишити рівно одного кандидата» (`pm disable` Google-майстра → ребут):
+  **гіпотеза не підтвердилась** — PMS знову написав «found 2» (його скан-тайм запит не
+  зважає на вимкнений стан), кеш лишився `none`. Компонент і пакет повернуті у
+  `default` (`enabled=0`), видимий з shell кандидат знову один — образ рівно такий, як до
+  досліду.
+- Неявний `am start -a MAIN -c SETUP_WIZARD` без `cmp=` не резолвить **не тільки наш**, а й
+  комітний `com.google.android.googlesdksetup/.DefaultActivity`, і навіть від uid 0. Тож
+  «не резолвиться» було властивістю шляху старту, а не нашим дефектом.
+- Наш фільтр тим часом правильний у своїх межах: `resolve-activity` бачить
+  `os.tessera.welcome/.WelcomeActivity`, `priority=1000`, `exported=true`,
+  `enabled=0` (DEFAULT, а не `DISABLED_UNTIL_USED`). Додавання `CATEGORY_DEFAULT` до
+  запиту, навпаки, ламає резолвінг (`No activity found`) — тож `DEFAULT` у поточний
+  однокатегорійний фільтр вписувати просто так не можна.
+
+**Вердикт.** ❌ Автозавпуску в поточній формі не буде ніколи, і причина тепер відома
+точно: у Android 15 перший екран бере той, хто оголошений `HOME`, а не той, хто оголошений
+`SETUP_WIZARD`. Наш модуль — тільки `SETUP_WIZARD`, тому його ніхто не кличе. Це не
+«невідома причина», а конкретна відсутність двох категорій і само-вимкнення.
+
+**Що це змінює в планах.** Копія механізму бази — три правки в одному файлі:
+`HOME` + `DEFAULT` у фільтр, `priority` з `1000` на `1` (як у бази — вище за 0 лаунчера
+вистачає, а `1000` нічого не виграє, бо `HOME` вирішує роль), і
+`setComponentEnabledSetting(..., DISABLED, ...)` після кроку 10. Без третього пункту
+телефон залишається з вітальнею як домашнім екраном назавжди.
+
+Двох речей копіювати не можна, і це треба перевіряти, а не вгадувати:
+
+- `directBootAware="true"` — база має, ми свідомо не копіюємо: наші кроки пишуть у файл
+  модуля на CE-сховищі, яке до розблокування недоступне. Отже чи взагалі ми виграємо
+  `HOME`-резолвінг у вікні між `FallbackHome` і лаунчером — питання до живого прогону.
+- `HOME` у фільтрі змінює поведінку кнопки «додому» під час майстра. Це помітна зміна
+  поведінки для користувача, тому правку не вносимо мовчки: спершу прогін, потім рішення.
+
 ## Що лишилося неперевіреним
 
 - Живий образ: чи `numHotseatIcons=5` у 4-стовпцевій сітці не ламає док і чи нашу підміну не перекриває static-RRO бази.
