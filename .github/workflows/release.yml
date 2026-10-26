@@ -24,7 +24,12 @@ jobs:
   bundle:
     runs-on: ubuntu-latest
     steps:
+      # Історія і теги потрібні повні: changelog рахуємо від попередньої віхи,
+      # а checkout@v4 за замовчуванням приносить один коміт без тегів — тоді
+      # «що змінилось» мовчки виходило порожнім рядком.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # Дешево й до збірки: чи кожен застосунок з реєстру справді в образі,
       # і чи Windows-інсталятор не відстав від того ж реєстру.
@@ -128,6 +133,20 @@ jobs:
           fi
           ARCHIVE="$(ls -1 dist/*.tar.xz | head -1)"
           DIR="dist/$(basename "${ARCHIVE%.tar.xz}")"
+          # «Що змінилось» = коміти від попередньої віхи. PREV — найстаріший
+          # з існуючих тегів, доданих до HEAD, крім поточного: для push із
+          # тегом це попередня віха, для workflow_dispatch (TAG=bundle-draft,
+          # тегу немає) — остання віха загалом.
+          PREV="$(git tag --sort=-creatordate --merged HEAD | grep -v "^${TAG}\$" | head -1 || true)"
+          if [[ -z "$PREV" ]]; then
+            RANGE="HEAD"
+            FROM_ROW="(віх досі немає — це перший пакунок, тож нижче вся історія)"
+          else
+            RANGE="${PREV}..HEAD"
+            FROM_ROW="(коміти від $PREV)"
+          fi
+          CHANGELOG="$(git log --no-merges --pretty='- %s (%h)' $RANGE | head -400)"
+          [[ -n "$CHANGELOG" ]] || CHANGELOG="— (від $PREV до $TAG жодного нового коміту)"
           N_APKS="$(find "$DIR/apks" -name '*.apk' | wc -l)"
           N_OVL="$(find "$DIR/overlays" -name '*.apk' 2>/dev/null | wc -l || true)"
           # Текст релізу описує ФАКТИЧНИЙ вміст. Раніше «$N_APKS застосунків»
@@ -153,7 +172,12 @@ jobs:
           APK підписані тестовим ключем: це пакунок для ознайомлення, а не
           оновлення вже встановленої системи.
 
-          Суми — у \`$(basename "$ARCHIVE").sha256\` і всередині архіву."
+          Суми — у \`$(basename "$ARCHIVE").sha256\` і всередині архіву.
+
+          ## Що змінилось
+          $FROM_ROW
+
+          $CHANGELOG"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$ARCHIVE" "$ARCHIVE.sha256" --clobber
           else
