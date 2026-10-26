@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import os.tessera.halo.data.HaloPrefs
-import os.tessera.halo.logic.GlowColor
+import os.tessera.halo.logic.ColorBloom
 import os.tessera.halo.logic.GlowPattern
 import os.tessera.halo.logic.HaloConfig
 
@@ -22,6 +22,7 @@ data class HaloUiState(
     val listenerGranted: Boolean = false,
     val canPostNotifications: Boolean = false,
     val accentArgb: Int = 0,
+    val glowArgb: Int = ColorBloom.TEAL,
     val notice: String? = null,
 )
 
@@ -55,8 +56,6 @@ class HaloViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onEnabled(enabled: Boolean) = update { it.copy(enabled = enabled) }
     fun onPattern(pattern: GlowPattern) = update { it.copy(pattern = pattern) }
-    fun onColor(color: GlowColor) = update { it.copy(color = color) }
-    fun onDuration(ms: Long) = update { it.copy(durationMs = ms) }
     fun onIntensity(value: Float) = update { it.copy(intensity = value) }
     fun onOnlyLoud(onlyLoud: Boolean) = update { it.copy(onlyLoud = onlyLoud) }
 

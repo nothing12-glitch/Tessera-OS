@@ -21,20 +21,18 @@
     <string name="halo_pattern_wave">Хвиля</string>
     <string name="halo_pattern_pulse">Пульс</string>
     <string name="halo_pattern_solid">Суцільно</string>
-    <string name="halo_color_title">Колір світла</string>
-    <string name="halo_color_monet">Акцент Monet</string>
-    <string name="halo_color_notification">Колір сповіщення</string>
-    <string name="halo_color_monet_hint">Той самий акцент, що й у теми TesseraOS: край змінює колір разом зі шпалерами.</string>
-    <string name="halo_color_notification_hint">Беремо колір сповіщення або його іконки. Іконку чужого застосунку система може не віддати (видимість пакетів з Android 11) — тоді повертаємось до акцента Monet.</string>
-    <string name="halo_duration_title">Тривалість світла</string>
-    <string name="halo_duration_value">%1$s с</string>
+    <string name="halo_color_body">Колір краю бере колір застосунку, який надіслав сповіщення. Якщо застосунок кольору не дав — край бірюзовий. Смуга широка й мʼяка, близько 12 мм, без чіткої межі; імпульс триває 3 секунди.</string>
     <string name="halo_intensity_title">Яскравість смуги</string>
     <string name="halo_intensity_value">%1$d відсотків</string>
 
     <string name="halo_section_when">Коли світити</string>
     <string name="halo_only_loud_title">Лише помітні сповіщення</string>
     <string name="halo_only_loud_body">Пріоритет нижчий за звичайний — не світиться. Канал чужого застосунку нам не видно, тому судимо за пріоритетом самого сповіщення.</string>
-    <string name="halo_zen_body">Під «Не турбувати» край мовчить, крім дзвінків і будильників — ті самі правила, що й у системи. Постійні сповіщення служб (навігатор, завантаження) не свічться взагалі.</string>
+    <string name="halo_zen_body">Під «Не турбувати» край вимикається повністю — стан режиму читаємо прямо зі слухача сповіщень, без додаткового дозволу. На вхідний дзвінок край не світить: він про сповіщення, а не про розмови. При вимкненому екрані й на екрані блокування краю теж немає.</string>
+    <string name="halo_tile_body">Край можна вмикати й вимикати плиткою Quick Settings — так само, як цим перемикачем. Плитка показує поточний стан.</string>
+
+    <string name="halo_tile_label">Світловий край</string>
+    <string name="halo_tile_description">Увімкнути або вимкнути світловий край Tessera Halo</string>
 
     <string name="halo_section_test">Перевірка</string>
     <string name="halo_test_button">Показати тестове сповіщення</string>
@@ -50,7 +48,11 @@
     <string name="halo_notice_need_overlay">Без дозволу на показ поверх тест не засвітить край.</string>
 
     <string name="halo_limits_title">Чого цей край не робить</string>
-    <string name="halo_limit_screen_off">Не світиться, коли екран вимкнено: система показує таке вікно лише на ввімкненому дисплеї. AOD — окрема апаратна функція.</string>
+    <string name="halo_limit_screen_off">Не світиться, коли екран вимкнено або заблоковано: система показує таке вікно лише на розблокованому ввімкненому дисплеї. AOD — окрема апаратна функція.</string>
+    <string name="halo_limit_battery">Вимикається, коли батарея нижча за 20 %, і робить смугу тьмянішою зі зниженням заряду — це наша власна інтенсивність малюнка, а не системна яскравість екрана.</string>
+    <string name="halo_limit_call">Не світить на вхідний дзвінок: край про сповіщення. Дзвінок упізнаємо зі стану аудіо, без дозволу на читання телефону.</string>
+    <string name="halo_limit_zen">Під «Не турбувати» не світить узагалі — стан читаємо зі слухача сповіщень.</string>
+    <string name="halo_limit_mic">Не є індикатором мікрофона: про нього край не світить. Консультативний індикатор приватності — справа системи, ми її не дублюємо.</string>
     <string name="halo_limit_not_led">Не замінює діод: це світло на склі, а не на задній панелі.</string>
     <string name="halo_limit_no_text">Не читає текст сповіщень і не зберігає їх.</string>
     <string name="halo_limit_listener">Не працює, доки вимкнено доступ до сповіщень: слухач — єдине джерело подій.</string>

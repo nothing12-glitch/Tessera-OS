@@ -1,7 +1,6 @@
 package os.tessera.halo.data
 
 import android.content.Context
-import os.tessera.halo.logic.GlowColor
 import os.tessera.halo.logic.GlowPattern
 import os.tessera.halo.logic.HaloConfig
 
@@ -17,9 +16,7 @@ class HaloPrefs(context: Context) {
     fun config(): HaloConfig = HaloConfig(
         enabled = prefs.getBoolean(KEY_ENABLED, true),
         pattern = GlowPattern.byName(prefs.getString(KEY_PATTERN, null)),
-        color = GlowColor.byName(prefs.getString(KEY_COLOR, null)),
-        durationMs = prefs.getLong(KEY_DURATION, HaloConfig.DEFAULT_DURATION_MS),
-        intensity = prefs.getFloat(KEY_INTENSITY, 0.85f),
+        intensity = prefs.getFloat(KEY_INTENSITY, HaloConfig.DEFAULT_INTENSITY),
         onlyLoud = prefs.getBoolean(KEY_ONLY_LOUD, true),
     ).normalized()
 
@@ -28,12 +25,15 @@ class HaloPrefs(context: Context) {
         prefs.edit()
             .putBoolean(KEY_ENABLED, normalized.enabled)
             .putString(KEY_PATTERN, normalized.pattern.name)
-            .putString(KEY_COLOR, normalized.color.name)
-            .putLong(KEY_DURATION, normalized.durationMs)
             .putFloat(KEY_INTENSITY, normalized.intensity)
             .putBoolean(KEY_ONLY_LOUD, normalized.onlyLoud)
             .apply()
     }
+
+    /** Лице плитки Quick Settings: чи вмикнено край саме користувачем. */
+    fun isEnabled(): Boolean = prefs.getBoolean(KEY_ENABLED, true)
+
+    fun setEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_ENABLED, enabled).apply()
 
     /** Останній колір, який край показував, — для світла на ввімкнення екрана. */
     fun lastColor(): Int = prefs.getInt(KEY_LAST_COLOR, 0)
@@ -44,8 +44,6 @@ class HaloPrefs(context: Context) {
         const val FILE = "tessera_halo"
         const val KEY_ENABLED = "enabled"
         const val KEY_PATTERN = "pattern"
-        const val KEY_COLOR = "color"
-        const val KEY_DURATION = "duration_ms"
         const val KEY_INTENSITY = "intensity"
         const val KEY_ONLY_LOUD = "only_loud"
         const val KEY_LAST_COLOR = "last_color"

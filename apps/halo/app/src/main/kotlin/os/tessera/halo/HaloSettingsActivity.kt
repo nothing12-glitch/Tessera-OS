@@ -35,8 +35,6 @@ class HaloSettingsActivity : ComponentActivity() {
                     state = state,
                     onEnabled = model::onEnabled,
                     onPattern = model::onPattern,
-                    onColor = model::onColor,
-                    onDuration = model::onDuration,
                     onIntensity = model::onIntensity,
                     onOnlyLoud = model::onOnlyLoud,
                     onOpenOverlayGrant = model::onOpenOverlayGrant,

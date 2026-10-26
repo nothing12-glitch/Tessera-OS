@@ -39,5 +39,18 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+
+        <!-- Плитка Quick Settings: другий спосіб увімкнути/вимкнути край.
+             Експортується системі саме через дозвіл Bind_quick_settings_tile. -->
+        <service
+            android:name=".HaloTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_halo_glyph"
+            android:label="@string/halo_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

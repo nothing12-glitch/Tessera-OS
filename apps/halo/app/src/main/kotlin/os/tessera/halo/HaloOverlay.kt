@@ -11,39 +11,43 @@ import os.tessera.halo.logic.GlowPattern
  * Керує вікном краю: саме тут вирішується, скільки пам'яті екран тримає
  * підсвіченим. Вікно не бере дотиків і не бере фокус — користувач не
  * помічає, що щось стоїть поверх його гри чи клавіатури.
+ *
+ * `FLAG_NOT_TOUCHABLE` лишаємо обов'язково: без нього оверлей перехопив би
+ * кожен дотик. Платформа через нього зрізає `alpha` вікна до 0.80, тому
+ * яскравість краю компенсовано в самому малюнку поверхні, а не тут.
  */
 class HaloOverlay(context: Context) {
 
     private val appContext = context.applicationContext
-    private val windowManager = appContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+    private val windowManager =
+        appContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
-    private var view: HaloGlowView? = null
+    private var surface: HaloGlowSurface? = null
 
-    val isShowing: Boolean get() = view != null
+    val isShowing: Boolean get() = surface != null
 
-    fun show(color: Int, pattern: GlowPattern, durationMs: Long, intensity: Float) {
-        val existing = view
+    fun show(color: Int, pattern: GlowPattern, intensity: Float) {
+        val existing = surface
         if (existing != null) {
             // Друге сповіщення під час світла: повторно використовуємо той
             // самий край, щоб не блимнуло новим вікном.
-            existing.configure(color, pattern, durationMs, intensity)
-            windowManager.updateViewLayout(existing, params())
+            existing.configure(color, pattern, intensity)
             existing.start()
             return
         }
-        val fresh = HaloGlowView(appContext).apply {
-            configure(color, pattern, durationMs, intensity)
+        val fresh = HaloGlowSurface(appContext).apply {
+            configure(color, pattern, intensity)
             onFinished = { hide() }
         }
         runCatching { windowManager.addView(fresh, params()) }
-            .onFailure { windowManager.removeViewImmediate(fresh); return }
-        view = fresh
+            .onFailure { runCatching { windowManager.removeViewImmediate(fresh) }; return }
+        surface = fresh
         fresh.start()
     }
 
     fun hide() {
-        val current = view ?: return
-        view = null
+        val current = surface ?: return
+        surface = null
         current.onFinished = null
         current.stop()
         runCatching { windowManager.removeViewImmediate(current) }

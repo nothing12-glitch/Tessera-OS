@@ -27,52 +27,129 @@ class HaloPlanTest {
         hasPixelSource = false,
     )
 
+    private fun ctx(
+        zen: Boolean = false,
+        call: Boolean = false,
+        interactive: Boolean = true,
+        locked: Boolean = false,
+        battery: Int = 100,
+        charging: Boolean = false,
+    ) = GlowContext(
+        zenActive = zen,
+        inCall = call,
+        interactive = interactive,
+        keyguardLocked = locked,
+        batteryPercent = battery,
+        charging = charging,
+    )
+
     @Test
     fun `увімкнений край світить на звичайне сповіщення`() {
-        assertTrue(HaloPlan.shouldGlow(posted(), base, zenActive = false))
+        assertTrue(HaloPlan.shouldGlow(posted(), base, ctx()))
     }
 
     @Test
     fun `вимкнений край не світить ні на що`() {
-        assertFalse(HaloPlan.shouldGlow(posted(), base.copy(enabled = false), false))
+        assertFalse(HaloPlan.shouldGlow(posted(), base.copy(enabled = false), ctx()))
     }
 
     @Test
     fun `постійне сповіщення служби не світиться`() {
-        assertFalse(HaloPlan.shouldGlow(posted(ongoing = true), base, false))
+        assertFalse(HaloPlan.shouldGlow(posted(ongoing = true), base, ctx()))
     }
 
     @Test
     fun `тихе сповіщення не світиться, якщо обрано лише помітні`() {
         val quiet = posted(priority = -1)
         assertTrue(base.onlyLoud)
-        assertFalse(HaloPlan.shouldGlow(quiet, base, false))
-        assertTrue(HaloPlan.shouldGlow(quiet, base.copy(onlyLoud = false), false))
+        assertFalse(HaloPlan.shouldGlow(quiet, base, ctx()))
+        assertTrue(HaloPlan.shouldGlow(quiet, base.copy(onlyLoud = false), ctx()))
     }
 
     @Test
-    fun `під не турбувати проходить лише будильник і дзвінок`() {
-        assertFalse(HaloPlan.shouldGlow(posted(category = "msg"), base, zenActive = true))
-        assertTrue(HaloPlan.shouldGlow(posted(category = "alarm"), base, zenActive = true))
-        assertTrue(HaloPlan.shouldGlow(posted(category = "call"), base, zenActive = true))
+    fun `під не турбувати край вимикається повністю`() {
+        assertFalse(HaloPlan.shouldGlow(posted(), base, ctx(zen = true)))
+        assertFalse(HaloPlan.shouldGlow(posted(category = "alarm"), base, ctx(zen = true)))
     }
 
     @Test
-    fun `тривалість і яскравість завжди в межах`() {
-        val wild = HaloConfig(durationMs = 999_999L, intensity = 4f).normalized()
-        assertEquals(HaloConfig.MAX_DURATION_MS, wild.durationMs)
-        assertEquals(1.0, wild.intensity.toDouble(), 0.0001)
+    fun `на вхідний дзвінок край не світить`() {
+        assertFalse(HaloPlan.shouldGlow(posted(category = "call"), base, ctx()))
+        assertFalse(HaloPlan.shouldGlow(posted(), base, ctx(call = true)))
+    }
 
-        val tiny = HaloConfig(durationMs = 1L, intensity = 0f).normalized()
-        assertEquals(HaloConfig.MIN_DURATION_MS, tiny.durationMs)
-        assertEquals(0.2, tiny.intensity.toDouble(), 0.0001)
+    @Test
+    fun `при вимкненому екрані й на блокуванні краю немає`() {
+        assertFalse(HaloPlan.shouldGlow(posted(), base, ctx(interactive = false)))
+        assertFalse(HaloPlan.shouldGlow(posted(), base, ctx(locked = true)))
+    }
+
+    @Test
+    fun `нижче порогу батареї край вимикається, на зарядці — ні`() {
+        assertFalse(HaloPlan.shouldGlow(posted(), base, ctx(battery = 15)))
+        assertTrue(HaloPlan.shouldGlow(posted(), base, ctx(battery = 15, charging = true)))
+        assertTrue(HaloPlan.shouldGlow(posted(), base, ctx(battery = 20)))
+        // непрочитаний заряд не вбиває світло чесно
+        assertTrue(HaloPlan.shouldGlow(posted(), base, ctx(battery = -1)))
+    }
+
+    @Test
+    fun `яскравість краю падає з розрядом батареї`() {
+        val cfg = HaloConfig(intensity = 1f)
+        assertEquals(1.0, HaloPlan.edgeBrightness(cfg, ctx(battery = 100)).toDouble(), 0.001)
+        assertEquals(1.0, HaloPlan.edgeBrightness(cfg, ctx(battery = 40, charging = true)).toDouble(), 0.001)
+        val low = HaloPlan.edgeBrightness(cfg, ctx(battery = HaloConfig.MIN_BATTERY_PERCENT))
+        assertTrue("на межі порогу тьмяніше за повну: $low", low < 1f && low >= HaloConfig.MIN_INTENSITY)
+        assertEquals(
+            HaloPlan.batteryFactor(ctx(battery = HaloConfig.MIN_BATTERY_PERCENT)).toDouble(),
+            HaloPlan.batteryFactor(ctx(battery = 5)).toDouble(),
+            0.0001,
+        )
+    }
+
+    @Test
+    fun `яскравість завжди в межах`() {
+        assertEquals(1.0, HaloConfig(intensity = 4f).normalized().intensity.toDouble(), 0.0001)
+        assertEquals(
+            HaloConfig.MIN_INTENSITY.toDouble(),
+            HaloConfig(intensity = 0f).normalized().intensity.toDouble(),
+            0.0001,
+        )
+    }
+
+    @Test
+    fun `колір бере колір застосунку, а без нього — бірюзовий резерв`() {
+        val appColor = 0xFFFF1020.toInt()
+        assertEquals(appColor, HaloPlan.pickColor(appColor, ColorBloom.TEAL))
+        // прозорий (альфа 0) і нульовий — це «кольору немає»
+        assertEquals(ColorBloom.TEAL, HaloPlan.pickColor(0x00FF1020, ColorBloom.TEAL))
+        assertEquals(ColorBloom.TEAL, HaloPlan.pickColor(0, ColorBloom.TEAL))
+    }
+
+    @Test
+    fun `компенсація зрізу альфи повертає яскравість до 1,00`() {
+        // 0.80 → назад до 100%, але не вище стелі 255
+        assertEquals(255, ColorBloom.compensateAlpha(204))
+        assertEquals(100, ColorBloom.compensateAlpha(80))
+        assertEquals(0, ColorBloom.compensateAlpha(0))
+        assertEquals(0, ColorBloom.compensateAlpha(-5))
     }
 
     @Test
     fun `друге світло можливе щойно перше згасло`() {
-        val config = HaloConfig(durationMs = 2000L)
-        assertFalse(HaloPlan.allowReGlow(nowElapsed = 2800L, lastGlowElapsed = 1000L, config))
-        assertTrue(HaloPlan.allowReGlow(nowElapsed = 3800L, lastGlowElapsed = 1000L, config))
+        val impulse = HaloConfig.IMPULSE_MS
+        assertFalse(HaloPlan.allowReGlow(nowElapsed = impulse, lastGlowElapsed = 0L))
+        assertTrue(
+            HaloPlan.allowReGlow(
+                nowElapsed = impulse + HaloConfig.RE_GLOW_COOLDOWN_MS,
+                lastGlowElapsed = 0L,
+            ),
+        )
+    }
+
+    @Test
+    fun `імпульс триває рівно три секунди`() {
+        assertEquals(3000L, HaloConfig.IMPULSE_MS)
     }
 
     @Test
@@ -83,12 +160,11 @@ class HaloPlanTest {
     }
 
     @Test
-    fun `назви збережених правил повертаються, сміття — ні`() {
+    fun `візерунків рівно три і сміття повертає хвилю`() {
+        assertEquals(3, GlowPattern.entries.size)
         assertEquals(GlowPattern.PULSE, GlowPattern.byName("PULSE"))
         assertEquals(GlowPattern.WAVE, GlowPattern.byName("хвиля"))
         assertEquals(GlowPattern.WAVE, GlowPattern.byName(null))
-        assertEquals(GlowColor.MONET, GlowColor.byName("ХИБА"))
-        assertEquals(GlowColor.NOTIFICATION, GlowColor.byName("NOTIFICATION"))
     }
 
     @Test

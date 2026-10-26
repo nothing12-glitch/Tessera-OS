@@ -49,9 +49,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import os.tessera.halo.HaloUiState
 import os.tessera.halo.R
-import os.tessera.halo.logic.GlowColor
 import os.tessera.halo.logic.GlowPattern
 import os.tessera.halo.logic.HaloConfig
+import os.tessera.halo.logic.HaloMotion
 import java.util.Locale
 
 @Composable
@@ -59,8 +59,6 @@ fun HaloSettingsScreen(
     state: HaloUiState,
     onEnabled: (Boolean) -> Unit,
     onPattern: (GlowPattern) -> Unit,
-    onColor: (GlowColor) -> Unit,
-    onDuration: (Long) -> Unit,
     onIntensity: (Float) -> Unit,
     onOnlyLoud: (Boolean) -> Unit,
     onOpenOverlayGrant: () -> Unit,
@@ -69,6 +67,7 @@ fun HaloSettingsScreen(
     onAskPostPermission: () -> Unit,
 ) {
     val accent = Color(state.accentArgb)
+    val glow = Color(state.glowArgb)
     Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
@@ -115,42 +114,17 @@ fun HaloSettingsScreen(
                 PatternChip(GlowPattern.PULSE, stringResource(R.string.halo_pattern_pulse), state.config, onPattern)
                 PatternChip(GlowPattern.SOLID, stringResource(R.string.halo_pattern_solid), state.config, onPattern)
             }
-            GlowPreview(
-                pattern = state.config.pattern,
-                color = accent,
-                strength = state.config.intensity,
-            )
-
             Text(
-                stringResource(R.string.halo_color_title),
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ColorChip(
-                    label = stringResource(R.string.halo_color_monet),
-                    selected = state.config.color == GlowColor.MONET,
-                    onSelect = { onColor(GlowColor.MONET) },
-                )
-                ColorChip(
-                    label = stringResource(R.string.halo_color_notification),
-                    selected = state.config.color == GlowColor.NOTIFICATION,
-                    onSelect = { onColor(GlowColor.NOTIFICATION) },
-                )
-            }
-            Text(
-                stringResource(
-                    if (state.config.color == GlowColor.MONET) {
-                        R.string.halo_color_monet_hint
-                    } else {
-                        R.string.halo_color_notification_hint
-                    },
-                ),
+                stringResource(R.string.halo_color_body),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            GlowPreview(
+                pattern = state.config.pattern,
+                color = glow,
+                strength = state.config.intensity,
+            )
 
-            DurationSlider(state.config, onDuration)
             IntensitySlider(state.config, onIntensity)
 
             SectionTitle(stringResource(R.string.halo_section_when))
@@ -162,6 +136,11 @@ fun HaloSettingsScreen(
             )
             Text(
                 stringResource(R.string.halo_zen_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                stringResource(R.string.halo_tile_body),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -327,36 +306,6 @@ private fun PatternChip(
 }
 
 @Composable
-private fun ColorChip(label: String, selected: Boolean, onSelect: () -> Unit) {
-    FilterChip(
-        selected = selected,
-        onClick = onSelect,
-        label = { Text(label) },
-    )
-}
-
-@Composable
-private fun DurationSlider(config: HaloConfig, onChange: (Long) -> Unit) {
-    val seconds = String.format(Locale.getDefault(), "%.1f", config.durationMs / 1000f)
-    Column {
-        Text(
-            stringResource(R.string.halo_duration_title),
-            style = MaterialTheme.typography.labelLarge,
-        )
-        Text(
-            stringResource(R.string.halo_duration_value, seconds),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Slider(
-            value = config.durationMs.toFloat(),
-            onValueChange = { onChange(it.toLong()) },
-            valueRange = HaloConfig.MIN_DURATION_MS.toFloat()..HaloConfig.MAX_DURATION_MS.toFloat(),
-        )
-    }
-}
-
-@Composable
 private fun IntensitySlider(config: HaloConfig, onChange: (Float) -> Unit) {
     val percent = (config.intensity * 100).toInt()
     Column {
@@ -372,14 +321,15 @@ private fun IntensitySlider(config: HaloConfig, onChange: (Float) -> Unit) {
         Slider(
             value = config.intensity,
             onValueChange = onChange,
-            valueRange = 0.2f..1f,
+            valueRange = HaloConfig.MIN_INTENSITY..1f,
         )
     }
 }
 
 /**
- * Живий малюнок візерунка. Той самий математичний рух, що й у
- * `HaloGlowView`, але в межах екрана налаштувань.
+ * Живий малюнок візерунка: та сама математика й та сама тривалість імпульсу
+ * (`HaloConfig.IMPULSE_MS` = 3 с), що й на поверхні краю, але в межах екрана.
+ * Смуга широка й м'яка — кілька концентричних прошарків без чіткої межі.
  */
 @Composable
 private fun GlowPreview(pattern: GlowPattern, color: Color, strength: Float) {
@@ -388,58 +338,57 @@ private fun GlowPreview(pattern: GlowPattern, color: Color, strength: Float) {
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1800, easing = LinearEasing),
+            animation = tween(durationMillis = HaloConfig.IMPULSE_MS.toInt(), easing = LinearEasing),
             repeatMode = RepeatMode.Restart,
         ),
         label = "halo-progress",
     )
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = MaterialTheme.colorScheme.surface,
         shape = MaterialTheme.shapes.large,
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp)
+            .height(170.dp)
             .padding(4.dp),
     ) {
-        Canvas(modifier = Modifier.fillMaxWidth().height(150.dp)) {
-            val band = size.minDimension * 0.09f
-            val inset = band
+        Canvas(modifier = Modifier.fillMaxWidth().height(170.dp)) {
+            val band = size.minDimension * 0.14f
+            val inset = band * 0.35f
             val frameWidth = size.width - 2 * inset
             val frameHeight = size.height - 2 * inset
-            val radius = CornerRadius(band * 1.5f, band * 1.5f)
+            val radius = CornerRadius(band * 1.7f, band * 1.7f)
             val perimeter = 2f * (frameWidth + frameHeight)
+
+            val envelope = HaloMotion.envelope(progress)
             val effect = if (pattern == GlowPattern.WAVE) {
                 PathEffect.dashPathEffect(
                     floatArrayOf(perimeter * 0.17f, perimeter * 0.33f),
-                    -progress * perimeter * 2f,
+                    -HaloMotion.travel(progress, laps = 2f) * perimeter,
                 )
             } else {
                 null
             }
             val breathe = if (pattern == GlowPattern.PULSE) {
-                0.35f + 0.65f * (0.5f - 0.5f * kotlin.math.cos(2.0 * Math.PI * 2f * progress).toFloat())
+                0.4f + 0.6f * HaloMotion.breathe(progress, cycles = 2)
             } else {
                 1f
             }
-            val alpha = strength * breathe
+            val alpha = (envelope * strength * breathe).coerceIn(0f, 1f)
 
-            val halo = color.copy(alpha = alpha * 0.28f)
-            val core = color.copy(alpha = alpha * 0.9f)
-
-            drawRoundRect(
-                color = halo,
-                topLeft = Offset(inset, inset),
-                size = Size(frameWidth, frameHeight),
-                cornerRadius = radius,
-                style = Stroke(width = band * 2f, pathEffect = effect),
+            val passes = listOf(
+                Triple(band, 0.22f, radius),
+                Triple(band * 0.62f, 0.42f, radius),
+                Triple(band * 0.34f, 0.6f, radius),
             )
-            drawRoundRect(
-                color = core,
-                topLeft = Offset(inset, inset),
-                size = Size(frameWidth, frameHeight),
-                cornerRadius = radius,
-                style = Stroke(width = band * 0.55f, pathEffect = effect),
-            )
+            for ((width, factor, corner) in passes) {
+                drawRoundRect(
+                    color = color.copy(alpha = alpha * factor),
+                    topLeft = Offset(inset, inset),
+                    size = Size(frameWidth, frameHeight),
+                    cornerRadius = corner,
+                    style = Stroke(width = width, pathEffect = effect),
+                )
+            }
         }
     }
 }
@@ -461,6 +410,10 @@ private fun LimitsBlock() {
             )
             listOf(
                 stringResource(R.string.halo_limit_screen_off),
+                stringResource(R.string.halo_limit_battery),
+                stringResource(R.string.halo_limit_call),
+                stringResource(R.string.halo_limit_zen),
+                stringResource(R.string.halo_limit_mic),
                 stringResource(R.string.halo_limit_not_led),
                 stringResource(R.string.halo_limit_no_text),
                 stringResource(R.string.halo_limit_listener),

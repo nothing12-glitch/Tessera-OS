@@ -15,7 +15,7 @@ import os.tessera.halo.logic.ColorBloom
  */
 object HaloColors {
 
-    /** Резерв — той самий синій із нашої айдентики, якщо Monet недоступний. */
+    /** Акцент Monet — для превʼю та тестового сповіщення на екрані налаштувань. */
     private const val BRAND_FALLBACK = "#8FB0FF"
 
     fun monetAccent(context: Context): Int = runCatching {
@@ -23,10 +23,11 @@ object HaloColors {
     }.getOrElse { Color.parseColor(BRAND_FALLBACK) }
 
     /**
-     * Колір сповіщення: спершу той, який застосунок сам йому дав, потім
-     * велика картинка, потім маленька іконка. `FLAG_COLORIZED` лишаємо за
-     * бортом: він прихований у framework, а публічний `notification.color`
-     * дає те саме.
+     * Колір застосунку, що надіслав сповіщення: спершу той, який застосунок
+     * сам йому дав, потім велика картинка, потім маленька іконка.
+     * `FLAG_COLORIZED` лишаємо за бортом: він прихований у framework, а
+     * публічний `notification.color` дає те саме. `null` — коли кольору
+     * немає зовсім; тоді край візьме бірюзовий резерв.
      */
     fun fromNotification(sbn: StatusBarNotification, context: Context): Int? {
         val n = sbn.notification

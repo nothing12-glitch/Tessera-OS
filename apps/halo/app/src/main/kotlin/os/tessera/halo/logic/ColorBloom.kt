@@ -6,6 +6,22 @@ package os.tessera.halo.logic
  */
 object ColorBloom {
 
+    /** Бірюзовий резерв: коли застосунок не дав свого кольору. */
+    val TEAL: Int = rgb(20, 184, 166)
+
+    /**
+     * `WindowManager` примусово зрізає `alpha` оверлея з 1.00 до 0.80, стоїть
+     * `FLAG_NOT_TOUCHABLE`. Прапорець знімати не можна — вікно перехопило б
+     * кожен дотик. Тож підсилюємо альфу тут, у премультипованому малюнку,
+     * а не через `LayoutParams.alpha`.
+     */
+    const val OVERLAY_ALPHA_CEILING = 0.80f
+
+    fun compensateAlpha(alpha: Int): Int {
+        if (alpha <= 0) return 0
+        return (alpha / OVERLAY_ALPHA_CEILING).toInt().coerceAtMost(255)
+    }
+
     private const val BIN_SHIFT = 4 // 8 біт каналу -> 4 біт кошика (16^3 = 4096 кошиків)
     private const val BINS = 1 shl (BIN_SHIFT * 3)
     private const val MIN_ALPHA = 40

@@ -5,13 +5,17 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.media.AudioManager
+import android.os.BatteryManager
+import android.os.PowerManager
+import android.app.KeyguardManager
 import android.os.SystemClock
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import os.tessera.halo.data.HaloPrefs
 import os.tessera.halo.logic.ColorBloom
-import os.tessera.halo.logic.GlowColor
+import os.tessera.halo.logic.GlowContext
 import os.tessera.halo.logic.HaloConfig
 import os.tessera.halo.logic.HaloPlan
 import os.tessera.halo.logic.PostedNotification
@@ -21,19 +25,36 @@ import os.tessera.halo.logic.PostedNotification
  * свідомо: система сама підтримує його живим, поки користувач не вимкнув
  * доступ до сповіщень, тому нам не потрібен foreground-сервіс із постійним
  * сповіщенням-податком на увагу.
+ *
+ * Стан «не турбувати» беремо зі слухача (`currentInterruptionFilter`), а не з
+ * `Settings.Global` — це дає той самий висновок без `ACCESS_NOTIFICATION_POLICY`.
  */
 class HaloListenerService : NotificationListenerService() {
 
     private lateinit var prefs: HaloPrefs
     private var overlay: HaloOverlay? = null
     private val pending = LinkedHashMap<String, Int>()
-    private var lastColor = 0
     private var lastGlowStartedAt = 0L
     private var receiversRegistered = false
 
+    // Кеш режиму переривань: `onInterruptionFilterChanged` дає його без дозволу.
+    private var interruptionFilter = INTERRUPTION_FILTER_ALL
+
+    private lateinit var audioManager: AudioManager
+    private lateinit var powerManager: PowerManager
+    private lateinit var keyguardManager: KeyguardManager
+
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == Intent.ACTION_SCREEN_ON) glowOnWake()
+            // Екран згас — край не має чого світити в порожнину.
+            if (intent?.action == Intent.ACTION_SCREEN_OFF) overlay?.hide()
+        }
+    }
+
+    // Плитка Quick Settings вимкнула край, коли той ще горить: гасимо відразу.
+    private val stateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == ACTION_STATE_CHANGED && !prefs.isEnabled()) overlay?.hide()
         }
     }
 
@@ -41,14 +62,23 @@ class HaloListenerService : NotificationListenerService() {
         super.onCreate()
         prefs = HaloPrefs(this)
         overlay = HaloOverlay(this)
+        audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+        powerManager = getSystemService(POWER_SERVICE) as PowerManager
+        keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
     }
 
     override fun onListenerConnected() {
         super.onListenerConnected()
+        interruptionFilter = try { currentInterruptionFilter } catch (_: Exception) { INTERRUPTION_FILTER_ALL }
         if (receiversRegistered) return
         registerReceiver(
             screenReceiver,
-            IntentFilter(Intent.ACTION_SCREEN_ON),
+            IntentFilter(Intent.ACTION_SCREEN_OFF),
+            RECEIVER_NOT_EXPORTED,
+        )
+        registerReceiver(
+            stateReceiver,
+            IntentFilter(ACTION_STATE_CHANGED),
             RECEIVER_NOT_EXPORTED,
         )
         receiversRegistered = true
@@ -58,9 +88,9 @@ class HaloListenerService : NotificationListenerService() {
         sbn ?: return
         val config = prefs.config()
         val posted = describe(sbn)
-        if (!HaloPlan.shouldGlow(posted, config, isZenActive())) return
+        if (!HaloPlan.shouldGlow(posted, config, currentContext())) return
 
-        pending[posted.key] = resolveColor(sbn, config)
+        pending[posted.key] = resolveColor(sbn)
         light(pending.getValue(posted.key), config)
     }
 
@@ -71,44 +101,47 @@ class HaloListenerService : NotificationListenerService() {
         if (pending.isEmpty()) overlay?.hide()
     }
 
+    /** Режим «не турбувати» змінився: оновлюємо кеш і гасимо край, якщо увімкнули DND. */
+    override fun onInterruptionFilterChanged(filter: Int) {
+        super.onInterruptionFilterChanged(filter)
+        interruptionFilter = filter
+        if (zenActive()) overlay?.hide()
+    }
+
     override fun onDestroy() {
-        if (receiversRegistered) runCatching { unregisterReceiver(screenReceiver) }
+        if (receiversRegistered) {
+            runCatching { unregisterReceiver(screenReceiver) }
+            runCatching { unregisterReceiver(stateReceiver) }
+        }
         receiversRegistered = false
         overlay?.hide()
         overlay = null
         super.onDestroy()
     }
 
-    /** Дістав телефон — показуємо те, що накопичилось, якщо край уже згас. */
-    private fun glowOnWake() {
-        val config = prefs.config()
-        if (!config.enabled || pending.isEmpty()) return
-        if (!HaloPlan.allowReGlow(SystemClock.elapsedRealtime(), lastGlowStartedAt, config)) return
-        val color = pending.values.lastOrNull()?.takeIf { it != 0 } ?: lastColor
-        if (color != 0) light(color, config)
-    }
+    /**
+     * Дістав телефон — край не світить у порожнину: реєструємо лише
+     * `ACTION_SCREEN_OFF` і гасимо оверлей. Повторне світло на пробудженні
+     * свідомо прибрано — воно суперечило б «не показувати на блокуванні».
+     */
 
     private fun light(color: Int, config: HaloConfig) {
         if (!Settings.canDrawOverlays(this)) return
         val bright = ColorBloom.readableOnDark(color)
-        lastColor = bright
         lastGlowStartedAt = SystemClock.elapsedRealtime()
         prefs.saveLastColor(bright)
         overlay?.show(
             color = bright and 0x00FFFFFF,
             pattern = config.pattern,
-            durationMs = config.durationMs,
-            intensity = config.intensity,
+            intensity = HaloPlan.edgeBrightness(config, currentContext()),
         )
     }
 
-    private fun resolveColor(sbn: StatusBarNotification, config: HaloConfig): Int =
-        if (config.color == GlowColor.MONET) {
-            HaloColors.monetAccent(this)
-        } else {
-            runCatching { HaloColors.fromNotification(sbn, this) }.getOrNull()
-                ?: HaloColors.monetAccent(this)
-        }
+    /** Колір: спершу той, що дав застосунок, інакше бірюзовий резерв. */
+    private fun resolveColor(sbn: StatusBarNotification): Int {
+        val appColor = runCatching { HaloColors.fromNotification(sbn, this) }.getOrNull() ?: 0
+        return HaloPlan.pickColor(appColor, ColorBloom.TEAL) and 0x00FFFFFF
+    }
 
     private fun describe(sbn: StatusBarNotification) = PostedNotification(
         key = key(sbn),
@@ -122,18 +155,44 @@ class HaloListenerService : NotificationListenerService() {
 
     private fun key(sbn: StatusBarNotification) = "${sbn.packageName}/${sbn.tag}/${sbn.id}"
 
+    private fun currentContext(): GlowContext {
+        val (level, charging) = readBattery()
+        return GlowContext(
+            zenActive = zenActive(),
+            inCall = callActive(),
+            interactive = powerManager.isInteractive,
+            keyguardLocked = runCatching { keyguardManager.isKeyguardLocked }.getOrDefault(false),
+            batteryPercent = level,
+            charging = charging,
+        )
+    }
+
+    private fun zenActive(): Boolean = interruptionFilter != INTERRUPTION_FILTER_ALL
+
     /**
-     * «Не турбувати». Публічного геттера в framework немає (`isInZenMode`
-     * прихований), тому читаємо той самий global-ключ, який тримає систему:
-     * 0 — режим вимкнено. Не читається — теж вважаємо 0 і світимось як зазвичай.
+     * Дзвінок визначаємо через `AudioManager.mode` — це публічний стан без
+     * `READ_PHONE_STATE`. Вхідний дзвінок піднімає режим у `MODE_RINGING`.
      */
-    private fun isZenActive(): Boolean =
-        runCatching { Settings.Global.getInt(contentResolver, "zen_mode", ZEN_OFF) }
-            .getOrDefault(ZEN_OFF) != ZEN_OFF
+    private fun callActive(): Boolean =
+        audioManager.mode != AudioManager.MODE_NORMAL
+
+    /** Sticky-інтент батареї: дає рівень і зарядку без жодного дозволу. */
+    private fun readBattery(): Pair<Int, Boolean> {
+        val intent = runCatching {
+            registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        }.getOrNull() ?: return -1 to false
+        val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+        val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+        val percent = if (level >= 0 && scale > 0) level * 100 / scale else -1
+        val plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0)
+        return percent to (plugged != 0)
+    }
 
     companion object {
-        /** Значення `zen_mode`, коли «Не турбувати» вимкнено. */
-        private const val ZEN_OFF = 0
+        private const val INTERRUPTION_FILTER_ALL = 1
+
+        /** Приватний всередині застосунку: плитка просить слухача перечитати стан. */
+        const val ACTION_STATE_CHANGED = "os.tessera.halo.action.STATE_CHANGED"
 
         // `Settings.Secure.ENABLED_NOTIFICATION_LISTENERS` — приховане поле,
         // тому назву рядка пишемо дослівно, як це роблять усі слухачі сповіщень.
