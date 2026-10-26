@@ -59,7 +59,7 @@
     <string name="welcome_font_largest">Дуже великий</string>
     <string name="welcome_font_chip_desc">Масштаб шрифта: %1$s</string>
     <string name="welcome_font_applied">Масштаб записано в систему — він діє на весь телефон, а не на це вікно.</string>
-    <string name="welcome_font_pending">Масштаб ще не записували: торкніться варіанта, і ми спробуємо.</string>
+    <string name="welcome_font_pending">Цього запуску масштаб ще не записували: торкніться варіанта, і ми спробуємо.</string>
     <string name="welcome_contrast">Високий контраст тексту</string>
     <string name="welcome_contrast_desc">Перемикач високого контрасту тексту</string>
     <string name="welcome_contrast_body">Робить текст на весь телефон різкішим. Цей перемикач лишається в налаштуваннях модуля: вмикає його система.</string>
@@ -76,9 +76,9 @@
     <string name="welcome_theme_chip_desc">Тема: %1$s</string>
     <string name="welcome_theme_applied">Застосовано до всієї системи — це той самий перемикач, що й у Налаштуваннях → Дисплей.</string>
     <string name="welcome_theme_not_applied">Систему не переключено: дозвіл WRITE_SECURE_SETTINGS не видано. Цей екран усе одно пройде, але тему доведеться поставити вручну.</string>
-    <string name="welcome_theme_pending">Тему ще не записували: торкніться варіанта, і ми спробуємо.</string>
+    <string name="welcome_theme_pending">Цього запуску тему ще не записували: торкніться варіанта, і ми спробуємо.</string>
     <string name="welcome_accent_label">Акцентний колір</string>
-    <string name="welcome_accent_body">Обраний акцент одразу перемальовує цей екран. На весь телефон його дає лише Monet-оверлей в образі, а це не рядок `WRITE_SECURE_SETTINGS`, тому вибір лишається в налаштуваннях модуля.</string>
+    <string name="welcome_accent_body">Обраний акцент одразу перемальовує цей екран. На весь телефон його дає лише Monet-оверлей в образі, а це не рядок WRITE_SECURE_SETTINGS, тому вибір лишається в налаштуваннях модуля.</string>
     <string name="welcome_accent_dynamic">Як шпалера (Monet)</string>
     <string name="welcome_accent_indigo">Індиго</string>
     <string name="welcome_accent_sky">Небо</string>
@@ -98,7 +98,7 @@
 
     <!-- 6. Профіль живлення. -->
     <string name="welcome_power_title">Профіль живлення</string>
-    <string name="welcome_power_body">Економний, збалансований чи продуктивний. `PowerManager` вимагає дозволів рівня системи, яких у цього модуля немає, — тож імітувати успіх ми не будемо.</string>
+    <string name="welcome_power_body">Економний, збалансований чи продуктивний. PowerManager вимагає дозволів рівня системи, яких у цього модуля немає, — тож імітувати успіх ми не будемо.</string>
     <string name="welcome_power_economy">Економний</string>
     <string name="welcome_power_balanced">Збалансований</string>
     <string name="welcome_power_performance">Продуктивний</string>
@@ -109,7 +109,7 @@
 
     <!-- 7. Приватність мережі. -->
     <string name="welcome_network_title">Приватність мережі</string>
-    <string name="welcome_network_body">Випадкова чи стабільна MAC-адреса — це рішення кожної Wi-Fi мережі окремо. Дає його `WifiManager` із дозволами, яких у модуля немає, тому нижче лише ваш вибір і екран мережі.</string>
+    <string name="welcome_network_body">Випадкова чи стабільна MAC-адреса — це рішення кожної Wi-Fi мережі окремо. Дає його WifiManager із дозволами, яких у модуля немає, тому нижче лише ваш вибір і екран мережі.</string>
     <string name="welcome_mac_random">Випадкова адреса</string>
     <string name="welcome_mac_stable">Стабільна адреса</string>
     <string name="welcome_mac_chip_desc">Політика MAC-адреси: %1$s</string>

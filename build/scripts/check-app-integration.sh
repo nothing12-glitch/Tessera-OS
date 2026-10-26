@@ -264,6 +264,21 @@ else
   ok "grep -P недоступний — перевірку апострофів пропущено (не пастка: AAPT2 все одно впаде на збірці)"
 fi
 
+# 14. Markdown у рядках інтерфейсу. Живий прогін 2026-10-26 показав на екрані
+#     «а це не рядок `WRITE_SECURE_SETTINGS`»: бектики — конвенція README, а не
+#     типографіка Android, і на склі вони лишаються видимими. Компілятор і
+#     юніт-тести на це не дивляться — бачить лише людина чи знімок.
+for s in "$ROOT"/apps/*/app/src/main/res/values*/strings.xml; do
+  [[ -f "$s" ]] || continue
+  rel="${s#"$ROOT"/}"
+  ticks="$(grep -n '`' "$s" 2>/dev/null | grep '<string' || true)"
+  if [[ -n "$ticks" ]]; then
+    fail "$rel: у <string> є бектики — це markdown, він зʼявиться на екрані. Перші рядки: $(printf '%s\n' "$ticks" | head -2 | cut -c1-120 | tr '\n' ' ')"
+  else
+    ok "$rel: рядки інтерфейсу без markdown-бектиків"
+  fi
+done
+
 if [[ "$missing" != 0 ]]; then
   echo "[app-integration] Провалено. Див. apps/<застосунок>/Android.bp, build/scripts/apps.list і README застосунків." >&2
   exit 1
