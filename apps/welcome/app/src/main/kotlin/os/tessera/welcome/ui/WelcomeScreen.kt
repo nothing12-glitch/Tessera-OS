@@ -8,6 +8,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,11 +21,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,31 +36,55 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import os.tessera.welcome.R
 import os.tessera.welcome.WelcomeUiState
-import os.tessera.welcome.logic.AccountRoute
+import os.tessera.welcome.logic.AccentColor
+import os.tessera.welcome.logic.FontScaleChoice
+import os.tessera.welcome.logic.LanguageChoice
+import os.tessera.welcome.logic.MacPolicyChoice
+import os.tessera.welcome.logic.NavigationChoice
+import os.tessera.welcome.logic.PowerProfileChoice
+import os.tessera.welcome.logic.RegionChoice
+import os.tessera.welcome.logic.SystemScreen
 import os.tessera.welcome.logic.ThemeChoice
 import os.tessera.welcome.logic.WelcomeFlow
 import os.tessera.welcome.logic.WelcomeStep
 
 /**
- * Екран першого запуску: повноекранний, чотири кроки, один перехід між ними.
+ * Усі дії екрана одним об'єктом: кроків десять, і перелік lambda-параметрів
+ * уже був би окремим файлом.
+ */
+data class WelcomeActions(
+    val onNext: () -> Unit,
+    val onBack: () -> Unit,
+    val onSkip: () -> Unit,
+    val onTheme: (ThemeChoice) -> Unit,
+    val onAccent: (AccentColor) -> Unit,
+    val onLanguage: (LanguageChoice) -> Unit,
+    val onRegion: (RegionChoice) -> Unit,
+    val onFontScale: (FontScaleChoice) -> Unit,
+    val onHighContrast: (Boolean) -> Unit,
+    val onNavigation: (NavigationChoice) -> Unit,
+    val onPower: (PowerProfileChoice) -> Unit,
+    val onMacPolicy: (MacPolicyChoice) -> Unit,
+    val onOpenAccount: () -> Unit,
+    val onOpenScreen: (SystemScreen) -> Unit,
+)
+
+/**
+ * Екран першого запуску: повноекранний, десять кроків, один перехід між ними.
  *
- * Анімація тут стокова і навмисно одна на всі кроки: `AnimatedContent` із
- * зсувом по горизонталі. Власного руху, який хтось мусив би вимірювати на
- * плавність, немає — за рішенням користувача рух роблять засоби системи, а не
- * наш код.
+ * Анімація переходу стокова і навмисно одна на всі кроки; власний рух є лише
+ * там, де він і є змістом — у вітанні та в демо краю.
  */
 @Composable
 fun WelcomeScreen(
     state: WelcomeUiState,
-    onTheme: (ThemeChoice) -> Unit,
-    onNext: () -> Unit,
-    onBack: () -> Unit,
-    onSkipAccount: () -> Unit,
-    onOpenAccount: () -> Unit,
+    actions: WelcomeActions,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -75,13 +100,13 @@ fun WelcomeScreen(
         ) {
             Header(state = state)
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
 
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
-                contentAlignment = Alignment.CenterStart,
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
             ) {
                 AnimatedContent(
                     targetState = state.flow.step,
@@ -93,24 +118,15 @@ fun WelcomeScreen(
                     },
                     label = "welcome-step",
                 ) { step ->
-                    when (step) {
-                        WelcomeStep.GREETING -> Greeting(state = state)
-                        WelcomeStep.THEME -> ThemeStep(state = state, onTheme = onTheme)
-
-                        WelcomeStep.ACCOUNT -> AccountStep(state = state, onOpenAccount = onOpenAccount)
-                        WelcomeStep.FINISH -> FinishStep(state = state)
-                    }
+                    StepBody(step = step, state = state, actions = actions)
                 }
             }
 
             Notice(notice = state.notice)
 
-            Footer(
-                state = state,
-                onBack = onBack,
-                onNext = onNext,
-                onSkipAccount = onSkipAccount,
-            )
+            Footer(state = state, actions = actions)
+
+            BuildLine(state = state)
         }
     }
 }
@@ -132,136 +148,37 @@ private fun Header(state: WelcomeUiState) {
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(Modifier.weight(1f))
-        Text(
-            text = stringResource(
-                R.string.welcome_step,
-                WelcomeFlow.stepNumber(state.flow),
-                WelcomeFlow.steps.size,
-            ),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        StepDots(state = state)
     }
-    Spacer(Modifier.height(12.dp))
-    LinearProgressIndicator(
-        progress = { WelcomeFlow.progress(state.flow) },
+}
+
+/** Крапки замість «Крок N із M»: по одній на крок, пропущені — інші за кольором. */
+@Composable
+private fun StepDots(state: WelcomeUiState) {
+    val scheme = MaterialTheme.colorScheme
+    val active = WelcomeFlow.dotIndex(state.flow)
+    val label = stringResource(R.string.welcome_dots_desc, active + 1, WelcomeFlow.dotCount())
+    Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(4.dp)
-            .clip(RoundedCornerShape(2.dp)),
-        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-    )
-}
-
-@Composable
-private fun StepTitle(title: String, body: String) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Spacer(Modifier.height(12.dp))
-        Text(
-            text = body,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun Greeting(state: WelcomeUiState) {
-    Column {
-        StepTitle(
-            title = stringResource(R.string.welcome_greeting_title),
-            body = stringResource(R.string.welcome_greeting_body),
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.welcome_greeting_version, state.buildLabel),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun ThemeStep(
-    state: WelcomeUiState,
-    onTheme: (ThemeChoice) -> Unit,
-) {
-    Column {
-        StepTitle(
-            title = stringResource(R.string.welcome_theme_title),
-            body = stringResource(R.string.welcome_theme_body),
-        )
-        Spacer(Modifier.height(20.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ThemeChoice.entries.forEach { choice ->
-                FilterChip(
-                    selected = state.flow.theme == choice,
-                    onClick = { onTheme(choice) },
-                    label = {
-                        Text(
-                            text = when (choice) {
-                                ThemeChoice.AUTO -> stringResource(R.string.welcome_theme_auto)
-                                ThemeChoice.LIGHT -> stringResource(R.string.welcome_theme_light)
-                                ThemeChoice.DARK -> stringResource(R.string.welcome_theme_dark)
-                            },
-                        )
-                    },
-                )
+            .semantics(mergeDescendants = true) { contentDescription = label }
+            .padding(start = 8.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        WelcomeFlow.steps.forEachIndexed { index, step ->
+            val color = when {
+                index == active -> scheme.primary
+                step in state.flow.skipped -> scheme.tertiary
+                index < active -> scheme.primaryContainer
+                else -> scheme.surfaceVariant
             }
-        }
-        Spacer(Modifier.height(16.dp))
-        val applied = state.themeApplied
-        if (applied != null) {
-            Text(
-                text = stringResource(
-                    if (applied) R.string.welcome_theme_applied
-                    else R.string.welcome_theme_not_applied
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Box(
+                modifier = Modifier
+                    .size(if (index == active) 10.dp else 7.dp)
+                    .clip(CircleShape)
+                    .background(color),
             )
         }
-    }
-}
-
-@Composable
-private fun AccountStep(state: WelcomeUiState, onOpenAccount: () -> Unit) {
-    val unavailable = state.account == AccountRoute.UNAVAILABLE
-    Column {
-        StepTitle(
-            title = stringResource(R.string.welcome_account_title),
-            body = stringResource(
-                if (unavailable) R.string.welcome_account_none else R.string.welcome_account_body,
-            ),
-        )
-        Spacer(Modifier.height(20.dp))
-        Button(
-            onClick = onOpenAccount,
-            enabled = !unavailable,
-            colors = ButtonDefaults.buttonColors(),
-        ) {
-            Text(stringResource(R.string.welcome_account_open))
-        }
-    }
-}
-
-@Composable
-private fun FinishStep(state: WelcomeUiState) {
-    val themeName = when (state.flow.theme) {
-        ThemeChoice.AUTO -> stringResource(R.string.welcome_theme_auto)
-        ThemeChoice.LIGHT -> stringResource(R.string.welcome_theme_light)
-        ThemeChoice.DARK -> stringResource(R.string.welcome_theme_dark)
-    }
-    Column {
-        StepTitle(
-            title = stringResource(R.string.welcome_finish_title),
-            body = stringResource(R.string.welcome_finish_body, themeName),
-        )
     }
 }
 
@@ -277,34 +194,70 @@ private fun Notice(notice: Int?) {
     )
 }
 
+/**
+ * Низ: «Назад», «Пропустити» там, де пропуск справді є, і головна кнопка.
+ *
+ * Кожна кнопка має озвучуване ім'я окремим `contentDescription`: з дампів
+ * `uiautomator` видно, що самого тексту для TalkBack і зовнішніх тестів не
+ * дістаєш.
+ */
 @Composable
-private fun Footer(
-    state: WelcomeUiState,
-    onBack: () -> Unit,
-    onNext: () -> Unit,
-    onSkipAccount: () -> Unit,
-) {
+private fun Footer(state: WelcomeUiState, actions: WelcomeActions) {
+    val flow = state.flow
+    val atFinish = flow.step == WelcomeStep.FINISH
+    val backDesc = stringResource(R.string.welcome_back_desc)
+    val skipDesc = stringResource(R.string.welcome_skip_desc)
+    val nextDesc = stringResource(
+        if (atFinish) R.string.welcome_enter_desc else R.string.welcome_next_desc,
+    )
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (WelcomeFlow.canGoBack(state.flow)) {
-            TextButton(onClick = onBack) { Text(stringResource(R.string.welcome_back)) }
+        if (WelcomeFlow.canGoBack(flow)) {
+            TextButton(
+                onClick = actions.onBack,
+                modifier = Modifier.semantics { contentDescription = backDesc },
+            ) {
+                Text(stringResource(R.string.welcome_back))
+            }
         }
-        if (state.flow.step == WelcomeStep.ACCOUNT) {
-            TextButton(onClick = onSkipAccount) { Text(stringResource(R.string.welcome_account_skip)) }
+        if (WelcomeFlow.canSkip(flow)) {
+            TextButton(
+                onClick = actions.onSkip,
+                modifier = Modifier.semantics { contentDescription = skipDesc },
+            ) {
+                Text(stringResource(R.string.welcome_skip))
+            }
         }
         Spacer(Modifier.weight(1f))
-        Button(onClick = onNext) {
+        Button(
+            onClick = actions.onNext,
+            modifier = Modifier.semantics { contentDescription = nextDesc },
+        ) {
             Text(
                 stringResource(
-                    if (state.flow.step == WelcomeStep.FINISH) R.string.welcome_done_button
-                    else R.string.welcome_next,
+                    if (atFinish) R.string.welcome_done_button else R.string.welcome_next,
                 ),
                 modifier = Modifier.padding(horizontal = 8.dp),
             )
         }
     }
+}
+
+/**
+ * Дрібний рядок збірки знизу. На кроці вітання його не малюємо двічі: там
+ * збірка — останній елемент анімації.
+ */
+@Composable
+private fun BuildLine(state: WelcomeUiState) {
+    if (state.buildLabel.isEmpty() || state.flow.step == WelcomeStep.GREETING) return
+    Text(
+        text = stringResource(R.string.welcome_build, state.buildLabel),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 12.dp),
+    )
 }

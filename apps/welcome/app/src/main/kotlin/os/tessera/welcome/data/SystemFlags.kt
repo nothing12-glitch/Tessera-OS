@@ -6,10 +6,13 @@ import android.provider.Settings
 /**
  * Системні прапорці, які перемальовують не це вікно, а весь телефон.
  *
- * Обидва — `Settings.Secure`/`Settings.Global`, тому кожен виклик потребує
+ * Усе це `Settings.Secure`/`Settings.Global`, тому кожен запис потребує
  * `WRITE_SECURE_SETTINGS` (`signature|privileged`). Звичайний застосунок
  * дістає `SecurityException`; саме через цей клас модуль живе в
  * `system_ext/priv-app` із дозвільним списком `privapp-permissions`.
+ *
+ * Клас тільки робить виклик і нічого не вгадує: чи вийшло, чи ні — вирішує
+ * той, хто викликає, і чесно показує це на екрані.
  */
 class SystemFlags(context: Context) {
 
@@ -34,6 +37,20 @@ class SystemFlags(context: Context) {
     fun nightMode(): Int = Settings.Secure.getInt(resolver, UI_NIGHT_MODE, 0)
 
     /**
+     * Масштаб шрифта для всієї системи. Рядок `font_scale` читає
+     * AccessibilityManagerService — запис тут не імітація; чи справді зростає
+     * текст, перевіряється на живому образі (див. README).
+     */
+    fun setFontScale(scale: Float) {
+        Settings.Secure.putFloat(resolver, FONT_SCALE, scale)
+    }
+
+    /** Поточний системний масштаб шрифта; 1.0 — якщо прочитати не вдалося. */
+    fun fontScale(): Float = runCatching {
+        Settings.Secure.getFloat(resolver, FONT_SCALE, 1f)
+    }.getOrDefault(1f)
+
+    /**
      * Завершити перший запуск: `device_provisioned` знімає блокування лаунчера,
      * `user_setup_complete` сповіщає решту застосунків, що налаштування сталося.
      *
@@ -50,8 +67,14 @@ class SystemFlags(context: Context) {
     }
 
     private companion object {
-        /** Публічних констант для цього рядка в `Settings.Secure` немає. */
+        /** Публічних констант для цих рядків у `Settings.Secure` немає. */
         const val UI_NIGHT_MODE = "ui_night_mode"
+
+        /**
+         * Публічний `Settings.Secure.FONT_SCALE` позначений застарілим, тому
+         * рядок тримаємо тут — значення те саме, ніякого нового ключа не вводить.
+         */
+        const val FONT_SCALE = "font_scale"
 
         /**
          * `Settings.Secure.USER_SETUP_COMPLETE` існує в платформі, але з-під

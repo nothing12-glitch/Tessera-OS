@@ -2,13 +2,13 @@ package os.tessera.welcome.logic
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
  * Тести кроків, а не пікселів: OOBE ламається саме на порядку — «Назад» із
- * останнього, пропуск не на тому екрані, смуга, яка раптом показує нуль на
- * першому кроці.
+ * останнього, пропуск не на тому екрані, крок, який бреше про запис до спроби.
  */
 class WelcomeFlowTest {
 
@@ -18,7 +18,22 @@ class WelcomeFlowTest {
     }
 
     @Test
-    fun `advance walks the four steps in order`() {
+    fun `start keeps saved choices but resets place and finish`() {
+        val saved = WelcomeState(
+            step = WelcomeStep.NETWORK,
+            theme = ThemeChoice.DARK,
+            power = PowerProfileChoice.PERFORMANCE,
+            finished = true,
+        )
+        val state = WelcomeFlow.start(saved)
+        assertEquals(WelcomeStep.GREETING, state.step)
+        assertFalse(state.finished)
+        assertEquals(ThemeChoice.DARK, state.theme)
+        assertEquals(PowerProfileChoice.PERFORMANCE, state.power)
+    }
+
+    @Test
+    fun `advance walks all ten steps in order`() {
         var state = WelcomeFlow.start()
         val visited = mutableListOf(state.step)
         repeat(WelcomeFlow.steps.size - 1) {
@@ -26,9 +41,21 @@ class WelcomeFlowTest {
             visited += state.step
         }
         assertEquals(
-            listOf(WelcomeStep.GREETING, WelcomeStep.THEME, WelcomeStep.ACCOUNT, WelcomeStep.FINISH),
+            listOf(
+                WelcomeStep.GREETING,
+                WelcomeStep.LANGUAGE,
+                WelcomeStep.ACCESSIBILITY,
+                WelcomeStep.APPEARANCE,
+                WelcomeStep.NAVIGATION,
+                WelcomeStep.POWER,
+                WelcomeStep.NETWORK,
+                WelcomeStep.ACCOUNT,
+                WelcomeStep.EDGE_DEMO,
+                WelcomeStep.FINISH,
+            ),
             visited,
         )
+        assertEquals(10, visited.size)
     }
 
     @Test
@@ -53,10 +80,13 @@ class WelcomeFlowTest {
     }
 
     @Test
-    fun `back returns one step`() {
-        val state = WelcomeState(step = WelcomeStep.ACCOUNT)
-        assertEquals(WelcomeStep.THEME, WelcomeFlow.back(state).step)
-        assertTrue(WelcomeFlow.canGoBack(state))
+    fun `back returns exactly one step from every step but the first`() {
+        WelcomeFlow.steps.drop(1).forEach { step ->
+            val state = WelcomeState(step = step)
+            val previous = WelcomeFlow.steps[step.ordinal - 1]
+            assertEquals(previous, WelcomeFlow.back(state).step)
+            assertTrue(WelcomeFlow.canGoBack(state))
+        }
     }
 
     @Test
@@ -67,54 +97,176 @@ class WelcomeFlowTest {
     }
 
     @Test
-    fun `skip account only counts on the account step`() {
-        val elsewhere = WelcomeFlow.skipAccount(WelcomeState(step = WelcomeStep.THEME))
-        assertFalse(elsewhere.accountSkipped)
-
-        val onAccount = WelcomeFlow.skipAccount(WelcomeState(step = WelcomeStep.ACCOUNT))
-        assertTrue(onAccount.accountSkipped)
+    fun `skip is offered exactly where a skip truly exists`() {
+        val skippable = setOf(
+            WelcomeStep.POWER,
+            WelcomeStep.NETWORK,
+            WelcomeStep.ACCOUNT,
+            WelcomeStep.EDGE_DEMO,
+        )
+        WelcomeFlow.steps.forEach { step ->
+            assertEquals(skippable.contains(step), step.skippable)
+            assertEquals(skippable.contains(step), WelcomeFlow.canSkip(WelcomeState(step = step)))
+        }
+        // Перші кроки й «Готово» пропустити немає куди.
+        assertFalse(WelcomeStep.GREETING.skippable)
+        assertFalse(WelcomeStep.LANGUAGE.skippable)
+        assertFalse(WelcomeStep.ACCESSIBILITY.skippable)
+        assertFalse(WelcomeStep.APPEARANCE.skippable)
+        assertFalse(WelcomeStep.NAVIGATION.skippable)
+        assertFalse(WelcomeStep.FINISH.skippable)
     }
 
     @Test
-    fun `choose theme keeps the step`() {
-        val state = WelcomeState(step = WelcomeStep.THEME)
-        val chosen = WelcomeFlow.chooseTheme(state, ThemeChoice.DARK)
-        assertEquals(ThemeChoice.DARK, chosen.theme)
-        assertEquals(WelcomeStep.THEME, chosen.step)
+    fun `skip marks the step and moves forward`() {
+        val onAccount = WelcomeState(step = WelcomeStep.ACCOUNT)
+        val after = WelcomeFlow.skip(onAccount)
+        assertTrue(WelcomeFlow.isSkipped(after, WelcomeStep.ACCOUNT))
+        assertEquals(WelcomeStep.EDGE_DEMO, after.step)
     }
 
     @Test
-    fun `progress is never zero on the first step`() {
-        assertEquals(0.25, WelcomeFlow.progress(WelcomeFlow.start()).toDouble(), 0.0001)
-        assertEquals(1.0, WelcomeFlow.progress(WelcomeState(step = WelcomeStep.FINISH)).toDouble(), 0.0001)
+    fun `skip on a step without skip changes nothing`() {
+        val onTheme = WelcomeState(step = WelcomeStep.APPEARANCE)
+        assertEquals(onTheme, WelcomeFlow.skip(onTheme))
+        assertFalse(WelcomeFlow.isSkipped(WelcomeFlow.skip(onTheme), WelcomeStep.APPEARANCE))
     }
 
     @Test
-    fun `unknown or missing stored theme falls back to auto`() {
-        assertEquals(ThemeChoice.AUTO, ThemeChoice.byName(null))
-        assertEquals(ThemeChoice.AUTO, ThemeChoice.byName("НЕМАЄ_ТАКОЇ"))
-        assertEquals(ThemeChoice.DARK, ThemeChoice.byName("DARK"))
+    fun `skip after finish changes nothing`() {
+        val done = WelcomeState(step = WelcomeStep.POWER, finished = true)
+        assertEquals(done, WelcomeFlow.skip(done))
     }
 
     @Test
-    fun `auto follows the system, the rest do not`() {
-        assertTrue(ThemeChoice.AUTO.isDark(systemPrefersDark = true))
-        assertFalse(ThemeChoice.AUTO.isDark(systemPrefersDark = false))
-        assertTrue(ThemeChoice.DARK.isDark(systemPrefersDark = false))
-        assertFalse(ThemeChoice.LIGHT.isDark(systemPrefersDark = true))
+    fun `back from after a skip returns to the skipped step`() {
+        val skipped = WelcomeFlow.skip(WelcomeState(step = WelcomeStep.POWER))
+        assertEquals(WelcomeStep.POWER, WelcomeFlow.back(skipped).step)
+        assertTrue(WelcomeFlow.isSkipped(WelcomeFlow.back(skipped), WelcomeStep.POWER))
     }
 
     @Test
-    fun `account route needs exactly the gms core package`() {
+    fun `only three steps write to the system, and they cover all targets`() {
         assertEquals(
-            AccountRoute.SETTINGS,
-            accountRoute(listOf("os.tessera.welcome", "com.google.android.gms"), "com.google.android.gms"),
+            setOf(WelcomeStep.ACCESSIBILITY, WelcomeStep.APPEARANCE, WelcomeStep.FINISH),
+            WelcomeFlow.writingSteps,
+        )
+        val covered = WelcomeFlow.steps.flatMap { it.writes }.toSet()
+        assertEquals(WriteTarget.entries.toSet(), covered)
+    }
+
+    @Test
+    fun `the steps we cannot write stay honest about it`() {
+        val storingOnly = setOf(
+            WelcomeStep.GREETING,
+            WelcomeStep.LANGUAGE,
+            WelcomeStep.NAVIGATION,
+            WelcomeStep.POWER,
+            WelcomeStep.NETWORK,
+            WelcomeStep.ACCOUNT,
+            WelcomeStep.EDGE_DEMO,
+        )
+        storingOnly.forEach { step -> assertTrue(step.writes.isEmpty()) }
+        assertEquals(3, WriteTarget.entries.size)
+    }
+
+    @Test
+    fun `write state stays untouched until we actually try`() {
+        val state = WelcomeState(step = WelcomeStep.APPEARANCE)
+        WriteTarget.entries.forEach { target ->
+            assertEquals(WriteState.NOT_ATTEMPTED, WelcomeFlow.writeState(state, target))
+        }
+    }
+
+    @Test
+    fun `record distinguishes success from a permission failure`() {
+        val applied = WelcomeFlow.record(WelcomeState(), WriteTarget.NIGHT_MODE, succeeded = true)
+        assertEquals(WriteState.APPLIED, WelcomeFlow.writeState(applied, WriteTarget.NIGHT_MODE))
+
+        val blocked = WelcomeFlow.record(WelcomeState(), WriteTarget.NIGHT_MODE, succeeded = false)
+        assertEquals(WriteState.BLOCKED, WelcomeFlow.writeState(blocked, WriteTarget.NIGHT_MODE))
+    }
+
+    @Test
+    fun `recording one target leaves the others untouched`() {
+        val state = WelcomeFlow.record(
+            WelcomeFlow.record(WelcomeState(), WriteTarget.NIGHT_MODE, succeeded = true),
+            WriteTarget.FONT_SCALE,
+            succeeded = false,
+        )
+        assertEquals(WriteState.APPLIED, WelcomeFlow.writeState(state, WriteTarget.NIGHT_MODE))
+        assertEquals(WriteState.BLOCKED, WelcomeFlow.writeState(state, WriteTarget.FONT_SCALE))
+        assertEquals(WriteState.NOT_ATTEMPTED, WelcomeFlow.writeState(state, WriteTarget.PROVISION))
+    }
+
+    @Test
+    fun `choices keep the current step and never move the screen`() {
+        val atAppearance = WelcomeState(step = WelcomeStep.APPEARANCE)
+        assertEquals(
+            WelcomeStep.APPEARANCE,
+            WelcomeFlow.chooseTheme(atAppearance, ThemeChoice.DARK).step,
         )
         assertEquals(
-            AccountRoute.UNAVAILABLE,
-            accountRoute(listOf("os.tessera.welcome"), "com.google.android.gms"),
+            ThemeChoice.DARK,
+            WelcomeFlow.chooseTheme(atAppearance, ThemeChoice.DARK).theme,
         )
-        assertEquals(AccountRoute.UNAVAILABLE, accountRoute(emptyList(), "com.google.android.gms"))
+        assertEquals(
+            AccentColor.AMBER,
+            WelcomeFlow.chooseAccent(atAppearance, AccentColor.AMBER).accent,
+        )
+
+        val atLanguage = WelcomeState(step = WelcomeStep.LANGUAGE)
+        val chosen = WelcomeFlow.chooseRegion(
+            WelcomeFlow.chooseLanguage(atLanguage, LanguageChoice.POLISH),
+            RegionChoice.NONE,
+        )
+        assertEquals(LanguageChoice.POLISH, chosen.language)
+        assertEquals(RegionChoice.NONE, chosen.region)
+        assertEquals(WelcomeStep.LANGUAGE, chosen.step)
+
+        val atAccess = WelcomeState(step = WelcomeStep.ACCESSIBILITY)
+        val scaled = WelcomeFlow.chooseHighContrast(
+            WelcomeFlow.chooseFontScale(atAccess, FontScaleChoice.LARGEST),
+            enabled = true,
+        )
+        assertEquals(FontScaleChoice.LARGEST, scaled.fontScale)
+        assertTrue(scaled.highContrast)
+        assertEquals(WelcomeStep.ACCESSIBILITY, scaled.step)
+
+        val atPower = WelcomeState(step = WelcomeStep.POWER)
+        assertEquals(
+            MacPolicyChoice.STABLE,
+            WelcomeFlow.chooseMacPolicy(
+                WelcomeFlow.choosePower(atPower, PowerProfileChoice.ECONOMY),
+                MacPolicyChoice.STABLE,
+            ).macPolicy,
+        )
+        assertEquals(
+            NavigationChoice.BUTTONS,
+            WelcomeFlow.chooseNavigation(atPower, NavigationChoice.BUTTONS).navigation,
+        )
+    }
+
+    @Test
+    fun `dots have exactly one active index per step`() {
+        assertEquals(10, WelcomeFlow.dotCount())
+        WelcomeFlow.steps.forEach { step ->
+            val state = WelcomeState(step = step)
+            assertEquals(step.ordinal, WelcomeFlow.dotIndex(state))
+        }
+        assertEquals(0, WelcomeFlow.dotIndex(WelcomeFlow.start()))
+    }
+
+    @Test
+    fun `skipped steps accumulate instead of overwriting each other`() {
+        var state = WelcomeFlow.skip(WelcomeState(step = WelcomeStep.POWER))
+        state = WelcomeFlow.skip(state)
+        state = WelcomeFlow.skip(state)
+        assertEquals(
+            setOf(WelcomeStep.POWER, WelcomeStep.NETWORK, WelcomeStep.ACCOUNT),
+            state.skipped,
+        )
+        assertNotEquals(emptySet<WelcomeStep>(), state.skipped)
     }
 
     @Test

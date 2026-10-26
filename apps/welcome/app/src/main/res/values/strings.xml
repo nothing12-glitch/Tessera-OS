@@ -3,35 +3,154 @@
     <string name="app_name">Ласкаво просимо</string>
 
     <string name="welcome_brand">TesseraOS</string>
-    <string name="welcome_greeting_title">Вітаємо у Tessera OS!</string>
-    <string name="welcome_greeting_body">Це LineageOS 22.2 з нашою темою Material Design 3. Дім, телефон, повідомлення й решту програм дає система — ми міняємо лише те, як усе це виглядає.</string>
-    <string name="welcome_greeting_version">Збірка образу — %1$s</string>
+    <string name="welcome_brand_desc">Знак TesseraOS</string>
 
-    <string name="welcome_theme_title">Обери тему</string>
-    <string name="welcome_theme_body">Темна чи світла — бажання на весь телефон, а не на одне вікно. «Авто» йде за розкладом.</string>
-    <string name="welcome_theme_auto">Авто</string>
-    <string name="welcome_theme_light">Світла</string>
-    <string name="welcome_theme_dark">Темна</string>
-    <string name="welcome_theme_applied">Застосовано до всієї системи — це той самий перемикач, що й у Налаштуваннях → Дисплей.</string>
-    <string name="welcome_theme_not_applied">Систему не переключено: дозвіл WRITE_SECURE_SETTINGS не видано. Цей екран усе одно пройде, але тему доведеться поставити вручну.</string>
-    <string name="welcome_theme_failed">Не можу переключити тему для всієї системи — зроби це в Налаштуваннях → Дисплей.</string>
+    <!-- Шапка: крапки прогресу замість «Крок N із M». -->
+    <string name="welcome_dots_desc">Прогрес майстра: крок %1$d із %2$d</string>
 
-    <string name="welcome_account_title">Обліковий запис Google</string>
-    <string name="welcome_account_body">Сервіси Google в цьому образі не вбудовані за замовчуванням: образ відкритий і не містить власницьких бібліотек. Якщо на пристрої є постачальник GmsCore-API (наприклад microG, встановлений окремо), додай акаунт просто зараз — або пізніше в Налаштуваннях.</string>
-    <string name="welcome_account_none">На цьому пристрої немає жодного постачальника GmsCore-API, тож і додавати акаунт нікуди. Крок можна пропустити.</string>
-    <string name="welcome_account_open">Додати акаунт</string>
-    <string name="welcome_account_skip">Пропустити</string>
-    <string name="welcome_account_failed">Екран додавання акаунта не відкривається — зроби це пізніше в Налаштуваннях.</string>
-
-    <string name="welcome_finish_title">Готово</string>
-    <string name="welcome_finish_body">Тема — %1$s. Домашній екран, телефон, повідомлення й решту програм дає система. Дальше телефон працює сам.</string>
-    <string name="welcome_done_button">Почати</string>
-    <string name="welcome_provision_failed">Не вдалося позначити налаштування завершеним: дозвіл WRITE_SECURE_SETTINGS не видано. Телефон лишиться на цьому екрані й після наступного запуску.</string>
+    <!-- Рядок знизу екрана: збірка образу на кожному кроці. -->
+    <string name="welcome_build">Збірка образу — %1$s</string>
 
     <string name="welcome_next">Далі</string>
+    <string name="welcome_next_desc">Перейти до наступного кроку</string>
     <string name="welcome_back">Назад</string>
-    <string name="welcome_step">Крок %1$d із %2$d</string>
-    <string name="welcome_progress">Прогрес першого запуску</string>
+    <string name="welcome_back_desc">Повернутися до попереднього кроку</string>
+    <string name="welcome_skip">Пропустити</string>
+    <string name="welcome_skip_desc">Пропустити цей крок і йти далі</string>
+    <string name="welcome_enter_desc">Завершити перший запуск і відкрити домашній екран</string>
 
-    <string name="welcome_brand_desc">Знак TesseraOS</string>
+    <!-- 1. Вітання: анімація появи знака, а не статичний текст. -->
+    <string name="welcome_greeting_title">Вітаємо у TesseraOS!</string>
+    <string name="welcome_greeting_body">Це LineageOS 22.2 з нашою темою Material Design 3. Домашній екран, телефон, повідомлення й решту програм дає система — ми міняємо лише те, як усе це виглядає.</string>
+    <string name="welcome_greeting_hint">Перший запуск — десять коротких кроків. На кожному можна повернутися назад.</string>
+    <string name="welcome_greeting_mark_desc">Знак TesseraOS</string>
+
+    <!-- 2. Мова й регіон. -->
+    <string name="welcome_language_title">Мова й регіон</string>
+    <string name="welcome_language_body">Оберіть мову інтерфейсу. Системну мову цей майстер перемкнути не може: для того потрібен дозвіл CHANGE_CONFIGURATION, якого в модуля немає. Ваш вибір зберігаємо, а змінює його системний екран мови.</string>
+    <string name="welcome_language_label">Мова</string>
+    <string name="welcome_language_chip_desc">Мова інтерфейсу: %1$s</string>
+    <string name="welcome_region_label">Регіон</string>
+    <string name="welcome_region_chip_desc">Регіон: %1$s</string>
+    <string name="welcome_language_open">Відкрити екран мови</string>
+    <string name="welcome_language_open_desc">Відкрити системний екран вибору мови</string>
+    <string name="welcome_language_saved">Модуль тримає цей вибір: %1$s. Системну мову змінює екран мови.</string>
+    <string name="welcome_lang_uk">Українська</string>
+    <string name="welcome_lang_en">Англійська</string>
+    <string name="welcome_lang_pl">Польська</string>
+    <string name="welcome_lang_de">Німецька</string>
+    <string name="welcome_lang_fr">Французька</string>
+    <string name="welcome_lang_es">Іспанська</string>
+    <string name="welcome_region_none">Без регіону</string>
+    <string name="welcome_region_ua">Україна</string>
+    <string name="welcome_region_us">Сполучені Штати</string>
+    <string name="welcome_region_gb">Велика Британія</string>
+    <string name="welcome_region_pl">Польща</string>
+    <string name="welcome_region_de">Німеччина</string>
+    <string name="welcome_region_fr">Франція</string>
+    <string name="welcome_region_es">Іспанія</string>
+
+    <!-- 3. Доступність. -->
+    <string name="welcome_access_title">Доступність</string>
+    <string name="welcome_access_body">Масштаб шрифта цей модуль справді записує в систему — він діє на весь телефон. Високий контраст і TalkBack вмикає екран спеціальних можливостей: туди наш дозвіл не сягає.</string>
+    <string name="welcome_font_label">Розмір шрифта</string>
+    <string name="welcome_font_normal">Звичайний</string>
+    <string name="welcome_font_large">Великий</string>
+    <string name="welcome_font_largest">Дуже великий</string>
+    <string name="welcome_font_chip_desc">Масштаб шрифта: %1$s</string>
+    <string name="welcome_font_applied">Масштаб записано в систему — він діє на весь телефон, а не на це вікно.</string>
+    <string name="welcome_font_pending">Масштаб ще не записували: торкніться варіанта, і ми спробуємо.</string>
+    <string name="welcome_contrast">Високий контраст тексту</string>
+    <string name="welcome_contrast_desc">Перемикач високого контрасту тексту</string>
+    <string name="welcome_contrast_body">Робить текст на весь телефон різкішим. Цей перемикач лишається в налаштуваннях модуля: вмикає його система.</string>
+    <string name="welcome_access_open">Екран спеціальних можливостей</string>
+    <string name="welcome_access_open_desc">Відкрити системний екран спеціальних можливостей</string>
+    <string name="welcome_talkback_hint">TalkBack озвучує те, що на екрані. Його теж вмикають у спеціальних можливостях.</string>
+
+    <!-- 4. Вигляд: тема вручну + вільний акцент. -->
+    <string name="welcome_appearance_title">Вигляд</string>
+    <string name="welcome_appearance_body">Тема — вручну, на весь телефон. Автоперемикання за розкладом у Tessera немає: світанок і зорю ми не вгадуємо.</string>
+    <string name="welcome_theme_label">Тема</string>
+    <string name="welcome_theme_light">Світла</string>
+    <string name="welcome_theme_dark">Темна</string>
+    <string name="welcome_theme_chip_desc">Тема: %1$s</string>
+    <string name="welcome_theme_applied">Застосовано до всієї системи — це той самий перемикач, що й у Налаштуваннях → Дисплей.</string>
+    <string name="welcome_theme_not_applied">Систему не переключено: дозвіл WRITE_SECURE_SETTINGS не видано. Цей екран усе одно пройде, але тему доведеться поставити вручну.</string>
+    <string name="welcome_theme_pending">Тему ще не записували: торкніться варіанта, і ми спробуємо.</string>
+    <string name="welcome_accent_label">Акцентний колір</string>
+    <string name="welcome_accent_body">Обраний акцент одразу перемальовує цей екран. На весь телефон його дає лише Monet-оверлей в образі, а це не рядок `WRITE_SECURE_SETTINGS`, тому вибір лишається в налаштуваннях модуля.</string>
+    <string name="welcome_accent_dynamic">Як шпалера (Monet)</string>
+    <string name="welcome_accent_indigo">Індиго</string>
+    <string name="welcome_accent_sky">Небо</string>
+    <string name="welcome_accent_verdigris">Патина</string>
+    <string name="welcome_accent_amber">Бурштин</string>
+    <string name="welcome_accent_ember">Жарини</string>
+    <string name="welcome_accent_night">Ніч</string>
+    <string name="welcome_accent_chip_desc">Акцентний колір: %1$s</string>
+
+    <!-- 5. Навігація. -->
+    <string name="welcome_nav_title">Навігація</string>
+    <string name="welcome_nav_body">Жести чи три кнопки. Навігацію перемикають налаштування бази (оверлей конфігурації навігації), а не рядок, який покриває наш дозвіл, тому тут ми лише зберігаємо вибір і кажемо, де його застосувати.</string>
+    <string name="welcome_nav_gestures">Жести</string>
+    <string name="welcome_nav_buttons">Три кнопки</string>
+    <string name="welcome_nav_chip_desc">Спосіб навігації: %1$s</string>
+    <string name="welcome_nav_saved">Модуль тримає цей вибір: %1$s. Застосовує Налаштування → Система → Навігація.</string>
+
+    <!-- 6. Профіль живлення. -->
+    <string name="welcome_power_title">Профіль живлення</string>
+    <string name="welcome_power_body">Економний, збалансований чи продуктивний. `PowerManager` вимагає дозволів рівня системи, яких у цього модуля немає, — тож імітувати успіх ми не будемо.</string>
+    <string name="welcome_power_economy">Економний</string>
+    <string name="welcome_power_balanced">Збалансований</string>
+    <string name="welcome_power_performance">Продуктивний</string>
+    <string name="welcome_power_chip_desc">Профіль живлення: %1$s</string>
+    <string name="welcome_power_saved">Модуль тримає цей вибір: %1$s. Такий самий профіль оберіть у Налаштуваннях → Батарея.</string>
+    <string name="welcome_power_open">Налаштування батареї</string>
+    <string name="welcome_power_open_desc">Відкрити системні налаштування</string>
+
+    <!-- 7. Приватність мережі. -->
+    <string name="welcome_network_title">Приватність мережі</string>
+    <string name="welcome_network_body">Випадкова чи стабільна MAC-адреса — це рішення кожної Wi-Fi мережі окремо. Дає його `WifiManager` із дозволами, яких у модуля немає, тому нижче лише ваш вибір і екран мережі.</string>
+    <string name="welcome_mac_random">Випадкова адреса</string>
+    <string name="welcome_mac_stable">Стабільна адреса</string>
+    <string name="welcome_mac_chip_desc">Політика MAC-адреси: %1$s</string>
+    <string name="welcome_mac_random_body">Мережа не впізнає гостя за адресою, та деякі маршрутизатори через це відмовляють.</string>
+    <string name="welcome_mac_stable_body">Мережа бачить той самий пристрій — зручно зі списком дозволених адрес і простіше налаштувати доступ.</string>
+    <string name="welcome_network_saved">Модуль тримає цей вибір: %1$s.</string>
+    <string name="welcome_network_open">Екран Wi-Fi</string>
+    <string name="welcome_network_open_desc">Відкрити системний екран мережі</string>
+
+    <!-- 8. Акаунт. -->
+    <string name="welcome_account_title">Обліковий запис</string>
+    <string name="welcome_account_body">Сервіси Google в цьому образі не вбудовані за замовчуванням: образ відкритий і не містить власницьких бібліотек. Якщо на пристрої є постачальник GmsCore-API (наприклад microG, встановлений окремо), додайте акаунт просто зараз — або пізніше в Налаштуваннях.</string>
+    <string name="welcome_account_none">На цьому пристрої немає жодного постачальника GmsCore-API, тож і додавати акаунт нікуди. Крок можна пропустити.</string>
+    <string name="welcome_account_open">Додати акаунт</string>
+    <string name="welcome_account_open_desc">Відкрити системний екран додавання акаунта</string>
+    <string name="welcome_account_failed">Екран додавання акаунта не відкривається — зробіть це пізніше в Налаштуваннях.</string>
+    <string name="welcome_account_skipped">Акаунт пропущено — додати його можна пізніше в Налаштуваннях.</string>
+
+    <!-- 9. Демо світлового краю: анімована вставка, нічого не пише. -->
+    <string name="welcome_edge_title">Світловий край — демо</string>
+    <string name="welcome_edge_body">Так край показує сповіщення: смуга світла біжить по периметру. Це приклад руху, а не налаштування — сам край живе в застосунку «Halo», його вибори лежать у власному файлі того застосунку й звідси недоступні.</string>
+    <string name="welcome_edge_desc">Анімація: смуга світла біжить по краю телефона</string>
+
+    <!-- 10. Готово: тур і три картки-підказки. -->
+    <string name="welcome_finish_title">Готово</string>
+    <string name="welcome_finish_body">Тема — %1$s. Домашній екран, телефон, повідомлення й решту програм дає система. Дальше телефон працює сам.</string>
+    <string name="welcome_tour_title">Короткий тур</string>
+    <string name="welcome_tip_halo_title">Край світить на сповіщення</string>
+    <string name="welcome_tip_halo_body">Увімкніть його в застосунку «Halo» — світло по краю замість чужих індикаторів.</string>
+    <string name="welcome_tip_wallpaper_title">Колір рахується від шпалери</string>
+    <string name="welcome_tip_wallpaper_body">Змініть шпалеру — Monet перерахує тони всієї системи. Акцент із кроку «Вигляд» лишається в налаштуваннях модуля.</string>
+    <string name="welcome_tip_settings_title">Донаштувати пізніше</string>
+    <string name="welcome_tip_settings_body">Мову, доступність, мережу й акаунт відкриває застосунок «Налаштування».</string>
+    <string name="welcome_done_button">Увійти в Tessera</string>
+    <string name="welcome_provision_applied">Пристрій позначено налаштованим: система випускає домашній екран, і майстер більше не повернеться.</string>
+    <string name="welcome_provision_failed">Не вдалося позначити налаштування завершеним: дозвіл WRITE_SECURE_SETTINGS не видано. Телефон лишиться на цьому екрані й після наступного запуску.</string>
+    <string name="welcome_provision_pending">Прапорці ще не записували: натисніть «Увійти в Tessera».</string>
+
+    <!-- Стан запису, спільний для всіх кроків із записом у систему. -->
+    <string name="welcome_write_blocked">Запис не вдався: дозвіл WRITE_SECURE_SETTINGS не видано.</string>
+    <string name="welcome_state_selected">вибрано</string>
+    <string name="welcome_state_unselected">не вибрано</string>
+    <string name="welcome_screen_failed">Системний екран не відкривається — зробіть це пізніше в «Налаштуваннях».</string>
 </resources>

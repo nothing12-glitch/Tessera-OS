@@ -6,9 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import os.tessera.welcome.ui.TesseraWelcomeTheme
+import os.tessera.welcome.ui.WelcomeActions
 import os.tessera.welcome.ui.WelcomeScreen
 
 /**
@@ -23,8 +25,8 @@ class WelcomeActivity : ComponentActivity() {
     private val viewModel: WelcomeViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         if (viewModel.skipWhenAlreadyPassed()) {
             finish()
@@ -33,15 +35,26 @@ class WelcomeActivity : ComponentActivity() {
 
         setContent {
             val state by viewModel.state.collectAsStateWithLifecycle()
-            TesseraWelcomeTheme(choice = state.flow.theme) {
-                WelcomeScreen(
-                    state = state,
-                    onTheme = viewModel::onTheme,
+            val actions = remember(viewModel) {
+                WelcomeActions(
                     onNext = viewModel::onNext,
                     onBack = viewModel::onBack,
-                    onSkipAccount = viewModel::onSkipAccount,
+                    onSkip = viewModel::onSkip,
+                    onTheme = viewModel::onTheme,
+                    onAccent = viewModel::onAccent,
+                    onLanguage = viewModel::onLanguage,
+                    onRegion = viewModel::onRegion,
+                    onFontScale = viewModel::onFontScale,
+                    onHighContrast = viewModel::onHighContrast,
+                    onNavigation = viewModel::onNavigation,
+                    onPower = viewModel::onPower,
+                    onMacPolicy = viewModel::onMacPolicy,
                     onOpenAccount = viewModel::onOpenAccount,
+                    onOpenScreen = viewModel::onOpenScreen,
                 )
+            }
+            TesseraWelcomeTheme(choice = state.flow.theme, accent = state.flow.accent) {
+                WelcomeScreen(state = state, actions = actions)
                 LaunchedEffect(state.finished) {
                     if (state.finished) finish()
                 }
