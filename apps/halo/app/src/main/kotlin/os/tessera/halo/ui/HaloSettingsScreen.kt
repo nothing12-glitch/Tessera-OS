@@ -104,11 +104,7 @@ fun HaloSettingsScreen(
                 onChange = onEnabled,
             )
 
-            Text(
-                stringResource(R.string.halo_pattern_title),
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(top = 4.dp),
-            )
+            SectionTitle(stringResource(R.string.halo_pattern_title))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 PatternChip(GlowPattern.WAVE, stringResource(R.string.halo_pattern_wave), state.config, onPattern)
                 PatternChip(GlowPattern.PULSE, stringResource(R.string.halo_pattern_pulse), state.config, onPattern)
@@ -352,8 +348,11 @@ private fun GlowPreview(pattern: GlowPattern, color: Color, strength: Float) {
             .padding(4.dp),
     ) {
         Canvas(modifier = Modifier.fillMaxWidth().height(170.dp)) {
-            val band = size.minDimension * 0.14f
-            val inset = band * 0.35f
+            val band = size.minDimension * 0.10f
+            // Штрих малюється по центрі контуру, тож половини смуги лишається
+            // назовні. Без цього запасу зовнішній прошарок обрізався б краєм
+            // полотна — на превʼю було видно лише дуги по боках.
+            val inset = band * 0.6f
             val frameWidth = size.width - 2 * inset
             val frameHeight = size.height - 2 * inset
             val radius = CornerRadius(band * 1.7f, band * 1.7f)
