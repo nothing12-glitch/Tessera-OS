@@ -124,6 +124,9 @@ MD3 (три RRO-оверлеї) поверх наявного образу Andro
 їхні вимоги й чесні обмеження (чому це ще не ISO для VirtualBox) — в
 [docs/VM-INSTALL.md](docs/VM-INSTALL.md).
 
+Скільки заліза насправді потрібно — і чому «старий телефон» із опитування не
+виходить — виміряно та записано в [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
+
 ## Google Play (GApps)
 
 TesseraOS **не** постачається з пропрієтарними застосунками Google і не
