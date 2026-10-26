@@ -13,6 +13,18 @@
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
 
     <!--
+      Другий привілей — саме для теми, і він з'явився тут не «на всяк випадок».
+      Живий прогін 2026-10-26 на userdebug-образі: `UiModeManager.setNightMode()`
+      доходив до system_server і отримував мовчки відкинутий запит —
+      `E/UiModeManager: Night mode locked, requires MODIFY_DAY_NIGHT_MODE
+      permission`, а `dumpsys uimode` лишався на `mNightMode=1 (no)`. Сирий
+      запис `ui_night_mode` у Secure те не ламає: значення там було, а телефон —
+      ні. Дозвіл `signature|privileged`, тому маніфест і дозвільний список мають
+      називати його однаково — інакше на `enforce`-образі система не підніметься.
+    -->
+    <uses-permission android:name="android.permission.MODIFY_DAY_NIGHT_MODE" />
+
+    <!--
       Звичайний дозвіл, а не привілей: потрібен лише на два поштовхи в кінці
       майстра. Звук дає ToneGenerator без дозволів.
     -->

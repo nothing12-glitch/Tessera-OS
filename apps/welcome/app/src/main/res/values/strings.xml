@@ -75,7 +75,7 @@
     <string name="welcome_theme_dark">Темна</string>
     <string name="welcome_theme_chip_desc">Тема: %1$s</string>
     <string name="welcome_theme_applied">Застосовано до всієї системи — це той самий перемикач, що й у Налаштуваннях → Дисплей.</string>
-    <string name="welcome_theme_not_applied">Систему не переключено: дозвіл WRITE_SECURE_SETTINGS не видано. Цей екран усе одно пройде, але тему доведеться поставити вручну.</string>
+    <string name="welcome_theme_not_applied">Систему не переключено: сервіс режиму тем не прийняв — для нього потрібен дозвіл MODIFY_DAY_NIGHT_MODE. Цей екран усе одно пройде, але тему доведеться поставити вручну.</string>
     <string name="welcome_theme_pending">Цього запуску тему ще не записували: торкніться варіанта, і ми спробуємо.</string>
     <string name="welcome_accent_label">Акцентний колір</string>
     <string name="welcome_accent_body">Обраний акцент одразу перемальовує цей екран. На весь телефон його дає лише Monet-оверлей в образі, а це не рядок WRITE_SECURE_SETTINGS, тому вибір лишається в налаштуваннях модуля.</string>

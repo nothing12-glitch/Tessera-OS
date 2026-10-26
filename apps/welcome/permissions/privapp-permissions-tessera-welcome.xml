@@ -9,9 +9,15 @@
 
   Один запис — один дозвіл, і той самий, що й у маніфесті. Ніяких
   `default-enabled`-списків «на всяк випадок».
+
+  Другий запис — не запас: `MODIFY_DAY_NIGHT_MODE` дорівнює рівно те, без чого
+  крок з темою не має права казати «застосовано». Без нього system_server відкидає
+  `UiModeManager.setNightMode()` (виміряно 2026-10-26), а стан у Secure при цьому
+  змінюється — тож перевіряти дозвіл лише рядом у базі було б самообманом.
 -->
 <permissions>
     <privapp-permissions package="os.tessera.welcome">
         <permission name="android.permission.WRITE_SECURE_SETTINGS" />
+        <permission name="android.permission.MODIFY_DAY_NIGHT_MODE" />
     </privapp-permissions>
 </permissions>

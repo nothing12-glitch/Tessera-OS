@@ -92,8 +92,8 @@ class WelcomeViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
-     * Тема. Пишемо `Settings.Secure.ui_night_mode` — те саме значення, яке
-     * змінює перемикач у Налаштуваннях, тож ефект бачить увесь пристрій.
+     * Тема. Керує нею `UiModeManager`: він і застосовує режим наживо, і пише той
+     * самий рядок `ui_night_mode`, що й перемикач у Налаштуваннях.
      */
     fun onTheme(choice: ThemeChoice) {
         choose { WelcomeFlow.chooseTheme(it, choice) }
@@ -101,7 +101,17 @@ class WelcomeViewModel(application: Application) : AndroidViewModel(application)
             light = UiModeManager.MODE_NIGHT_NO,
             dark = UiModeManager.MODE_NIGHT_YES,
         )
-        record(WriteTarget.NIGHT_MODE, attempt { flags.setNightMode(mode) })
+        record(WriteTarget.NIGHT_MODE, attempt {
+            flags.setNightMode(mode)
+            // Значення в базі ще не означає темного телефону. Живий прогін
+            // 26.10.2026 виміряв, що сирий запис у Secure лишає сервіс на
+            // старому режимі до перезавантаження — тому стан «застосовано»
+            // вирішує застосований режим, а не відсутність винятку.
+            val applied = flags.appliedNightMode()
+            check(applied == mode) {
+                "Сервіс лишився на режимі $applied, хоч запитано $mode"
+            }
+        })
     }
 
     /**
