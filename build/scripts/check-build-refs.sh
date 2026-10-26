@@ -173,7 +173,8 @@ upstream_has "device/generic/goldfish/board/emu64x/BoardConfig.mk" >/dev/null &&
 #    що й мертві посилання на файли бази, але всередині нашого дерева: у docs/EMULATOR.md
 #    роки стояло «tools/emulator-smoke.sh перевіряє», хоча ані tools/, ані самого
 #    скрипту в репо ніколи не було. Читач іде за посиланням і знаходить порожнечу.
-OUR_DOCS=$(find "$ROOT/docs" -name '*.md'; ls "$ROOT/README.md" "$ROOT/site/index.html" 2>/dev/null)
+OUR_DOCS=$(find "$ROOT/docs" -name '*.md'; ls "$ROOT/README.md" "$ROOT/CONTRIBUTING.md" \
+  "$ROOT/SECURITY.md" "$ROOT/site/index.html" 2>/dev/null)
 # Беремо цілий шляхоподібний токен, а потім відсіюємо за першою ланкою.
 # Короткий префікс у самому взірці ловив би «config/common.mk» із
 # «vendor/lineage/config/common.mk» — це файл бази, а не наш мертвий шлях.

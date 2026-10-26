@@ -86,7 +86,7 @@ TesseraOS на цьому етапі його не обирає, бо корис
 - `main` — тільки те, що проходить CI; релізні теги `v15.<lineage>.<tessera>`.
 - Версія product-властивості `ro.tessera.version` збігається з тегом.
 - Зміни до `overlay/**` вимагають скріншота до/після в PR (див.
-  [CONTRIBUTING.md](CONTRIBUTING.md)).
+  [CONTRIBUTING.md](../CONTRIBUTING.md)).
 
 ## Roadmap
 
