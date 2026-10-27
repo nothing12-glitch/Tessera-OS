@@ -79,7 +79,19 @@
 - Оголошення фичі в базі немає: перелік `API/android_frameworks_native/git/trees/lineage-22.2?recursive=1` для `data/etc/` містить `android.software.live_tv.xml`, а `android.software.live_wallpaper.xml` — HTTP 404, тобто з коробки `hasSystemFeature` = false і категорії не буде.
 - Рушіїв живих шпалер у 22.2 немає: `LineageOS/android_packages_wallpapers_LivePicker` має гілку `lineage-22.2` (200 на `AndroidManifest.xml`, пакет `com.android.wallpaper.livepicker`), а `_Basic`, `_MagicSmoke`, `_PhotoPhase`, `_MusicVisualization`, `apps_CMWallpapers` на тій гілці — 404.
 
-**Вердикт.** ⚠️ механізм живий, але потребує від нас двох речей: додати в образ оголошення фичі (`android.software.live_wallpaper.xml` у `system/etc/permissions`) і застосунок-рушій (LivePicker — лише picker). Чи входить LivePicker у PRODUCT_PACKAGES нашого пристрою — `❓`.
+**Що дерево 27.10 додало до цього.**
+- Те саме підтверджується на диску, а не лише через GitHub: `~/tessera/packages/wallpapers/` містить **рівно одну** теку — `LivePicker`. Жодного рушія там немає, тож «404» перекладається як «фізично відсутні в образі».
+- Назва модуля — **не** `LivePicker`, а `LiveWallpapersPicker` (`packages/wallpapers/LivePicker/Android.bp:41`), і він `privileged: true` + `platform_apis: true`. Рядок `required: ["android.software.live_wallpaper.xml"]` (`Android.bp:43`) тягне за собою `prebuilt_etc` з `sub_dir: "permissions"` (`:34-37`). Тобто один рядок `PRODUCT_PACKAGES += LiveWallpapersPicker` дає одразу і picker, і `system/etc/permissions/android.software.live_wallpaper.xml` — окремого `PRODUCT_COPY_FILES` для фичі не потрібне.
+- Пошук по всьому дереві: `android.software.live_wallpaper.xml` існує рівно в одному місці — у теці LivePicker. У `frameworks/native/data/etc/` його справді немає, як і стверджував рядок вище.
+
+**Вердикт.** ⚠️ механізм живий, але потребує від нас одного рядка в образ:
+`PRODUCT_PACKAGES += LiveWallpapersPicker` — саме так, назвою модуля; написати
+`LivePicker` (назву теки) означало б падіння Soong на «module not found».
+Оголошення фичі приїжджає разом з ним через `required:`. Рушія це не дає:
+єдиний живий рушій — сторонній застосунок з `android.service.wallpaper.WallpaperService`.
+Чи входить `LiveWallpapersPicker` у PRODUCT_PACKAGES нашої бази — досі `❓`, але
+причина тепер інша і точна: вирішальний файл живе у `vendor/lineage/config/*.mk`,
+а `vendor/lineage` у нашому дереві ще не зсинхронізовано.
 
 **Що це змінює в планах.** «Живі шпалери» не скасовуємо, але подаємо як конфігурацію збірки + сторонній застосунок, а не «працює з коробки».
 
@@ -243,15 +255,63 @@ boot-прогонами на `TesseraUD`.
   телефонного образу жоден з них не доїжджає. Нашому оверлею перекривати рівно
   ці три ключі.
 
+## 8. Годинник на лок-скріні: механізм є, вбудованого вибору — немає (з дерева 27.10)
+
+**Питання.** Дорожня карта хоче «годинник по центру» і вибір стилю годинника.
+Чи дає база цей вибір як налаштування, чи це окремий застосунок?
+
+**Що знайдено** (у зсинхронізованому `~/tessera`, з рядками самого дерева):
+- У базі механізм увімкнено за замовчуванням:
+  `$FB/packages/SystemUI/res-keyguard/values/config.xml:32` —
+  `<bool name="config_enableLockScreenCustomClocks">true</bool>`, і саме цей
+  ресурс живить флаг `lockscreen_custom_clocks`
+  (`$FB/packages/SystemUI/src/com/android/systemui/flags/Flags.kt:77`).
+- API плагіна ціле: `$FB/packages/SystemUI/plugin/src/com/android/systemui/plugins/clocks/`
+  — 15 файлів, серед них `ClockProviderPlugin.kt`, `ClockPickerConfig.kt`,
+  `ClockController.kt`, `ClockFaceLayout.kt`. Теки `plugins/clocks` у `src/`
+  нема (там лише старий `statusbar/phone/ClockController.java` для годинника
+  у статус-барі), чому §4 і не міг відкрити `plugins.clocks.ClockController`.
+- Хто читає вибір користувача:
+  `$FB/packages/SystemUI/customization/src/com/android/systemui/shared/clocks/ClockRegistry.kt`
+  підписується на `Settings.Secure.LOCK_SCREEN_CUSTOM_CLOCK_FACE` (`:431`, `:440`;
+  сам ключ — `$FB/core/java/android/provider/Settings.java:8629`,
+  `"lock_screen_custom_clock_face"`), тримає `PluginLifecycleManager<ClockProviderPlugin>`
+  (`:633`) і віддає список через `getClocks()` (`:563`) / `getClockPickerConfig()` (`:568`).
+- **У самих Налаштуваннях вибору годинника немає**: `packages/apps/Settings` не
+  згадує `ClockRegistry` у жодному файлі (нуль влучань), а єдиний
+  «годинниковий» перемикач там — дворядковий режим:
+  `packages/apps/Settings/res/xml/security_lockscreen_settings.xml:88-91`
+  (ключ `lockscreen_double_line_clock_switch`, контролер
+  `com.android.settings.display.LockscreenClockPreferenceController`).
+- Сировина сама говорить, як обирають годинник поза жодним UI:
+  `$FB/packages/SystemUI/docs/clock-plugins.md:60` дає рядок
+  `adb shell settings put secure lock_screen_custom_clock_face '{"clockId":"ID"}'`.
+
+**Вердикт.** Вибір стилю годинника — це **не перемикач і не RRO**, а список
+плагінів: `getClocks()` наповнюється лише з `ClockProviderPlugin`, тому без
+окремого APK, який такий плагін оголошує, вибирати нічого — списки порожні, а
+рядок «вибрати годинник» у меню не з'явиться (для нього ще й `ClockPickerConfig`
+має бути в тому ж плагіні). Це третій власний модуль, а рамку продукту ми
+домовились тримати в двох модулях — тому тут не правка, а **рішення власника**.
+
+**Що це змінює в планах.** Пункт «годинник по центру» лишається тим, чим і
+був: стоковими `Settings.Secure`/параметрами екрана блокування (§UI.md, рядок
+про лок-скрін). «Вибір стилю годинника» перетворюється з «залишилося перевірити»
+на «окремий застосунок із плагін-API» — і перестає бути боргом документації.
+
 ## Що лишилося неперевіреним
 
 - Живий образ: чи `numHotseatIcons=5` у 4-стовпцевій сітці не ламає док і чи нашу підміну не перекриває static-RRO бази.
-- Чи з'являється обмеження `overlayable` після лінкування (`aapt2 dump resources SystemUI.apk` / `idmap2`), а не з сирцевини.
-- Чи є десь у SystemUI src UI вибору «custom clock» (конфіг прочитано, код `plugins.clocks.ClockController` не відкривав).
-- PRODUCT_PACKAGES нашого device-tree (чи ставиться LivePicker) і чи `vendor/lineage/overlay/common` не конфліктує з нашим `overlay-packages` у `build/tessera.mk`.
+- Чи з'являється обмеження `overlayable` після лінкування (`aapt2 dump resources SystemUI.apk` / `idmap2`), а не з сирцевини. Зі сторони сирцевини питання майже зняте: `find ~/tessera/frameworks/base -name 'overlayable*.xml'` дає 12 файлів, і **всі** вони — тестові дані (`core/tests/…`, `services/tests/…`, `libs/androidfw/tests/…`, `cmds/idmap2/tests/…`, `apct-tests/…`, `packages/CredentialManager/wear`); у `packages/SystemUI` такого файлу нуль. Тобто списку «ось це можна перекривати» в наших цілях просто немає — лишається єдине, що сирцевина не показує: чи не згенерував aapt2 обмеження вже в зібраному APK.
+- PRODUCT_PACKAGES нашого device-tree: §5 назвав точне ім'я модуля (`LiveWallpapersPicker`) і довів, що фіча приїжджає разом з ним, але **чи додає його база — досі невідомо**, бо вирішальні `*.mk` живуть у `vendor/lineage`, а його ще не зсинхронізовано. Те саме стосується конфлікту з `vendor/lineage/overlay/common` і нашим `overlay-packages` у `build/tessera.mk`: перевіряється одним `ls` після syncу.
 - Чи оверлей кривої люкс→яскравість взагалі застосовується на власному
   x86_64-образі — для цього потрібен зібраний образ, якого ще немає. Самі імена
   ключів від 27.10 підтверджені з дерева (§7), тож це єдине, що там лишалося.
+- Чи дає `check-overlay-names.sh` право казати «працює»: ні — він перевіряє лише
+  існування імені. Дерево 27.10 знайшло контрприклад усередині самої бази
+  (`opaque_scrim`, `dual_shade_scrim_alpha`: оголошені, але в `frameworks/base`
+  не читаються ніде). Тому кожен новий оверлей потребує живого знімка, і це
+  єдиний спосіб відрізнити «ім'я знайдене» від «ім'я працює».
 
 ## Як повторити перевірку
 
@@ -272,9 +332,34 @@ curl -s "https://api.github.com/repos/LineageOS/android_frameworks_base/git/tree
 curl -s "https://api.github.com/repos/LineageOS/android_packages_apps_LineageParts/git/trees/lineage-22.2?recursive=1" | grep -o '"path": "[^"]*"' | grep -iE 'theme|overlay|shape'
 ```
 
+Від 27.10 є дерево локально (`~/tessera`, 82 ГБ), і воно покриває все, де raw
+сліпий: пошук по вмісту багатьох файлів і застосунок, якого немає в `build/make`.
+Команди, які реально дають відповіді §5 і §8:
+
+```sh
+T=~/tessera; FB=$T/frameworks/base
+# §5: чи є рушії живих шпалер на диску (рівно одна тека — немає)
+ls $T/packages/wallpapers
+# §5: як фіча приїжджає в образ (назва модуля + required)
+grep -n 'name:\|required:\|sub_dir' $T/packages/wallpapers/LivePicker/Android.bp
+# §5: де взагалі лежить xml оголошення фичі
+find $T -name 'android.software.live_wallpaper.xml'
+# §8: флаг custom clock і його дефолт
+grep -rn 'config_enableLockScreenCustomClocks' $FB/packages/SystemUI | head
+# §8: хто читає вибір годинника і чи Налаштування мають до нього руки
+grep -rn 'LOCK_SCREEN_CUSTOM_CLOCK_FACE' $FB/packages/SystemUI/customization | head
+grep -rl 'ClockRegistry' $T/packages/apps/Settings      # порожньо = вибору немає
+# гарант: які взагалі overlayable-файли є в базі (усі 12 — тестові)
+find $FB -name 'overlayable*.xml' | sed "s|$T/||"
+```
+
+Пастка двох із цих команд: `grep -rln Provision $T/build/make/target/product`
+ловить `handheld_system.mk`, де насправді стоїть `ManagedProvisioning` — тобто
+треба `-w` (§6). І тека `packages/wallpapers/LivePicker` — це не назва модуля:
+Soong знає `LiveWallpapersPicker`, а `LivePicker` збірку б не пройшов (§5).
+
 Для §7 — зчитувальні команди на живому пристрої (запис повертаємо назад, це єдине,
 що ми взагалі чіпаємо):
-
 ```sh
 ADB=~/Library/Android/sdk/platform-tools/adb   # або …/AppData/Local/Android/Sdk/…
 D=emulator-5554                                # чи serial справжнього телефону
