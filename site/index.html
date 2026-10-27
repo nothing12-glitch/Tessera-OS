@@ -956,8 +956,14 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
           лаунчера його біла пігулка пошуку стає темно-сірою: перемальовується не наше вікно</p>
           <p class="muted" style="margin:0 0 8px"><span class="state ok">✓</span> обидві перевірки
           тепер повторюються однією командою: <code>check-welcome-live.sh theme</code> дає 9 із 9
-          тверджень, <code>check-welcome-live.sh walk --fresh</code> — 4 із 4, і обидва прогони
-          йдуть на живому образі без жодного <code>adb install</code></p>
+          тверджень, <code>check-welcome-live.sh walk --fresh</code> — 4 із 4</p>
+          <p class="muted" style="margin:0 0 8px"><span class="state ok">✓</span> 27 жовтня 2026
+          доведено те, що раніше було лише переказом: <code>check-welcome-live.sh install &lt;apk&gt;</code>
+          ставить модуль у <code>/system_ext/priv-app</code> разом із дозвільним списком і дає
+          <b>5 із 5</b> на <code>userdebug</code>-образі — partition, <code>codePath</code>, прапор
+          <code>SYSTEM</code> і обидва привілеї <code>granted=true</code> саме з allowlist-файла, без
+          жодного <code>adb install</code> у прогоні. Тобто тема працює не тому, що дозвіл видали
+          вручну з adb</p>
           <p class="muted" style="margin:0 0 8px"><span class="state ok">✓</span> 27 жовтня 2026 той
           самий прохід записується відео: <code>screens dark --fresh --video</code> — 6 із 6
           тверджень. Кадр «крок N» і секунда N у відео вище — з одного проходу, а не з двох різних:
@@ -1086,6 +1092,10 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
           <p class="hint" style="margin:0">Єдиний живий телефон, виміряваний проєктом, —
           Galaxy J5 (2017): 32 біти без arm64, ядро 3.18, API 28, заблокований
           завантажувач. TesseraOS на нього не ставиться в принципі.</p>
+          <p class="muted" style="margin:12px 0 0">Для тих телефонів, де поставити можна:
+          тема ставиться через adb вже сьогодні, а повний розбір з попередженнями про
+          розблокований завантажувач, Knox, Widevine і ризик «цегли» — у розділі
+          <code>На справжньому телефоні</code> документа <code>docs/VM-INSTALL.md</code>.</p>
         </div>
         <div class="card">
           <p class="stack-num">У РЕЛІЗІ СЬОГОДНІ</p>
