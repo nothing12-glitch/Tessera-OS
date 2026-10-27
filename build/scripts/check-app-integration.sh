@@ -77,6 +77,26 @@ while IFS='|' read -r dir module pkg artifact extra; do
     fi
   fi
 
+  # 2c. Край тримають рівно три рядки маніфеста: дозвіл малювати поверх інших
+  #     вікон, звʼязаний слухач сповіщень і оголошена плитка QS. Без будь-якого
+  #     з них модуль збирається, встановлюється й не робить нічого — а зелений
+  #     білд цього не бачить, бо компілятор про звʼязки сервісів не питає.
+  if [[ "$dir" == "halo" ]]; then
+    if [[ ! -f "$MANIFEST" ]]; then
+      fail "$tag немає $MANIFEST — вимог краю нечим перевірити"
+    else
+      grep -q 'android.permission.SYSTEM_ALERT_WINDOW' "$MANIFEST" ||
+        fail "$tag немає SYSTEM_ALERT_WINDOW — вікна над екраном не буде, край не намалюється"
+      grep -q 'android.permission.BIND_NOTIFICATION_LISTENER_SERVICE' "$MANIFEST" ||
+        fail "$tag слухач без BIND_NOTIFICATION_LISTENER_SERVICE — система не привʼяже сервіс, край лишиться німим"
+      grep -q '"android.service.notification.NotificationListenerService"' "$MANIFEST" ||
+        fail "$tag немає фільтра NotificationListenerService — навіть виданий дозвіл не запустить слухача"
+      grep -q 'android.permission.BIND_QUICK_SETTINGS_TILE' "$MANIFEST" ||
+        fail "$tag плитка QS без BIND_QUICK_SETTINGS_TILE — в шторках її не буде, а документи її обіцяють"
+      ok "$tag край: вікно поверх інших, слухач сповіщень і плитка QS заявлені"
+    fi
+  fi
+
   # 3. presigned і certificate виключають одне одного (build/soong/java/app_import.go)
   PRESIGNED=$(grep -cE '^\s*presigned:\s*true' "$BP")
   CERT=$(grep -cE '^\s*certificate:' "$BP")

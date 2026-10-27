@@ -60,7 +60,11 @@ TesseraOS — відкритий проєкт Apache-2.0: **LineageOS 22.2 + т�
 - `build/scripts/check-app-integration.sh` — `privileged: true` без рядка в
   дозвільному списку і без нього в `PRODUCT_PACKAGES` = падіння. Образ тримає
   `ro.control_privapp_permissions=enforce`, тож без allowlist boot не
-  сходиться.
+  сходиться. З 27.10 там само лежить рядок краю: `apps/halo` без
+  `SYSTEM_ALERT_WINDOW`, без слухача `BIND_NOTIFICATION_LISTENER_SERVICE` або
+  без плитки `BIND_QUICK_SETTINGS_TILE` = падіння, бо такий модуль збирається,
+  встановлюється і мовчки не робить нічого — а компілятор про звʼязки сервісів
+  не питає.
 - `build/scripts/check-build-refs.sh` — чи справді існують файли бази, на які
   ми посилаємось, і чи не посилається документація на мертві шляхи в нашому
   репо.
