@@ -178,12 +178,60 @@ boot-прогонами на `TesseraUD`.
 - `HOME` у фільтрі змінює поведінку кнопки «додому» під час майстра. Це помітна зміна
   поведінки для користувача, тому правку не вносимо мовчки: спершу прогін, потім рішення.
 
+## 7. Автояскравість «увімкнена за замовчуванням»
+
+**Питання.** Опитування №2 просить, щоб автояскравість у образі була ввімкнена. Чи
+досягається це штатним записом налаштування — тобто чи може це зробити наш модуль?
+
+**Що знайдено.** Виміряно 27.10 на двох живих пристроях; логи
+`.scratch/auto-brightness-2026-10-27.log` і `.scratch/real-phone-2026-10-27.log`.
+
+- Ключ — `screen_brightness_mode` у таблиці `system` (`0` — вручну, `1` — автоматично).
+  Старий `automatic_brightness` на Android 15 вже нічого не означає: на емуляторі
+  `settings get system automatic_brightness` дає `null`.
+- Емулятор `emulator-5554` (`sdk_gphone64_x86_64-userdebug 15`, API 35) **має**
+  оголошений датчик: `pm list features` → `android.hardware.sensor.light`, а
+  `dumpsys sensorservice` перелічує «Goldfish Light sensor» тип `android.sensor.light(5)`.
+  Проте конфіг дисплея кривої не має: `mBrightnessLevelsNits= []`,
+  `mBrightnessLevelsMap= {default_normal=[]}`, а датчик у ньому порожній —
+  `mAmbientLightSensor=SensorData{type= , name= }`. Підсумок той самий у рядку
+  `mAutoBrightnessAvailable= false`.
+- Запис утримується, ефекту немає: `settings put system screen_brightness_mode 1`
+  (з сесії `adb root`) через 6 с читається знову як `1`, однак `dumpsys display`
+  показує `mIsAutoBrightnessEnabled=false`, а `mScreenBrightness` лишається
+  `0.39763778` — рівно `mScreenBrightnessDefault`. Тобто на образі без кривої такий
+  запис був би цинною обіцянкою: значення інше, поведінка та сама.
+- Реальний телефон (`SM-A366B`, Android 17 / API 37) на тому ж полі дає
+  `mAutoBrightnessAvailable= true`. Тобто різниться не версія Android і не наші APK,
+  а конфігурація дисплея конкретного образу.
+
+**Вердикт.** ⚠️ «увімкнена за замовчуванням» — це конфігурація образу (крива
+люкс→яскравість і посилання на датчик у конфігу дисплея), а не рядок у `Settings`.
+З нашого модуля доступне лише значення; зробити, щоб це значення щось означало,
+з модуля неможливо в принципі.
+
+**Що це змінює в планах.**
+
+- У вітальні автояскравість не вмикаємо й не показуємо «увімкнено»: це той самий
+  принцип чесності, через що ми не застосовуємо наживо навігацію, профіль живлення й
+  тип MAC-адреси.
+- Вимогу переносимо у план збірки образу: після sync звірити назви ключів у
+  `$FB/core/res/res/values/config.xml` і покласти оверлей у
+  `overlay/themes/TesseraFrameworkTheme` — він уже існує для теми, тож механізм той
+  самий, що з `local_palette.xml`.
+- Імена ключів поки **не підтверджені**: `frameworks/base` у дереві досі немає
+  (sync обірвався на `LineageOS/android_development`), тому з пристрою я зчитав
+  лише *значення* parsed-конфігу через `dumpsys display`, а не назви з сирців.
+
 ## Що лишилося неперевіреним
 
 - Живий образ: чи `numHotseatIcons=5` у 4-стовпцевій сітці не ламає док і чи нашу підміну не перекриває static-RRO бази.
 - Чи з'являється обмеження `overlayable` після лінкування (`aapt2 dump resources SystemUI.apk` / `idmap2`), а не з сирцевини.
 - Чи є десь у SystemUI src UI вибору «custom clock» (конфіг прочитано, код `plugins.clocks.ClockController` не відкривав).
 - PRODUCT_PACKAGES нашого device-tree (чи ставиться LivePicker) і чи `vendor/lineage/overlay/common` не конфліктує з нашим `overlay-packages` у `build/tessera.mk`.
+- Назви ключів конфігурації дисплея з сирців бази (§7) і чи оверлей кривої люкс→яскравість
+  взагалі застосовується на власному x86_64-образі — для цього потрібен зібраний образ,
+  якого ще немає.
 
 ## Як повторити перевірку
 
@@ -202,4 +250,20 @@ curl -sf -o /dev/null -w '%{http_code}\n' https://raw.githubusercontent.com/Line
 # перелік файлів репо — замість grep, який через HTTP неможливий:
 curl -s "https://api.github.com/repos/LineageOS/android_frameworks_base/git/trees/lineage-22.2?recursive=1" | grep -o '"path": "[^"]*"' | grep -i overlayable
 curl -s "https://api.github.com/repos/LineageOS/android_packages_apps_LineageParts/git/trees/lineage-22.2?recursive=1" | grep -o '"path": "[^"]*"' | grep -iE 'theme|overlay|shape'
+```
+
+Для §7 — зчитувальні команди на живому пристрої (запис повертаємо назад, це єдине,
+що ми взагалі чіпаємо):
+
+```sh
+ADB=~/Library/Android/sdk/platform-tools/adb   # або …/AppData/Local/Android/Sdk/…
+D=emulator-5554                                # чи serial справжнього телефону
+$ADB -s $D shell pm list features | grep -i sensor.light
+$ADB -s $D shell settings get system screen_brightness_mode
+$ADB -s $D shell dumpsys display | grep -oE 'mAutoBrightnessAvailable= ?[a-z]+|mBrightnessLevelsNits= ?\[[^]]*\]'
+$ADB -s $D shell dumpsys display | grep -oE 'mIsAutoBrightnessEnabled=[a-z]+|mScreenBrightness=[0-9.]+|mScreenBrightnessDefault=[0-9.]+'
+$ADB -s $D shell settings put system screen_brightness_mode 1; sleep 6
+$ADB -s $D shell settings get system screen_brightness_mode   # 1 — значення тримається
+$ADB -s $D shell dumpsys display | grep -oE 'mIsAutoBrightnessEnabled=[a-z]+'   # false — ефекту немає
+$ADB -s $D shell settings put system screen_brightness_mode 0                    # повернули як було
 ```
