@@ -90,7 +90,7 @@
 
     <!-- 5. Навігація. -->
     <string name="welcome_nav_title">Навігація</string>
-    <string name="welcome_nav_body">Жести чи три кнопки. Навігацію перемикають налаштування бази (оверлей конфігурації навігації), а не рядок, який покриває наш дозвіл, тому тут ми лише зберігаємо вибір і кажемо, де його застосувати.</string>
+    <string name="welcome_nav_body">Жести чи три кнопки. Тут вітальня лише зберігає вибір: навігацію перемикає сама система, а не цей модуль, тому нижче — ваш вибір і підказка, де його застосувати.</string>
     <string name="welcome_nav_gestures">Жести</string>
     <string name="welcome_nav_buttons">Три кнопки</string>
     <string name="welcome_nav_chip_desc">Спосіб навігації: %1$s</string>
