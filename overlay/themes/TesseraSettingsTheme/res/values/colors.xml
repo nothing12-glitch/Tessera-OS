@@ -2,8 +2,11 @@
 <!--
   Палітра Налаштувань.
 
-  Перевірено (2026-10-23) проти packages/apps/Settings/res/values/colors.xml
-  гілки lineage-22.2 — там 227 імен. Лише одне з них має сенс як наш гачок:
+  Перевірено (23.10 з GitHub raw, повторно 27.10 з локального дерева
+  lineage-22.2) проти packages/apps/Settings/res/values/colors.xml — там 135
+  рядків із <color name=, з них 115 унікальних імен (цифра «227», яку цей
+  коментар містив раніше, з дерева не підтвердилась). Лише одне з них має сенс
+  як наш гачок:
       res/values/colors.xml:29  <color name="icon_accent">#ffabffec</color>
   Решту раніше перелічених тут імен (`settingslib_theme_*`, `ic_info_color`,
   `memory_info_description_color`, `summary_card_bg_color`, `blue_grey_600`)
@@ -13,11 +16,14 @@
   Theme.DeviceDefault, тобто через наш framework-оверлей. Окремий RRO на
   Settings потрібен лише для того, що Settings тримає у власних ресурсах.
 
-  Можливий наступний крок (не зроблено): Settings лінкує SettingsLib
-  статично, тому `settingslib_*`-ресурси можуть існувати вже у зібраному
-  APK. Перевіряється так:
-    aapt2 dump resources Settings.apk | grep settingslib_
-  Саме за цим списком і треба додавати наступні рядки.
+  Що дерево відповіло на «можливий наступний крок» (27.10): у власних res
+  Налаштувань імен з префіксом settingslib_ не оголошено взагалі — усі 37
+  зустрічей у 55 файлах це посилання на пул з
+  frameworks/base/packages/SettingsLib, де таких імен 158. Жодне з 158 не
+  починається на theme, тому settingslib_theme_* не «зникли через лінкування»:
+  їх немає в жодній сирцевині. aapt2 dump resources Settings.apk усе одно
+  варто зробити наживо — але вже щоб побачити, котрі з 158 дожили до таблиці
+  ресурсів зібраного APK, а не шукати серед них невидиму «theme».
 -->
 <resources>
     <color name="icon_accent">#3350C8</color>

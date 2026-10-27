@@ -185,31 +185,54 @@ overlay, а системний шрифт ставиться файлом `fonts
 ## 8. Результат тесту імен ресурсів (2026-10-23)
 
 Тест: кожне ім'я, яке ми підмінюємо, порівняне з реальним деревом бази
-(гілка `lineage-22.2`, файли беруться з GitHub raw; повторюється командою
+(гілка `lineage-22.2`; 23.10 файли бралися з GitHub raw, бо дерева ще не було;
+від 27.10 те саме перечитано з локального зсинхронізованого дерева
+`~/tessera` — рядки файлів нижче саме з нього; повторюється командою
 `build/scripts/check-overlay-names.sh`).
 
 | Що перевіряли | Результат |
 |---|---|
-| 30 імен палітри framework (`colorPrimary`, `colorOnPrimary`, `colorSurfaceContainer*`, `colorOutline`…) | **мертві**: у `colors_device_defaults.xml` їх немає |
-| ті самі назви як **атрибути теми** (`attrs.xml`, `public-final.xml`) | живуть лише `colorPrimary`, `colorSecondary`, `colorError`, `colorBackground`, `colorAccent`, `windowLightStatusBar`; `colorSurface`/`colorSurfaceVariant` — private; решти (on\*, Container, Outline, surfaceContainer-шкала) **у framework не існує** |
-| 8 імен лаунчера (`num_columns`, `config_icon_mask`, `cell_height`, `icon_size`, `num_hotseat_icons`, …) | **усі мертві**. Сітка живе в `res/xml/device_profiles.xml` як атрибути `launcher:numColumns`/`numRows`/`numHotseatIcons`; через resource-values нею не керувати |
-| маска іконок | `config_icon_mask` і `config_useRoundIcon` існують, але в **framework** (`core/res/res/values/config.xml:4626` і `:4526`), а не в лаунчері |
-| 5 імен SystemUI (`qs_columns_portrait`, `quick_settings_tile_corner_radius`, `qs_tile_vertical_padding`, `qs_detail_corner_radius_top`) | **усі мертві**. Реальні: `quick_settings_num_columns` (=2), `quick_settings_max_rows` (=4), `qs_corner_radius` (=28dp), `qs_tile_height` (=80dp) |
-| прозорість/тоншість панелі сповіщень і напівпрозорий фонQS (пункт попиту 5) | **імен не підтверджено**. Жодного підходящого імені серед реальних SystemUI-ресурсів вище немає; кандидатів на alpha/scrim/висоту шади у `config.xml`/`dimens.xml`/`colors.xml` не знайдено. Тому оверлей **не створено** — не вигадуємо імена, які CI позначив би мертвими.потребує звірки з живим `frameworks/base` |
+| 30 імен палітри framework (`colorPrimary`, `colorOnPrimary`, `colorSurfaceContainer*`, `colorOutline`…) | **мертві**: у `colors_device_defaults.xml` їх немає (перевірено з дерева 27.10: `colorPrimary`, `colorOnPrimary`, `colorSurfaceVariant`, `colorSurfaceContainer`, `colorOutline`, `colorSecondaryContainer` — нуль оголошень у файлі) |
+| ті самі назви як **атрибути теми** (`attrs.xml`, `public-final.xml`) | живуть і є публічні (по одному запису в `public-final.xml`) лише `colorPrimary`, `colorSecondary`, `colorError`, `colorBackground`, `colorAccent`, `windowLightStatusBar`; `colorSurface` (`core/res/res/values/attrs.xml:1178`) і `colorSurfaceVariant` як attr **є**, але не потрапили ані в `public-final.xml`, ані в `public-staging.xml` — це і є їхня «private»; решти (on\*, Container, Outline, surfaceContainer-шкала, `colorTertiary`) **у framework не існує** взагалі (attr=0) |
+| 8 імен лаунчера (`num_columns`, `config_icon_mask`, `cell_height`, `icon_size`, `num_hotseat_icons`, …) | **усі мертві** (з дерева: `packages/apps/Trebuchet/res/values` оголошує 0 з них). Сітка живе в `res/xml/device_profiles.xml` як атрибути `launcher:numColumns`/`numRows`/`numHotseatIcons`; через resource-values нею не керувати |
+| маска іконок | `config_icon_mask` і `config_useRoundIcon` існують, але в **framework** (`core/res/res/values/config.xml:4626` і `:4526`, обидва рядки підтверджені з дерева), а не в лаунчері. Важливий натяк на користь оверлея: сам Trebuchet читає саме framework-івський приватний ресурс — `quickstep/src/com/android/launcher3/taskbar/bubbles/BubbleCreator.java:151` бере його як `com.android.internal.R.string.config_icon_mask` |
+| 5 імен SystemUI (`qs_columns_portrait`, `quick_settings_tile_corner_radius`, `qs_tile_vertical_padding`, `qs_detail_corner_radius_top`) | **усі мертві**. Реальні, з точними рядками дерева: `quick_settings_num_columns` = 2 (`packages/SystemUI/res/values/config.xml:68`), `quick_settings_max_rows` = 4 (`:71`), `qs_corner_radius` = 28dp і `qs_tile_height` = 80dp (`res/values/dimens.xml:680` і `:681`) |
+| прозорість/тоншість панелі сповіщень і напівпрозорий фон QS (пункт попиту 5) | дерева 27.10 дало **один живий важіль і дві мертві назви**. Живий: `packages/SystemUI/res/values/bools.xml:32 notification_scrim_transparent` (стоїть `false`) — читається в `statusbar/phone/ScrimController.java:410` і застосовується в `:946`. Мертві: `config.xml:1006 opaque_scrim` (#D9D9D9) і `config.xml:1008 dual_shade_scrim_alpha` (0.1) — імена існують, але в усьому `frameworks/base` їх не читає **ніхто** (нуль посилань). Оверлей не створено: «напівпрозорий фон QS» досі не має підтвердженого імені, а вибір «наскільки прозоро» треба виміряти на живому образі, а не призначити з гадки |
 | лок-скрін: центрований годинник, дві шпаргалки, віджети з налаштувань (пункт 6) | **не RRO**: це стокові `Settings`-параметри ( Налаштування → Екран блокування), значення живуть у `Settings.Secure`, а не в ресурсах. Оверлеєм не керується |
 | власний шрифт (пункт 8) | **не RRO**: overlay шрифт не задає (woff2 не вантажиться). Доставка — `fonts.xml`+`PRODUCT_COPY_FILES` і Compose `FontFamily`. Жоден оверлей на шрифт не посилається — так і має бути |
-| 7 імен Settings (`settingslib_theme_*`, `ic_info_color`, `summary_card_bg_color`, `blue_grey_600`, `memory_info_description_color`) | **усі мертві** у `packages/apps/Settings/res/values/colors.xml` (227 імен). Живий, підтверджений: `icon_accent` |
+| 7 імен Settings (`settingslib_theme_*`, `ic_info_color`, `summary_card_bg_color`, `blue_grey_600`, `memory_info_description_color`) | **усі мертві** — і це тепер виміряно глибше, ніж 23.10. У `packages/apps/Settings` ці 11 імен (7 `settingslib_theme_accent_*` + 4 інші) оголошені у **0 файлах**; `settingslib_theme` як префікс не згадується ні в `packages/apps/Settings`, ні у `frameworks/base/packages/SettingsLib` (нуль влучань в обох). Живий, підтверджений: `icon_accent` — `packages/apps/Settings/res/values/colors.xml:29`. У самому цьому файлі 135 рядків із `<color name=`, з них 115 унікальних імен (раніше тут стояло «227 імен» — цифра з дерева не підтвердилась), а в усіх `res/values` + `res/values-night` Налаштувань — 124 унікальні імена кольорів |
 
 Головний висновок: чотири оверлеї зібралися б і підписалися без
 жодної помилки в CI — aapt2 з `--auto-add-overlay` не знає, що імена
 нікому не потрібні. Тест імен — єдиний, що це ловить; відтепер він у репо і
 працює з вихідним кодом 0/1.
 
-Ще не перевірено (потребує зібраного APK, а не з сирцевини): `settingslib_*`
-ресурси можуть з'являтися після статичного лінкування SettingsLib —
-`aapt2 dump resources Settings.apk`. І те, чи приватні framework-ресурси
-`config_icon_mask`/`config_useRoundIcon` дійсно перебиваються static RRO у
-виправленому образі (це вже M1 на білд-боксі).
+Дерево 27.10 додало до цього висновку другу, неприємнішу половинку: **ім'я
+може існувати й все одно нічого не робити**. `opaque_scrim` і
+`dual_shade_scrim_alpha` справді оголошені в SystemUI, але в усьому
+`frameworks/base` їх не читає жоден рядок коду — тобто оверлей на них зібрався б,
+пройшов би `check-overlay-names.sh` і не змінив би на екрані нічого. Нинішній
+гарант перевіряє саме існування імені, а не те, що хтось його читає; цю другу
+половинку він не ловить, тому живий прогін залишається обов'язковим.
+
+Ще не перевірено (потребує зібраного APK, а не з сирцевини): чи приватні
+framework-ресурси `config_icon_mask`/`config_useRoundIcon`
+(`core/res/res/values/config.xml:4626` і `:4526`, підтверджено з дерева) дійсно
+перебиваються static RRO у виправленому образі. Дерево зняло половину сумніву:
+споживач існує — Trebuchet читає `com.android.internal.R.string.config_icon_mask`
+(`BubbleCreator.java:151`), тож питання не в тому, «хто це взагалі читає», а в
+тому, чи система дозволить оверлею змінити приватний ресурс із `framework`. Це
+вже M1 на білд-боксі.
+
+Питання «`settingslib_*` можуть з'явитися лише після статичного лінкування»
+дерево зняло наполовину: у власних `res` Налаштувань імен з префіксом
+`settingslib_` не оголошено взагалі (усі 37 зустрічей у 55 файлах — це
+посилання), а пул, з якого їх запозичує лінкер, — 158 унікальних імен
+`frameworks/base/packages/SettingsLib`, і жодне з них не починається з `theme`.
+Тож `settingslib_theme_*` не зникли через невидиме лінкування: їх немає в жодній
+з двох сирцевин. Решту 158 імен `aapt2 dump resources Settings.apk` все одно
+варто звірити наживо — це єдиний спосіб побачити, котрі з них дожили до таблиці
+ресурсів зібраного APK.
 
 ## 9. Сітка: RRO не вийшов (2026-10-23, перевірено збіркою)
 
