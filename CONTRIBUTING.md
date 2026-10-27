@@ -62,8 +62,13 @@ TesseraOS — відкритий проєкт Apache-2.0: **LineageOS 22.2 + т�
   `ro.control_privapp_permissions=enforce`, тож без allowlist boot не
   сходиться.
 - `build/scripts/check-build-refs.sh` — чи справді існують файли бази, на які
-  ми посилаємось, і чи не посилається документія на мертві шляхи в нашому
+  ми посилаємось, і чи не посилається документація на мертві шляхи в нашому
   репо.
+- `build/scripts/check-doc-claims.sh` — чи твердження документів про дозволи
+  (`X у модуля немає`, `X видано з allowlist`) збігаються з маніфестом і
+  дозвільним списком. Це єдиний гарант прози, а не коду, і він ловить клас,
+  від якого зелений білд сліпий: README, що описує межу, якої в образі вже
+  немає. Має власний `--selftest` на свідомо брехливому fixture.
 - `build/scripts/check-overlay-names.sh`, `check-brand.sh`,
   `brand-font-check.js` — імена пакетів оверлеїв й айдентика.
 
@@ -72,6 +77,7 @@ TesseraOS — відкритий проєкт Apache-2.0: **LineageOS 22.2 + т�
 ```bash
 bash build/scripts/check-app-integration.sh
 bash build/scripts/check-build-refs.sh
+bash build/scripts/check-doc-claims.sh --selftest
 bash build/scripts/check-overlay-names.sh
 ```
 
