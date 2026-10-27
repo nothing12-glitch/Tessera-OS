@@ -353,10 +353,12 @@ workflow у кожного APK все ще вимагав іконку (випр
 потім поворот назад), `walk --fresh` (усі десять кроків тапами по `bounds` із
 `uiautomator dump`) і `screens <dark|light>` (кадри всіх десяти кроків в одній
 темі; з `--video` той самий прохід ще й записується `screenrecord`-ом на
-пристрої й стягується як `out/welcome-live/<тема>/oobe-<тема>.mp4`). `--fresh` чистить стан модуля, бо той свідомо відновлюється на кроці
-зупинки — і без чистого стану «1…10» не виміряти; `theme` починає з тої самої
-підготовки, бо з піднятим `device_provisioned` майстер виходить одразу, ще не
-показавши жодного екрана. Доведений порядок і сім пасток — readonly-оверлей
+пристрої й стягується як `out/welcome-live/<тема>/oobe-<тема>.mp4`). `--fresh`
+стосується лише `walk`: він свідомо відновлюється на кроці зупинки, і без
+чистого стану «1…10» не виміряти. `theme` і `screens` чистять стан модуля
+примусово — їм потрібен конкретний крок (4 і 1), а не доказ відновлення; з
+піднятим `device_provisioned` майстер виходить одразу, ще не показавши жодного
+екрана, а після `screens`-проходу він лишається на кроці 10. Доведений порядок і сім пасток — readonly-оверлей
 після кожного ребута, мовчазний ENOSPC на `/mnt/scratch`, підрядковий пошук вузла
 в дампі (перший тап влучив у текст підказки замість кнопки), «живий adb» ≠
 «готовий екран» на холодному boot, порожній дамп через уже відпрацьованого
@@ -370,7 +372,9 @@ bash build/scripts/check-welcome-live.sh install app/build/outputs/apk/debug/app
 bash build/scripts/check-welcome-live.sh theme
 bash build/scripts/check-welcome-live.sh walk --fresh
 # кадри всіх десяти кроків в одній темі → out/welcome-live/<тема>/stepN.png
-bash build/scripts/check-welcome-live.sh screens dark --fresh
+# (--fresh тут уже не потрібен: `screens` чистить стан сам; лишився в прикладах,
+#  бо саме так виглядає виміряний прогін 26–27.10.2026)
+bash build/scripts/check-welcome-live.sh screens dark
 bash build/scripts/check-welcome-live.sh screens light --fresh
 # + відео того ж проходу → out/welcome-live/dark/oobe-dark.mp4 (4.4 МБ, 105 с;
 #   для сайту той самий запис стискається окремо: 2,5× швидше, 540×1200, 369 КБ)

@@ -23,6 +23,25 @@ jobs:
             echo "Бінарні файли не належать до репозиторію:"; echo "$BAD"; exit 1
           fi
 
+      # Розширення — лише підказка, і з 27.10.2026 вона стала слабшою: у репо
+      # навмисне лежать медіа (.mp4, .webp), тож «не .apk» уже нічого не
+      # доводить. Цей крок дивиться у вміст: справжній APK, переіменований на
+      # renamed.mp4, `file` називає application/vnd.android.package-archive
+      # (перевірено на власному tessera-camera-debug.apk), і він сюди потрапляє.
+      # Підроблений «PK\x03\x04» без валідного архіву дає octet-stream і повзтить —
+      # тож перевірка чесна в межах «архів за вмістом», а не «будь-що двійкове».
+      - name: Жодного архіву за вмістом, навіть під медійним розширенням
+        run: |
+          set -euo pipefail
+          HITS=$(git ls-files -z | xargs -0 file --mime-type \
+                 | grep -E ': (application/(zip|java-archive|vnd\.android\.package-archive|x-dosexec|x-msdownload|x-sharedlib|x-executable))$' \
+                 || true)
+          if [[ -n "$HITS" ]]; then
+            echo "За вмістом це архів/виконуваний файл, яким би не було розширення:"
+            echo "$HITS"; exit 1
+          fi
+          echo "чисто за вмістом: $(git ls-files | wc -l) трекнутих файлів"
+
       - name: Заборона марок Google / Pixel у тому, що потрапляє в образ
         run: |
           set -euo pipefail
