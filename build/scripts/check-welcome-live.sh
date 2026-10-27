@@ -11,7 +11,7 @@
 #   build/scripts/check-welcome-live.sh [-s <серіал>] install <шлях/до/apk>
 #   build/scripts/check-welcome-live.sh [-s <серіал>] theme
 #   build/scripts/check-welcome-live.sh [-s <серіал>] walk [--fresh]
-#   build/scripts/check-welcome-live.sh [-s <серіал>] screens <dark|light> [--fresh]
+#   build/scripts/check-welcome-live.sh [-s <серіал>] screens <dark|light> [--fresh] [--video]
 #
 # Передумови (докладніше — docs/EMULATOR.md, розділ про system_ext/priv-app):
 # образ userdebug (на user `adb root` заборонено), емулятор запущено з
@@ -165,6 +165,44 @@ screenshot() { # screenshot <ім'я-файла> [пікаталог усере�
   "$ADB" -s "$DEV" pull /sdcard/shot.png "$(host_path "$OUT_DIR/$1")" >/dev/null 2>&1 || return 0
   adb_sh 'rm -f /sdcard/shot.png' >/dev/null
   echo "  знімок → $OUT_DIR/$1"
+}
+
+# ---------- відео: записує сам пристрій, зупиняємо сигналом ------------------
+
+# screenrecord пише mp4 на пристрої. Зупинка — саме SIGINT (`pkill -2`): вбитий
+# іншим сигналом файл лишається без moov-атома й не відтворюється, а за розміром
+# відрізнити його неможливо. Тому після сигналу ще sleep — дописати атом.
+record_start() { # record_start <шлях-на-пристрої>
+  local dev="$1" size
+  adb_sh "rm -f $dev" >/dev/null
+  adb_sh "screenrecord --time-limit 180 $dev >/dev/null 2>&1 &" >/dev/null
+  sleep 3
+  # Поле $5 з `ls -l`, а не «цифри наприкінці рядка»: рядок закінчується самим
+  # шляхом, тож перший варіант не збігався ніколи й підкоманда вмирала б ще до того,
+  # як що-небудь записалося.
+  size="$(adb_sh "ls -l $dev" | awk '{print $5}' | tr -dc '0-9')"
+  [[ -n "$size" ]] || die "screenrecord не створив $dev — на цьому образі запис екрана недоступний"
+  echo "  запис почато: $dev ($size байтів на старті)"
+}
+
+record_finish() { # record_finish <шлях-на-пристрої> <пікаталог> <ім'я-файла>
+  local dev="$1" sub="$2" name="$3" size host
+  adb_sh 'pkill -2 screenrecord' >/dev/null
+  sleep 4
+  size="$(adb_sh "ls -l $dev" | awk '{print $5}' | tr -dc '0-9')"
+  note "на пристроі $dev — ${size:-0} байтів"
+  [[ -n "$size" && "$size" -gt 100000 ]] \
+    || die "запис відео обірвався: на пристроі ${size:-0} байтів — screenrecord не створив і не дописав файл"
+  host="$OUT_DIR/$sub/$name"
+  mkdir -p "$OUT_DIR/$sub" 2>/dev/null
+  "$ADB" -s "$DEV" pull "$dev" "$(host_path "$host")" >/dev/null 2>&1
+  # Перевіряємо обидва боки, бо відмова бувала мовчазною з кожного: pull уміє не
+  # спрацювати, а файл на пристрої — виявитися порожнім. Локальний шлях тут
+  # posix-вий, бо `head` і `wc` читають його, а adb — навпаки, WINDOWS-вий.
+  ok_if "відео стягнено на диск ($host)" [ "$(file_size "$host" 2>/dev/null || echo 0)" -gt 100000 ]
+  ok_if "у файлі є mp4-заголовок ftyp"   [ -n "$(head -c 32 "$host" 2>/dev/null | grep -ao ftyp | head -1)" ]
+  echo "  відео → $host"
+  adb_sh "rm -f $dev" >/dev/null
 }
 
 # ---------- тема: рядок у базі проти стану сервісу ---------------------------
@@ -508,7 +546,7 @@ cmd_walk() {
 # ---------- screens: кадри всіх кроків в одній темі --------------------------
 
 cmd_screens() {
-  local want="${1:-dark}" want_mode expect_hex seen="" norm n st dump got
+  local want="${1:-dark}" want_mode expect_hex seen="" norm n st dump got VIDEO_DEV=""
   case "$want" in
     dark)  want_mode=2; expect_hex=21 ;;
     light) want_mode=1; expect_hex=11 ;;
@@ -529,6 +567,14 @@ cmd_screens() {
 
   prepare_at_step_one
 
+  # Запис ведеться під весь прохід, а не окремою командою: окремо відео знімало б
+  # інший стан (тему, крок, на якому зупинився майстер), і «кадр N» не збігався б
+  # з «секундою N» відеорядку. --time-limit 180 на десяти кроках — з тричі запасом.
+  if [[ "$VIDEO" == "1" ]]; then
+    VIDEO_DEV="/sdcard/oobe-$want.mp4"
+    record_start "$VIDEO_DEV"
+  fi
+
   for n in 1 2 3 4 5 6 7 8 9 10; do
     dump="$(dump_ui)"
     st="$(printf '%s' "$dump" | grep -oE 'крок [0-9]+ із [0-9]+' | head -1 | grep -oE '[0-9]+' | head -1)"
@@ -539,6 +585,7 @@ cmd_screens() {
     tap_node "Перейти до наступного кроку" >/dev/null || { echo "  далі йти нічим — «Далі» не знайдено"; break; }
     sleep 2
   done
+  [[ -z "$VIDEO_DEV" ]] || record_finish "$VIDEO_DEV" "$want" "oobe-$want.mp4"
   norm=$(echo $seen)
   ok_if "кадри знято з усіх десяти кроків по порядку" [ "$norm" = "1 2 3 4 5 6 7 8 9 10" ]
   # Файли рахуємо на диску, а не за власними рядками «знімок →»: adb pull уміє
@@ -553,7 +600,9 @@ cmd_screens() {
 }
 
 usage() {
-  sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  # Верbatim — весь верхній коментар, доки не почнеться код. Старий «sed -n 2,19p»
+  # обрізав шапку на фіксованому рядку й уже встиг загубити пояснення про ADB=.
+  awk 'NR>1 { if (!/^#/) exit; sub(/^# ?/, ""); print }' "${BASH_SOURCE[0]}"
   cat <<EOF
 
 Команди:
@@ -566,7 +615,10 @@ usage() {
                          відновлюється на кроці зупинки й «1…10» не вимірюється
   screens <dark|light>   кадри всіх десяти кроків в одній темі у
                          \$OUT_DIR/<тема>/stepN.png; тема ставиться ДО проходу,
-                         прапорців не чіпає: фінальний тап не робиться
+                         прапорців не чіпає: фінальний тап не робиться.
+                         --video — той самий прохід ще й записується
+                         screenrecord-ом на пристрої і стягується як
+                         <тема>/oobe-<тема>.mp4 (Q97: коротке відео майстра)
 
 Опції: -s <серіал>  (типово $DEV); шлях до adb: ADB=/шлях/до/adb
 Змінні: OUT_DIR=<каталог знімків>  (типово <репо>/out/welcome-live)
@@ -575,6 +627,7 @@ EOF
 
 CMD=""
 FRESH=0
+VIDEO=0
 ARGS=()
 # Без break: `walk --fresh` із break-ом тихо втрачав би --fresh, і прогін
 # стартував би брудним, а твердження «1…10» провалилося б без пояснення.
@@ -582,6 +635,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     -s) DEV="${2:?-s потребує серіал}"; shift 2 ;;
     --fresh) FRESH=1; shift ;;
+    --video) VIDEO=1; shift ;;
     -h|--help) usage; exit 0 ;;
     install|theme|walk|screens) CMD="$1"; shift ;;
     *) ARGS+=("$1"); shift ;;
@@ -589,6 +643,10 @@ while [[ $# -gt 0 ]]; do
 done
 [[ -n "$CMD" ]] || { usage >&2; exit 2; }
 [[ ${#ARGS[@]} -le 1 ]] || { echo "Зайві аргументи: ${ARGS[*]}" >&2; exit 2; }
+# Прапорець, який ніхто не прочитав, гірший за відмову: `theme --video` інакше
+# тихо відпрацював би без відео й з кодом 0.
+[[ "$VIDEO" == "0" || "$CMD" == "screens" ]] \
+  || { echo "--video має сенс лише з screens (walk і theme не складають кадрів у <тема>/)" >&2; exit 2; }
 
 case "$CMD" in
   install) cmd_install "${ARGS[0]:-}" ;;

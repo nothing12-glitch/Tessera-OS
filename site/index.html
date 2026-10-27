@@ -914,6 +914,26 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
         правильно».
       </div>
 
+      <h3 style="margin-top:44px">Як це виглядає наживо</h3>
+      <p class="muted" style="max-width:720px">
+        Один запис живого проходу 27.10.2026, зроблений тією ж підкомандою, що й кадри:
+        <code>check-welcome-live.sh screens dark --fresh --video</code>. Це не макет і не анімація —
+        цей екран справді був на образі. Оринал 105 с, тут 43: прискорено у 2,5 раза, щоб весь прохід
+        вмістився в один погляд. Звуку немає не тому, що його зрізали: <code>screenrecord</code> на
+        Android звуку не пише взагалі.
+      </p>
+      <figure style="margin:18px 0 0;max-width:320px">
+        <video src="media/oobe-dark.mp4" poster="media/oobe-dark-poster.webp" controls playsinline
+               preload="metadata" muted
+               style="width:100%;display:block;border-radius:24px"
+               aria-label="Живий прохід майстра першого запуску: десять кроків у темній темі"></video>
+        <figcaption class="muted" style="font-size:.84rem;margin-top:8px">
+          Вітання, мова й регіон, доступність, вигляд, навігація, профіль живлення, приватність
+          мережі, акаунт, демо краю — й екран «Готово». Кнопку «Увійти в Tessera» не натиснули:
+          саме вона пише системні прапорці, а прохід лишається повторюваним.
+        </figcaption>
+      </figure>
+
       <div class="grid g2" style="margin-top:24px;align-items:start">
         <div class="card">
           <h3>Що доведено наживо 26 жовтня 2026</h3>
@@ -938,6 +958,10 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
           тепер повторюються однією командою: <code>check-welcome-live.sh theme</code> дає 9 із 9
           тверджень, <code>check-welcome-live.sh walk --fresh</code> — 4 із 4, і обидва прогони
           йдуть на живому образі без жодного <code>adb install</code></p>
+          <p class="muted" style="margin:0 0 8px"><span class="state ok">✓</span> 27 жовтня 2026 той
+          самий прохід записується відео: <code>screens dark --fresh --video</code> — 6 із 6
+          тверджень. Кадр «крок N» і секунда N у відео вище — з одного проходу, а не з двох різних:
+          запис ведеться під весь прохід, а не окремо</p>
           <p class="muted" style="margin:0"><span class="state ok">✓</span> 36 юніт-тестів на JVM —
           вони тримають порядок кроків і «чи є тут що пропускати», бо це про порядок, а не про
           пікселі</p>
