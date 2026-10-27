@@ -290,7 +290,7 @@ $(call inherit-product, vendor/lineage/config/common.mk)
 
 | Workflow | Де збирається | Що робить |
 |---|---|---|
-| `policy.yml` | GitHub-hosted ubuntu | заборона бінарів/чужих брендів, ліцензії, **`check-build-refs.sh`**, **`check-doc-claims.sh`** (+ його `--selftest`) |
+| `policy.yml` | GitHub-hosted ubuntu | заборона бінарів/чужих брендів, ліцензії, **`check-build-refs.sh`**, **`check-doc-claims.sh`** (дозволи + чорний список екранних обіцянок; `--selftest` — чотири випадки) |
 | `build-apps.yml` | GitHub-hosted | наші 7 APK через Gradle |
 | `build-themes.yml` | GitHub-hosted | RRO-оверлеї |
 | `build-rom.yml` | self-hosted `linux, x86_64, rom-build` | повна збірка образу (hosted-раннери не витягнуть: 400 ГБ, 6-годинний ліміт) |
