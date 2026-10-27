@@ -79,6 +79,20 @@ TesseraOS — відкритий проєкт Apache-2.0: **LineageOS 22.2 + т�
   `--selftest` на свідомо брехливому fixture — чотири випадки.
 - `build/scripts/check-overlay-names.sh`, `check-brand.sh`,
   `brand-font-check.js` — імена пакетів оверлеїв й айдентика.
+- `build/scripts/check-overlay-consumption.sh` — друга половина того ж
+  питання: `check-overlay-names.sh` доводить, що ім'я існує, а цей доводить,
+  що його хтось у базі ЧИТАЄ. Різницю виміряно 27.10 на двох іменах
+  SystemUI (`opaque_scrim`, `dual_shade_scrim_alpha`): обидва оголошені, обидва
+  не читає жоден рядок у всьому `frameworks/base` — оверлей на таке збирається,
+  проходить обидва попередні гаранті й не змінює на екрані нічого. Потрібне
+  локальне дерево (`TESSERA_TREE=~/tessera`), тому в CI не запускається. Має
+  `--selftest` в обидва боки: мертві імена мають бути знайдені мертвими, а
+  `config_useRoundIcon` — живим; інакше «ok» нічого не вартий.
+- `build/scripts/check-grep-order.sh` — метажарант: стежить, щоб самі наші
+  перевірки не робилися порожніми. grep 3.11 мовчки ігнорує `--include=`,
+  якщо попереду стояв `--exclude=` (матриця 27.10 у шапці скрипту), і саме так
+  гарант споживання на одну версію почав рахувати xml-зчитувачами файли
+  зовсім інших розширень. Текстова перевірка, без дерева, тому в CI.
 
 Прогон локально, без образу:
 
@@ -87,6 +101,8 @@ bash build/scripts/check-app-integration.sh
 bash build/scripts/check-build-refs.sh
 bash build/scripts/check-doc-claims.sh --selftest
 bash build/scripts/check-overlay-names.sh
+bash build/scripts/check-grep-order.sh --selftest
+TESSERA_TREE=~/tessera bash build/scripts/check-overlay-consumption.sh --selftest
 ```
 
 ## Чотири шляхи внеску

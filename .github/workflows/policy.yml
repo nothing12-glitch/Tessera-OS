@@ -100,3 +100,19 @@ jobs:
       # саме на ній.
       - name: Той самий гарант на свідомій брехні (щоб не виявився порожнім)
         run: bash build/scripts/check-doc-claims.sh --selftest
+
+  # Третій клас тієї самої тиші: гарант, який перевіряє нічого. 27.10 grep
+  # 3.11 мовчки з'їдав --include, якщо попереду стояв --exclude=, і через це
+  # перевірка споживання рахувала «≥18 зчитувачів» там, де справжніх було 12.
+  # Цей крок статично забороняє такий порядок у наших скриптах — дешевий,
+  # мережі й дерева не потребує.
+  grep-order:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: У кожному grep фільтр за розширенням дійсно діє
+        run: bash build/scripts/check-grep-order.sh
+
+      - name: Той самий гарант на свідомо хибному виклику
+        run: bash build/scripts/check-grep-order.sh --selftest

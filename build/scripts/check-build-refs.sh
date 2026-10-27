@@ -135,8 +135,17 @@ done < <(
 if [[ -n "$BASE_ONLY" ]]; then
   if [[ -n "$TREE" ]]; then
     for mod in $BASE_ONLY; do
-      if grep -rqE "name: \"$mod\"|name:[[:space:]]*\"$mod\"|LOCAL_MODULE[[:space:]]*:?[[:space:]]*$mod" \
-           "$TREE" --include=Android.bp --include=Android.mk 2>/dev/null; then
+      # --exclude-dir тут не для швидкодії (вона лише 2×: 2 с → 1 с на
+      # frameworks+packages+build+vendor), а за правильність: без них рядок
+      # `name: "…"` легко знаходиться в out/ — там розкриваються наші власні
+      # bp-генератори, і гарант сказав би «модуль бази» про модуль бази, якого
+      # немає. Два --include в одному grep 3.11 — це об'єднання, і воно працює
+      # (виміряно 27.10: пошук по .java+.kt одним викликом знаходить те, чого
+      # .java сама не бачить). Не працює інше: --exclude=ПЕРЕД --include= —
+      # тоді grep мовчки з'їдає --include. Тому тут немає --exclude.
+      re="name: \"$mod\"|name:[[:space:]]*\"$mod\"|LOCAL_MODULE[[:space:]]*:?[[:space:]]*$mod"
+      if grep -rqE --exclude-dir=out --exclude-dir=.repo --exclude-dir=prebuilts \
+           --exclude-dir=.git --include=Android.bp --include=Android.mk "$re" "$TREE" 2>/dev/null; then
         ok "модуль бази: $mod"
       else
         fail "PRODUCT_PACKAGES: '$mod' не оголошений у дереві бази — збірка впаде або пакет мовчки зникне"
