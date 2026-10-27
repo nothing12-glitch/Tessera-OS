@@ -164,9 +164,22 @@ boot-прогонами на `TesseraUD`.
 `SETUP_WIZARD`. Наш модуль — тільки `SETUP_WIZARD`, тому його ніхто не кличе. Це не
 «невідома причина», а конкретна відсутність двох категорій і само-вимкнення.
 
+**Що додало дерево 27.10 ввечері.** Конкурента нарешті названо на ім'я, а не
+«ніхто». Цільовий образ `build/tessera.mk:18` успадковує
+`device/generic/goldfish/64bitonly/product/sdk_phone64_x86_64.mk`, той тягне
+`device/generic/goldfish/product/phone.mk` → `generic.mk:98`, а там у
+`PRODUCT_PACKAGES` стоїть `SdkSetup`. `com.android.sdksetup` оголошує
+`MAIN + HOME + DEFAULT + SETUP_WIZARD` із `priority="3"`
+(`device/generic/goldfish/provision/SdkSetup/AndroidManifest.xml:40-45`) і в
+`Android.bp:18` перекриває модуль `Provision`. Тобто на goldfish-образі майстра
+бази з одиницею (`packages/apps/Provision/AndroidManifest.xml:38`) не буде
+взагалі — буде SdkSetup із трійкою. На тестовому `google_apis`-образі ми його не
+бачили (`dumpsys package` → `Setup Wizard: none`), тому досі й не називали.
+
 **Що це змінює в планах.** Копія механізму бази — три правки в одному файлі:
-`HOME` + `DEFAULT` у фільтр, `priority` з `1000` на `1` (як у бази — вище за 0 лаунчера
-вистачає, а `1000` нічого не виграє, бо `HOME` вирішує роль), і
+`HOME` + `DEFAULT` у фільтр, `priority` вищий за `3` (не «як у бази»: одиниця
+`Provision` програла б трійці `SdkSetup`, а `1000` нічого не виграє, бо `HOME`
+вирішує роль), і
 `setComponentEnabledSetting(..., DISABLED, ...)` після кроку 10. Без третього пункту
 телефон залишається з вітальнею як домашнім екраном назавжди.
 
