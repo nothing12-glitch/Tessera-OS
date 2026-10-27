@@ -553,6 +553,7 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
       <a href="#about">Що це</a>
       <a href="#look">Як виглядає</a>
       <a href="#welcome">Вітальня</a>
+      <a href="#install">Як поставити</a>
       <a href="#identity">Айдентика</a>
       <a href="#try">Спробувати</a>
       <a href="#status">Статус</a>
@@ -1039,6 +1040,58 @@ footer.site { padding: 48px 0 64px; border-top: 1px solid var(--outline-variant)
         тому й окремий модуль, що нічого не робить замість системи: вона лише питає й пише відповіді
         туди, куди без привілеїв не написати.
       </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <p class="eyebrow">Як поставити</p>
+      <h2>Що для цього треба — і чого ще не існує</h2>
+      <p class="muted" style="max-width:720px">
+        Три способи побачити систему описані вище, у розділі «Спробувати». Тут — сухі вимоги
+        й межі, щоб не виявити їх уже посеред ночі, коли збірка обірветься на місці на диску.
+      </p>
+      <div class="grid g3" style="margin-top:26px">
+        <div class="card">
+          <p class="stack-num">КУДИ СТАВИТЬСЯ</p>
+          <h3>Віртуальна машина, не телефон</h3>
+          <p class="muted">Образ збирається під x86_64. Пакунок оформлення ставиться поверх
+          будь-якого Android 13 або новішого у VM чи емуляторі й потребує adb та 2 ГБ.
+          Гостьова система має бути <b>API 33+</b>: оверлеї тримаються на ресурсах бази, тож
+          на старішому тема не застосується — це вимога бази, а не наша примха.</p>
+          <p class="hint" style="margin:0">Єдиний живий телефон, виміряваний проєктом, —
+          Galaxy J5 (2017): 32 біти без arm64, ядро 3.18, API 28, заблокований
+          завантажувач. TesseraOS на нього не ставиться в принципі.</p>
+        </div>
+        <div class="card">
+          <p class="stack-num">У РЕЛІЗІ СЬОГОДНІ</p>
+          <h3>Пакунок — лише тема</h3>
+          <p class="muted" style="margin:0">Чинний <code>v15.22.2.3</code> — це три RRO-оверлеї
+          і два інсталятори, нуль APK. Він не є ROM: ані вітального майстра, ані світлового
+          краю в ньому немає. Попередній <code>v15.22.2.2</code> із сімома APK лишається на
+          сторінці релізів, але більше не «найновіший».</p>
+        </div>
+        <div class="card">
+          <p class="stack-num">ЧОГО ЩЕ НЕМАЄ</p>
+          <h3>Готового образу</h3>
+          <p class="muted" style="margin:0"><span class="state bad">✕</span> самостійного
+          <code>.img</code> TesseraOS у завантаженні немає: перший з'явиться разом із віхою M1,
+          коли збірка відпрацює на білд-боксі. Збірка — лише Linux, бо система збірки AOSP
+          нативно не працює на Windows і macOS: 400+ ГБ вільного місця (600+ рекомендовано),
+          16 ГБ RAM плюс 16 ГБ swap, перший прохід на 8 ядрах — 5–9 годин.</p>
+        </div>
+      </div>
+
+      <div class="notice" style="margin-top:24px">
+        <b>Шлях 3 у документі — це те саме «немає».</b> Повний розклад трьох шляхів — у
+        <code>docs/VM-INSTALL.md</code>, команди збірки й розбір помилок — у
+        <code>docs/BUILD.md</code>, запуск уже отриманого образу — у <code>docs/EMULATOR.md</code>.
+      </div>
+
+      <p class="muted" style="margin-top:16px">Документація:
+      <a href="https://github.com/nothing12-glitch/Tessera-OS/blob/main/docs/VM-INSTALL.md">VM-INSTALL.md</a> ·
+      <a href="https://github.com/nothing12-glitch/Tessera-OS/blob/main/docs/BUILD.md">BUILD.md</a> ·
+      <a href="https://github.com/nothing12-glitch/Tessera-OS/blob/main/docs/EMULATOR.md">EMULATOR.md</a></p>
     </div>
   </section>
 

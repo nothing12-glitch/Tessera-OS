@@ -350,10 +350,26 @@ workflow у кожного APK все ще вимагав іконку (випр
 `install` (push APK і дозвільного списка в `system_ext`, права 755/644,
 `restorecon`, ребут, другий remount і доказ `granted=true` без жодного
 `adb install`), `theme` (крок 4: `mCurUiMode` 0x11 → 0x21 без перезавантаження,
-потім поворот назад) і `walk --fresh` (усі десять кроків тапами по `bounds` із
-`uiautomator dump`; `--fresh` — бо модуль свідомо відновлюється на кроці
-зупинки, і без чистого стану «1…10» не виміряти). Доведений порядок і три
-пастки (readonly-оверлей після кожного ребута, мовчазний ENOSPC на
-`/mnt/scratch`, і підрядковий пошук вузла в дампі, який спершу влучив у текст
-підказки замість кнопки) — в `docs/EMULATOR.md`, розділ «Доведений порядок
-живої перевірки на записній системі».
+потім поворот назад), `walk --fresh` (усі десять кроків тапами по `bounds` із
+`uiautomator dump`) і `screens <dark|light>` (кадри всіх десяти кроків в одній
+темі). `--fresh` чистить стан модуля, бо той свідомо відновлюється на кроці
+зупинки — і без чистого стану «1…10» не виміряти; `theme` починає з тої самої
+підготовки, бо з піднятим `device_provisioned` майстер виходить одразу, ще не
+показавши жодного екрана. Доведений порядок і шість пасток — readonly-оверлей
+після кожного ребута, мовчазний ENOSPC на `/mnt/scratch`, підрядковий пошук вузла
+в дампі (перший тап влучив у текст підказки замість кнопки), «живий adb» ≠
+«готовий екран» на холодному boot, порожній дамп через уже відпрацьованого
+майстра і мікс adb 1.0.39 із `PATH` проти 1.0.41 — в `docs/EMULATOR.md`, розділ
+«Модуль у `system_ext/priv-app`: як це повторюється».
+
+```bash
+# APK збирається окремим кроком (блок вище); скрипт лише кладе його в образ і вимірює
+bash build/scripts/check-welcome-live.sh install app/build/outputs/apk/debug/app-debug.apk
+bash build/scripts/check-welcome-live.sh theme
+bash build/scripts/check-welcome-live.sh walk --fresh
+# кадри всіх десяти кроків в одній темі → out/welcome-live/<тема>/stepN.png
+bash build/scripts/check-welcome-live.sh screens dark --fresh
+bash build/scripts/check-welcome-live.sh screens light --fresh
+# -s <серіал пристрою> для будь-якої підкоманди; ADB=/шлях/до/adb — якщо adb не в PATH
+# або якщо в PATH стоїть інша версія adb: мікс 1.0.39 із 1.0.41 ламає сервер посеред прогону
+```

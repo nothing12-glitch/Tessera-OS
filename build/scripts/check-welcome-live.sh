@@ -11,6 +11,7 @@
 #   build/scripts/check-welcome-live.sh [-s <серіал>] install <шлях/до/apk>
 #   build/scripts/check-welcome-live.sh [-s <серіал>] theme
 #   build/scripts/check-welcome-live.sh [-s <серіал>] walk [--fresh]
+#   build/scripts/check-welcome-live.sh [-s <серіал>] screens <dark|light> [--fresh]
 #
 # Передумови (докладніше — docs/EMULATOR.md, розділ про system_ext/priv-app):
 # образ userdebug (на user `adb root` заборонено), емулятор запущено з
@@ -97,6 +98,27 @@ dump_ui() {
     | sed 's/></><\n</g'
 }
 
+# Готовність — це НЕ «пристрій видно в adb devices» і навіть не boot_completed=1.
+# 27.10.2026 прогін, запущений за ~30 с після cold boot, отримав `mCurrentFocus=null`
+# і «null root node» від uiautomator, хоча система вже повідомила про завершений
+# boot. Без цього воріт скрипт вимірює стан завантаження, а не модуль, і видає хибний
+# висновок: walk тоді написав би «майстер відновився на кроці невідомо».
+wait_ui_ready() {
+  local i focus
+  wait_boot
+  for i in $(seq 1 30); do
+    [[ "$(adb_sh 'dumpsys power' | grep -m1 -oE 'mWakefulness=[A-Za-z]+' | sed 's/.*=//')" == "Asleep" ]] \
+      && adb_sh 'input keyevent KEYCODE_WAKEUP' >/dev/null
+    focus="$(adb_sh 'dumpsys window' | grep -m1 -oE 'mCurrentFocus=Window\{[^}]*\}' || true)"
+    if [[ -n "$focus" ]] && dump_ui | grep -q '<hierarchy'; then
+      say "UI готовий (спроба $i): ${focus#mCurrentFocus=}"
+      return 0
+    fi
+    sleep 3
+  done
+  die "за ~90 с після boot система не дала ні вікна у фокусі, ні валідного дампа (uiautomator мовчить). Повтори прогін на живому екрані — інакше міритимеш завантаження, а не модуль"
+}
+
 tap_node() {
   local pat="$1" line b x y
   # Рівність атрибута, а не підрядок: 26.10.2026 під час живого прогону «Увійти в
@@ -122,8 +144,23 @@ current_step() {
   dump_ui | grep -oE 'крок [0-9]+ із [0-9]+' | head -1 | grep -oE '[0-9]+' | head -1
 }
 
-screenshot() { # screenshot <ім'я-файла>
-  mkdir -p "$OUT_DIR" 2>/dev/null || return 0
+# Фіксована пауза після старту імітує дефект модуля: 27.10.2026 перший старт після
+# `pm clear` на свіжозавантаженій системі двічі поспіль дав порожній дамп, і прогін
+# написав би «майстер відновився на кроці невідомо» замість правди «екран ще не
+# встиг». Тому опитування. Друкує номер крока, щойно екран показав хоча б один,
+# або порожній рядок після ~60 с.
+wait_step_marker() {
+  local i st=""
+  for i in $(seq 1 20); do
+    st="$(current_step)"
+    [[ -n "$st" ]] && break
+    sleep 3
+  done
+  printf '%s' "$st"
+}
+
+screenshot() { # screenshot <ім'я-файла> [пікаталог усередині OUT_DIR]
+  mkdir -p "$OUT_DIR/${2:-}" 2>/dev/null || return 0
   adb_sh "screencap -p /sdcard/shot.png" >/dev/null
   "$ADB" -s "$DEV" pull /sdcard/shot.png "$(host_path "$OUT_DIR/$1")" >/dev/null 2>&1 || return 0
   adb_sh 'rm -f /sdcard/shot.png' >/dev/null
@@ -162,6 +199,7 @@ require_device() {
   command -v "$ADB" >/dev/null 2>&1 || die "не знайшов adb («$ADB»): задай ADB=/шлях/до/adb"
   "$ADB" -s "$DEV" get-state >/dev/null 2>&1 || die "пристрою $DEV немає (перевір adb devices). Серіал задається через -s"
   "$ADB" -s "$DEV" wait-for-device
+  wait_ui_ready
 }
 
 require_installed() {
@@ -314,19 +352,21 @@ cmd_theme() {
   baseline="$(cur_uimode)"; note "базовий mCurUiMode=0x$baseline"
   ok_if "базовий стан світлий (0x11)" [ "$baseline" = "11" ]
 
-  say "старт майстра (явний cmp: неявний фільтр не резолвиться — див. apps/welcome/README.md)"
-  adb_sh "am start -a android.intent.action.MAIN -c android.intent.category.SETUP_WIZARD -n $COMPONENT" | head -1
-  sleep 4
+  # Підготовка — та сама, що в `walk`: з піднятими прапорцями модуль виходить
+  # миттєво (skipWhenAlreadyPassed читає device_provisioned), і тоді «тема не
+  # застосовується» насправді означало б «майстра на екрані не було». 27.10.2026
+  # саме так і сталось після успішного walk: theme впав, хоча тема й далі працювала.
+  prepare_at_step_one
+  step=1
   for i in 1 2 3 4 5; do
-    step="$(current_step)"
     [[ "$step" == "4" ]] && break
     # Без паузи дамп іноді знімає ще старий крок — тоді лічильник відстає і
     # прогін зупиняється на кроці 3, імітуючи «тема не працює».
     tap_node "Перейти до наступного кроку" >/dev/null || break
     sleep 2
-    echo "  тап $i → крок $(current_step)"
+    step="$(current_step)"
+    echo "  тап $i → крок ${step:-порожньо}"
   done
-  step="$(current_step)"
   [[ "$step" == "4" ]] || die "до крока 4 (Вигляд) не дійшли — зараз на «${step:-невідомо}». Без цього вимір теми неможливий"
 
   say "крок 4: «Світла» — підготовка, базовий стан і так світлий"
@@ -379,10 +419,10 @@ flags_state() {
     "$(raw_secure font_scale)" "$(raw_secure ui_night_mode)"
 }
 
-cmd_walk() {
-  local seen="" norm n st dump after still start
-  require_device; require_installed
-
+# Спільна підготовка `walk` і `screens`: чистий стан модуля, скинуті прапорці,
+# старт явним cmp і підтвердження, що майстер справді на кроці 1.
+prepare_at_step_one() {
+  local start
   if [[ "$FRESH" == "1" ]]; then
     say "--fresh: pm clear $PKG — це прибере збережені вибори модуля й крок, на якому він зупинився"
     adb_sh "pm clear $PKG" | head -2
@@ -402,15 +442,28 @@ cmd_walk() {
 
   say "старт майстра (явний cmp)"
   adb_sh "am start -a android.intent.action.MAIN -c android.intent.category.SETUP_WIZARD -n $COMPONENT" | head -1
-  sleep 4
+  start="$(wait_step_marker)"
   echo "  фокус: $(adb_sh 'dumpsys window' | grep -m1 -E 'mCurrentFocus' | sed 's/^ *//')"
+  [[ -n "$start" ]] || {
+    # Порожній маркер буває з двох причин, і плутати їх — значить написати «тема
+    # не працює» про екран, на якому майстра не було. Тому друкуємо те, що
+    # розрізняє: яка активність лишилася на екрані і які прапорці.
+    echo "  активна саме зараз: $(adb_sh 'dumpsys activity activities' | grep -m1 -E 'topResumedActivity' | sed 's/^ *//')"
+    flags_state
+    die "за ~60 с після старту на екрані немає маркера «крок N із 10». Рядок «активна саме зараз» каже, котра з двох причин: активність лишилася нашою — екран ще не встиг, повтори прогін; лишилася чужою — модуль вийшов сам, бо система вже налаштована"
+  }
 
   # Модуль свідомо відновлює крок, на якому зупинився, тож «1…10» без --fresh
-  # виміряти неможливо — і це саме той випадок, коли без this check прогін
-  # видав би «дефект вітальні» замість «не той стан старту».
-  start="$(current_step)"
-  [[ "$start" == "1" ]] || die "майстер відновився на кроці ${start:-невідомо}, а не почав з 1 — він памʼятає місце зупинки. Послідовність «1…10» вимірюється лише з чистого стану: повтори з --fresh"
+  # виміряти неможливо — і саме ця перевірка відрізняє «не той стан старту» від
+  # «дефект вітальні».
+  [[ "$start" == "1" ]] || die "майстер відновився на кроці $start, а не почав з 1 — він памʼятає місце зупинки. Послідовність «1…10» вимірюється лише з чистого стану: повтори з --fresh"
   echo "  старт підтверджено: крок 1"
+}
+
+cmd_walk() {
+  local seen="" norm n st dump after still
+  require_device; require_installed
+  prepare_at_step_one
 
   for n in 1 2 3 4 5 6 7 8 9 10; do
     # Один дамп на крок: з нього й номер, і тексти — два окремих зняття зловили б
@@ -452,8 +505,55 @@ cmd_walk() {
   report
 }
 
+# ---------- screens: кадри всіх кроків в одній темі --------------------------
+
+cmd_screens() {
+  local want="${1:-dark}" want_mode expect_hex seen="" norm n st dump got
+  case "$want" in
+    dark)  want_mode=2; expect_hex=21 ;;
+    light) want_mode=1; expect_hex=11 ;;
+    *) die "screens буває <dark|light>, а не «$want»" ;;
+  esac
+  require_device; require_installed
+
+  # Тему ставимо сервісом ДО проходу, а не на кроці 4: інакше перші три кадри
+  # лишилися б в іншій темі, і набору «десять кадрів темної» не вийшло б.
+  say "тема для всього набору: $want (сервіс, а не лише рядок у базі)"
+  if [[ "$want" == "dark" ]]; then adb_sh 'cmd uimode night yes' >/dev/null
+  else adb_sh 'cmd uimode night no' >/dev/null; fi
+  adb_sh "settings put secure ui_night_mode $want_mode" >/dev/null
+  sleep 2
+  echo "  стан сервісу: $(pair)"
+  ok_if "тема $want застосована наживо: mCurUiMode=0x$expect_hex" [ "$(cur_uimode)" = "$expect_hex" ]
+  ok_if "mNightMode = $want_mode"                                 [ "$(night_mode)" = "$want_mode" ]
+
+  prepare_at_step_one
+
+  for n in 1 2 3 4 5 6 7 8 9 10; do
+    dump="$(dump_ui)"
+    st="$(printf '%s' "$dump" | grep -oE 'крок [0-9]+ із [0-9]+' | head -1 | grep -oE '[0-9]+' | head -1)"
+    seen+="${st} "
+    [[ "$st" == "$n" ]] || say "увага: чекали крок $n, а дамп показав «${st:-порожньо}»"
+    screenshot "$want/step${st:-na}.png" "$want"
+    [[ "$st" == "10" ]] && break
+    tap_node "Перейти до наступного кроку" >/dev/null || { echo "  далі йти нічим — «Далі» не знайдено"; break; }
+    sleep 2
+  done
+  norm=$(echo $seen)
+  ok_if "кадри знято з усіх десяти кроків по порядку" [ "$norm" = "1 2 3 4 5 6 7 8 9 10" ]
+  # Файли рахуємо на диску, а не за власними рядками «знімок →»: adb pull уміє
+  # мовчки не спрацювати, і тоді «десять кадрів» було б брешнею в документації.
+  got="$(ls -1 "$OUT_DIR/$want"/step*.png 2>/dev/null | wc -l | tr -d ' ')"
+  ok_if "на диску лежить рівно 10 кадрів ($OUT_DIR/$want)" [ "$got" = "10" ]
+  note "послідовність кроків з дампа: $norm; кадрів на диску: $got"
+
+  say "прапорців не чіпали: фінальний тап не робився, щоб майстер лишився перед «Готово»"
+  flags_state
+  report
+}
+
 usage() {
-  sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   cat <<EOF
 
 Команди:
@@ -462,8 +562,11 @@ usage() {
   theme                  вимір пари «рядок у Secure» / «стан сервісу» до тапу,
                          відразу після тапу «Темна» і на +1/+4 с, плюс зворот
   walk                   десять кроків зі станом прапорців до й після;
-                         --fresh — спершу `pm clear` модуля, бо без нього він
+                         --fresh — спершу \`pm clear\` модуля, бо без нього він
                          відновлюється на кроці зупинки й «1…10» не вимірюється
+  screens <dark|light>   кадри всіх десяти кроків в одній темі у
+                         \$OUT_DIR/<тема>/stepN.png; тема ставиться ДО проходу,
+                         прапорців не чіпає: фінальний тап не робиться
 
 Опції: -s <серіал>  (типово $DEV); шлях до adb: ADB=/шлях/до/adb
 Змінні: OUT_DIR=<каталог знімків>  (типово <репо>/out/welcome-live)
@@ -480,7 +583,7 @@ while [[ $# -gt 0 ]]; do
     -s) DEV="${2:?-s потребує серіал}"; shift 2 ;;
     --fresh) FRESH=1; shift ;;
     -h|--help) usage; exit 0 ;;
-    install|theme|walk) CMD="$1"; shift ;;
+    install|theme|walk|screens) CMD="$1"; shift ;;
     *) ARGS+=("$1"); shift ;;
   esac
 done
@@ -491,4 +594,5 @@ case "$CMD" in
   install) cmd_install "${ARGS[0]:-}" ;;
   theme)   cmd_theme ;;
   walk)    cmd_walk ;;
+  screens) cmd_screens "${ARGS[0]:-dark}" ;;
 esac
