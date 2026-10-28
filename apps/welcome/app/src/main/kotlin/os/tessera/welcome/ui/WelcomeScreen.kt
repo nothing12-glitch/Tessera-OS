@@ -12,8 +12,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,7 +27,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -36,7 +39,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -91,25 +96,21 @@ fun WelcomeScreen(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.surface,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-        ) {
-            Header(state = state)
-
-            Spacer(Modifier.height(24.dp))
-
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState()),
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .widthIn(max = 600.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
             ) {
+                Header(state = state)
+                Spacer(Modifier.height(32.dp))
+
                 AnimatedContent(
                     targetState = state.flow.step,
+                    modifier = Modifier.fillMaxWidth().weight(1f),
                     transitionSpec = {
                         (slideInHorizontally(tween(300)) { it / 5 } + fadeIn(tween(300)))
                             .togetherWith(
@@ -118,63 +119,79 @@ fun WelcomeScreen(
                     },
                     label = "welcome-step",
                 ) { step ->
-                    StepBody(step = step, state = state, actions = actions)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                            .padding(bottom = 8.dp),
+                    ) {
+                        StepBody(step = step, state = state, actions = actions)
+                    }
                 }
+
+                Notice(notice = state.notice)
+                Footer(state = state, actions = actions)
+                BuildLine(state = state)
             }
-
-            Notice(notice = state.notice)
-
-            Footer(state = state, actions = actions)
-
-            BuildLine(state = state)
         }
     }
 }
 
 @Composable
 private fun Header(state: WelcomeUiState) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Image(
-            painter = painterResource(R.drawable.ic_launcher_foreground),
-            contentDescription = stringResource(R.string.welcome_brand_desc),
-            modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(12.dp)),
-        )
-        Spacer(Modifier.size(12.dp))
-        Text(
-            text = stringResource(R.string.welcome_brand),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Spacer(Modifier.weight(1f))
-        StepDots(state = state)
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        StepProgress(state = state)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                painter = painterResource(R.drawable.ic_launcher_foreground),
+                contentDescription = stringResource(R.string.welcome_brand_desc),
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .padding(4.dp),
+            )
+            Spacer(Modifier.size(12.dp))
+            Text(
+                text = stringResource(R.string.welcome_brand),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
-/** Крапки замість «Крок N із M»: по одній на крок, пропущені — інші за кольором. */
 @Composable
-private fun StepDots(state: WelcomeUiState) {
+private fun StepProgress(state: WelcomeUiState) {
     val scheme = MaterialTheme.colorScheme
     val active = WelcomeFlow.dotIndex(state.flow)
-    val label = stringResource(R.string.welcome_dots_desc, active + 1, WelcomeFlow.dotCount())
+    val count = WelcomeFlow.dotCount()
+    val label = stringResource(R.string.welcome_dots_desc, active + 1, count)
     Row(
         modifier = Modifier
-            .semantics(mergeDescendants = true) { contentDescription = label }
-            .padding(start = 8.dp, top = 6.dp, bottom = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
+            .fillMaxWidth()
+            .clip(CircleShape)
+            .semantics(mergeDescendants = true) {
+                contentDescription = label
+                progressBarRangeInfo = ProgressBarRangeInfo(
+                    current = (active + 1).toFloat(),
+                    range = 0f..count.toFloat(),
+                    steps = count - 1,
+                )
+            },
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         WelcomeFlow.steps.forEachIndexed { index, step ->
             val color = when {
                 index == active -> scheme.primary
                 step in state.flow.skipped -> scheme.tertiary
-                index < active -> scheme.primaryContainer
-                else -> scheme.surfaceVariant
+                index < active -> scheme.primary.copy(alpha = 0.55f)
+                else -> scheme.surfaceContainerHighest
             }
             Box(
                 modifier = Modifier
-                    .size(if (index == active) 10.dp else 7.dp)
+                    .weight(1f)
+                    .height(3.dp)
                     .clip(CircleShape)
                     .background(color),
             )
@@ -201,6 +218,7 @@ private fun Notice(notice: Int?) {
  * `uiautomator` видно, що самого тексту для TalkBack і зовнішніх тестів не
  * дістаєш.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Footer(state: WelcomeUiState, actions: WelcomeActions) {
     val flow = state.flow
@@ -210,38 +228,49 @@ private fun Footer(state: WelcomeUiState, actions: WelcomeActions) {
     val nextDesc = stringResource(
         if (atFinish) R.string.welcome_enter_desc else R.string.welcome_next_desc,
     )
-    Row(
+    FlowRow(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(top = 24.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        if (WelcomeFlow.canGoBack(flow)) {
-            TextButton(
-                onClick = actions.onBack,
-                modifier = Modifier.semantics { contentDescription = backDesc },
-            ) {
-                Text(stringResource(R.string.welcome_back))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (WelcomeFlow.canGoBack(flow)) {
+                TextButton(
+                    onClick = actions.onBack,
+                    modifier = Modifier
+                        .heightIn(min = 56.dp)
+                        .semantics { contentDescription = backDesc },
+                ) {
+                    Text(stringResource(R.string.welcome_back))
+                }
+            }
+            if (WelcomeFlow.canSkip(flow)) {
+                TextButton(
+                    onClick = actions.onSkip,
+                    modifier = Modifier
+                        .heightIn(min = 56.dp)
+                        .semantics { contentDescription = skipDesc },
+                ) {
+                    Text(stringResource(R.string.welcome_skip))
+                }
             }
         }
-        if (WelcomeFlow.canSkip(flow)) {
-            TextButton(
-                onClick = actions.onSkip,
-                modifier = Modifier.semantics { contentDescription = skipDesc },
-            ) {
-                Text(stringResource(R.string.welcome_skip))
-            }
-        }
-        Spacer(Modifier.weight(1f))
         Button(
             onClick = actions.onNext,
-            modifier = Modifier.semantics { contentDescription = nextDesc },
+            shape = MaterialTheme.shapes.extraLarge,
+            modifier = Modifier
+                .then(if (atFinish || !WelcomeFlow.canGoBack(flow)) Modifier.fillMaxWidth() else Modifier)
+                .heightIn(min = 56.dp)
+                .semantics { contentDescription = nextDesc },
         ) {
             Text(
                 stringResource(
                     if (atFinish) R.string.welcome_done_button else R.string.welcome_next,
                 ),
-                modifier = Modifier.padding(horizontal = 8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                textAlign = TextAlign.Center,
             )
         }
     }

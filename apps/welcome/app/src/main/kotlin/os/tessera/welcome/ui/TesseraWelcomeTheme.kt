@@ -3,8 +3,11 @@ package os.tessera.welcome.ui
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -14,6 +17,11 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import os.tessera.welcome.logic.AccentColor
 import os.tessera.welcome.logic.ThemeChoice
@@ -42,8 +50,23 @@ fun TesseraWelcomeTheme(
     val scheme = runCatching {
         if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     }.getOrElse {
-        if (dark) darkColorScheme() else lightColorScheme()
-    }.let { if (accent.isDynamic) it else it.withAccent(accent.argb, dark) }
+        if (dark) {
+            darkColorScheme(
+                primary = Color(0xFFB7C4FF),
+                onPrimary = Color(0xFF002478),
+                primaryContainer = Color(0xFF1E2B4C),
+                onPrimaryContainer = Color(0xFFDCE1FF),
+            )
+        } else {
+            lightColorScheme(
+                primary = Color(0xFF3350C8),
+                onPrimary = Color.White,
+                primaryContainer = Color(0xFFDCE1FF),
+                onPrimaryContainer = Color(0xFF101C49),
+            )
+        }
+    }.withSurfaces(dark)
+        .let { if (accent.isDynamic) it else it.withAccent(accent.argb, dark) }
 
     val view = LocalView.current
     SideEffect {
@@ -53,7 +76,75 @@ fun TesseraWelcomeTheme(
         controller?.isAppearanceLightNavigationBars = !dark
     }
 
-    MaterialTheme(colorScheme = scheme, content = content)
+    MaterialTheme(
+        colorScheme = scheme,
+        shapes = WelcomeShapes,
+        typography = WelcomeTypography,
+        content = content,
+    )
+}
+
+private val WelcomeShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(20.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(28.dp),
+)
+
+private val WelcomeTypography = Typography(
+    headlineMedium = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Medium,
+        fontSize = 28.sp,
+        lineHeight = 36.sp,
+        letterSpacing = (-0.5).sp,
+    ),
+    bodyLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.sp,
+    ),
+    labelLarge = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.sp,
+    ),
+)
+
+private fun ColorScheme.withSurfaces(dark: Boolean): ColorScheme = if (dark) {
+    copy(
+        background = Color(0xFF0B0F14),
+        onBackground = Color(0xFFE0E3EA),
+        surface = Color(0xFF0B0F14),
+        onSurface = Color(0xFFE0E3EA),
+        onSurfaceVariant = Color(0xFFA6ADBB),
+        surfaceContainerLowest = Color(0xFF080B10),
+        surfaceContainerLow = Color(0xFF131820),
+        surfaceContainer = Color(0xFF171C25),
+        surfaceContainerHigh = Color(0xFF202630),
+        surfaceContainerHighest = Color(0xFF2A313D),
+        outline = Color(0xFF747E90),
+        outlineVariant = Color(0xFF303846),
+    )
+} else {
+    copy(
+        background = Color(0xFFF7F8FC),
+        onBackground = Color(0xFF191C24),
+        surface = Color(0xFFF7F8FC),
+        onSurface = Color(0xFF191C24),
+        onSurfaceVariant = Color(0xFF535D70),
+        surfaceContainerLowest = Color.White,
+        surfaceContainerLow = Color(0xFFF0F2F8),
+        surfaceContainer = Color(0xFFECEEF5),
+        surfaceContainerHigh = Color(0xFFE4E7F0),
+        surfaceContainerHighest = Color(0xFFDDE1EB),
+        outline = Color(0xFF737E92),
+        outlineVariant = Color(0xFFCDD3DF),
+    )
 }
 
 /**

@@ -7,9 +7,18 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,7 +35,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
@@ -47,8 +55,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -122,13 +130,13 @@ private fun GroupLabel(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(bottom = 6.dp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(bottom = 12.dp),
     )
 }
 
 /**
- * Рядок варіантів. Кожен чип має озвучуване ім'я й стан: без нього й TalkBack,
+ * Рядок варіантів. Кожен тайл має озвучуване ім'я й стан: без нього й TalkBack,
  * і дамп `uiautomator` бачать порожній `focusable`-вузол.
  */
 @Composable
@@ -140,23 +148,71 @@ private fun <T> ChoiceRow(
 ) {
     val onState = stringResource(R.string.welcome_state_selected)
     val offState = stringResource(R.string.welcome_state_unselected)
-    options.chunked(3).forEach { rowOptions ->
-        Row(
-            modifier = Modifier.padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+    val scheme = MaterialTheme.colorScheme
+    val fontScale = LocalDensity.current.fontScale
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val columns = if (options.size != 3 && maxWidth / fontScale >= 300.dp) 2 else 1
+        Column(
+            modifier = Modifier.selectableGroup(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            rowOptions.forEach { option ->
-                val isSelected = option.value == selected
-                val desc = stringResource(descRes, option.label)
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { onSelect(option.value) },
-                    label = { Text(option.label) },
-                    modifier = Modifier.semantics {
-                        contentDescription = desc
-                        stateDescription = if (isSelected) onState else offState
-                    },
-                )
+            options.chunked(columns).forEach { rowOptions ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    rowOptions.forEach { option ->
+                        val isSelected = option.value == selected
+                        val desc = stringResource(descRes, option.label)
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 56.dp)
+                                .clip(MaterialTheme.shapes.extraLarge)
+                                .semantics(mergeDescendants = true) {
+                                    contentDescription = desc
+                                    stateDescription = if (isSelected) onState else offState
+                                }
+                                .selectable(
+                                    selected = isSelected,
+                                    role = Role.RadioButton,
+                                    onClick = { onSelect(option.value) },
+                                ),
+                            shape = MaterialTheme.shapes.extraLarge,
+                            color = if (isSelected) {
+                                scheme.primary.copy(alpha = 0.16f).compositeOver(scheme.surfaceContainer)
+                            } else {
+                                scheme.surfaceContainer
+                            },
+                            contentColor = scheme.onSurface,
+                            border = BorderStroke(
+                                1.dp,
+                                if (isSelected) scheme.primary.copy(alpha = 0.6f) else scheme.outlineVariant,
+                            ),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(
+                                    text = option.label,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = scheme.primary,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    repeat(columns - rowOptions.size) { Spacer(Modifier.weight(1f)) }
+                }
             }
         }
     }
@@ -196,11 +252,15 @@ private fun StoredLine(text: String) {
 private fun OpenScreenButton(label: String, description: String, onClick: () -> Unit) {
     OutlinedButton(
         onClick = onClick,
+        shape = MaterialTheme.shapes.extraLarge,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier
-            .padding(top = 16.dp)
+            .fillMaxWidth()
+            .padding(top = 24.dp)
+            .heightIn(min = 56.dp)
             .semantics { contentDescription = description },
     ) {
-        Text(label, modifier = Modifier.padding(horizontal = 4.dp))
+        Text(label, modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp))
     }
 }
 
@@ -278,7 +338,7 @@ private fun LanguageStep(state: WelcomeUiState, actions: WelcomeActions) {
             title = stringResource(R.string.welcome_language_title),
             body = stringResource(R.string.welcome_language_body),
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(24.dp))
         GroupLabel(stringResource(R.string.welcome_language_label))
         ChoiceRow(
             options = listOf(
@@ -334,7 +394,7 @@ private fun AccessibilityStep(state: WelcomeUiState, actions: WelcomeActions) {
             title = stringResource(R.string.welcome_access_title),
             body = stringResource(R.string.welcome_access_body),
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(24.dp))
         GroupLabel(stringResource(R.string.welcome_font_label))
         ChoiceRow(
             options = listOf(
@@ -353,8 +413,16 @@ private fun AccessibilityStep(state: WelcomeUiState, actions: WelcomeActions) {
             blockedRes = R.string.welcome_write_blocked,
             pendingRes = R.string.welcome_font_pending,
         )
-        Spacer(Modifier.height(20.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Spacer(Modifier.height(24.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.large)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(R.string.welcome_contrast),
@@ -391,7 +459,7 @@ private fun AppearanceStep(state: WelcomeUiState, actions: WelcomeActions) {
             title = stringResource(R.string.welcome_appearance_title),
             body = stringResource(R.string.welcome_appearance_body),
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(24.dp))
         GroupLabel(stringResource(R.string.welcome_theme_label))
         ChoiceRow(
             options = listOf(
@@ -409,7 +477,7 @@ private fun AppearanceStep(state: WelcomeUiState, actions: WelcomeActions) {
             blockedRes = R.string.welcome_theme_not_applied,
             pendingRes = R.string.welcome_theme_pending,
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(24.dp))
         GroupLabel(stringResource(R.string.welcome_accent_label))
         AccentSwatches(
             selected = state.flow.accent,
@@ -434,8 +502,8 @@ private fun AccentSwatches(selected: AccentColor, onSelect: (AccentColor) -> Uni
     val offState = stringResource(R.string.welcome_state_unselected)
     AccentColor.entries.chunked(4).forEach { rowColors ->
         Row(
-            modifier = Modifier.padding(bottom = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(bottom = 12.dp).selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             rowColors.forEach { accent ->
                 val label = labels.getValue(accent)
@@ -443,7 +511,7 @@ private fun AccentSwatches(selected: AccentColor, onSelect: (AccentColor) -> Uni
                 val isSelected = accent == selected
                 Box(
                     modifier = Modifier
-                        .size(46.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .background(
                             // Monet не має одного кольору, і `colorScheme.primary`
@@ -497,7 +565,7 @@ private fun NavigationStep(state: WelcomeUiState, actions: WelcomeActions) {
             title = stringResource(R.string.welcome_nav_title),
             body = stringResource(R.string.welcome_nav_body),
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(24.dp))
         ChoiceRow(
             options = listOf(
                 Option(NavigationChoice.GESTURES, stringResource(R.string.welcome_nav_gestures)),
@@ -531,7 +599,7 @@ private fun PowerStep(state: WelcomeUiState, actions: WelcomeActions) {
             title = stringResource(R.string.welcome_power_title),
             body = stringResource(R.string.welcome_power_body),
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(24.dp))
         ChoiceRow(
             options = listOf(
                 Option(PowerProfileChoice.ECONOMY, stringResource(R.string.welcome_power_economy)),
@@ -572,7 +640,7 @@ private fun NetworkStep(state: WelcomeUiState, actions: WelcomeActions) {
             title = stringResource(R.string.welcome_network_title),
             body = stringResource(R.string.welcome_network_body),
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(24.dp))
         ChoiceRow(
             options = listOf(
                 Option(MacPolicyChoice.RANDOM, stringResource(R.string.welcome_mac_random)),
@@ -619,11 +687,15 @@ private fun AccountStep(state: WelcomeUiState, actions: WelcomeActions) {
                 if (unavailable) R.string.welcome_account_none else R.string.welcome_account_body,
             ),
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(24.dp))
         Button(
             onClick = actions.onOpenAccount,
             enabled = !unavailable,
-            modifier = Modifier.semantics { contentDescription = openDesc },
+            shape = MaterialTheme.shapes.extraLarge,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .semantics { contentDescription = openDesc },
         ) {
             Text(stringResource(R.string.welcome_account_open))
         }
@@ -643,7 +715,7 @@ private fun EdgeDemoStep() {
             title = stringResource(R.string.welcome_edge_title),
             body = stringResource(R.string.welcome_edge_body),
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(24.dp))
         EdgeGlow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -670,7 +742,7 @@ private fun EdgeGlow(modifier: Modifier = Modifier) {
         label = "edge-phase",
     )
     val accent = MaterialTheme.colorScheme.primary
-    val body = colorResource(R.color.welcome_background)
+    val body = MaterialTheme.colorScheme.surfaceContainer
     Canvas(modifier = modifier) {
         val band = size.minDimension * 0.055f
         val inset = band * 2f
@@ -729,7 +801,7 @@ private fun FinishStep(state: WelcomeUiState) {
             blockedRes = R.string.welcome_provision_failed,
             pendingRes = R.string.welcome_provision_pending,
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(24.dp))
         GroupLabel(stringResource(R.string.welcome_tour_title))
         HintCard(
             title = stringResource(R.string.welcome_tip_halo_title),
@@ -751,12 +823,14 @@ private fun HintCard(title: String, body: String) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 10.dp),
+            .padding(bottom = 12.dp),
+        shape = MaterialTheme.shapes.large,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
